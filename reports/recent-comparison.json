@@ -1,0 +1,193 @@
+{
+  "checked_unix": 1790778731.594302,
+  "scope": "Fixed 32-task HumanEval subset and five-task pilot; differing quantizations and offload settings. Not a general ranking. Context tests are synthetic retrieval only.",
+  "hardware": "RTX 5070 Ti 16GB, Ryzen 9 9900X, 32GB RAM, Windows 11",
+  "runtime": "llama.cpp b11146 CUDA 13.4",
+  "comparisons": [
+    {
+      "label": "qwen38-27b-cpuffn8",
+      "model": {
+        "label": "Qwen3.8 27B intact Unsloth UD Q4_K_M comparison",
+        "repo": "unsloth/Qwen3.8-27B-GGUF",
+        "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+        "name": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "url": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf?download=true",
+        "size": 16464440224,
+        "sha256": "322e194ff79741c7baa497c240f677f54b201b0efab44ca8e50f122b39123482",
+        "license": "Apache-2.0",
+        "custom_derivative": false,
+        "source_repo": "Qwen/Qwen3.8-27B",
+        "source_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "source_created_at": "2026-08-05T08:22:59.000Z"
+      },
+      "context": 8192,
+      "cpu_ffn": 8,
+      "thinking": false,
+      "humaneval": {
+        "passed": 32,
+        "count": 32,
+        "median_decode_tokens_s": 25.1810283381811,
+        "report": "humaneval-qwen38-27b-cpuffn8.json"
+      },
+      "pilot": {
+        "passed": 5,
+        "count": 5,
+        "report": "pilot-qwen38-27b-cpuffn8.json"
+      }
+    },
+    {
+      "label": "mimo26-9b-q4",
+      "model": {
+        "label": "MiMo V2.6 Distill Qwen 9B Q4_K_M comparison",
+        "repo": "mradermacher/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+        "revision": "88526399a743fecca877b981758a6fff7f9ed628",
+        "name": "MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf",
+        "url": "https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-GGUF/resolve/88526399a743fecca877b981758a6fff7f9ed628/MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf?download=true",
+        "size": 5629105856,
+        "sha256": "50319f206cefe426d5be4e2bc9d91a552c0bc090aa94757156c2de2de1b2e0e8",
+        "license": "MIT",
+        "custom_derivative": false,
+        "source_repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+        "source_revision": "2367e865d009c13ac81713a2878291d33ab28177",
+        "source_created_at": "2026-09-21T18:18:40.000Z"
+      },
+      "context": 8192,
+      "cpu_ffn": 0,
+      "thinking": false,
+      "humaneval": {
+        "passed": 20,
+        "count": 32,
+        "median_decode_tokens_s": 116.97532887238232,
+        "report": "humaneval-mimo26-9b-q4.json"
+      },
+      "pilot": {
+        "passed": 4,
+        "count": 5,
+        "report": "pilot-mimo26-9b-q4.json"
+      }
+    },
+    {
+      "label": "mimo26-9b-q4-thinking",
+      "model": {
+        "label": "MiMo V2.6 Distill Qwen 9B Q4_K_M comparison",
+        "repo": "mradermacher/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+        "revision": "88526399a743fecca877b981758a6fff7f9ed628",
+        "name": "MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf",
+        "url": "https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-GGUF/resolve/88526399a743fecca877b981758a6fff7f9ed628/MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf?download=true",
+        "size": 5629105856,
+        "sha256": "50319f206cefe426d5be4e2bc9d91a552c0bc090aa94757156c2de2de1b2e0e8",
+        "license": "MIT",
+        "custom_derivative": false,
+        "source_repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+        "source_revision": "2367e865d009c13ac81713a2878291d33ab28177",
+        "source_created_at": "2026-09-21T18:18:40.000Z"
+      },
+      "context": 8192,
+      "cpu_ffn": 0,
+      "thinking": true,
+      "humaneval": {
+        "passed": 21,
+        "count": 32,
+        "median_decode_tokens_s": 117.16839886321105,
+        "report": "humaneval-mimo26-9b-q4-thinking.json"
+      },
+      "pilot": {
+        "passed": 3,
+        "count": 5,
+        "report": "pilot-mimo26-9b-q4-thinking.json"
+      }
+    }
+  ],
+  "contexts": [
+    {
+      "report": "context-mimo26-9b-32768.json",
+      "context": 32768,
+      "prompt_tokens": 31738,
+      "first_token_s": 6.764925956726074,
+      "passed": true,
+      "decode_tokens_s": 89.1503967192654
+    },
+    {
+      "report": "context-mimo26-9b-8192.json",
+      "context": 8192,
+      "prompt_tokens": 7158,
+      "first_token_s": 1.4559829235076904,
+      "passed": true,
+      "decode_tokens_s": 108.42981578979072
+    },
+    {
+      "report": "context-qwen38-27b-32768-cpuffn16.json",
+      "context": 32768,
+      "prompt_tokens": 31738,
+      "first_token_s": 28.239176988601685,
+      "passed": true,
+      "decode_tokens_s": 16.320490920366886
+    },
+    {
+      "report": "context-qwen38-27b-8192-cpuffn8.json",
+      "context": 8192,
+      "prompt_tokens": 7158,
+      "first_token_s": 5.478934049606323,
+      "passed": true,
+      "decode_tokens_s": 24.150700370310737
+    }
+  ],
+  "sampled_memory": [
+    {
+      "label": "mimo26-9b-8192",
+      "samples": 508,
+      "peak_total_gpu_mib": 6635,
+      "minimum_available_ram_bytes": 12608081920
+    },
+    {
+      "label": "qwen38-27b-8192",
+      "samples": 278,
+      "peak_total_gpu_mib": 15746,
+      "minimum_available_ram_bytes": 544731136
+    },
+    {
+      "label": "qwen38-27b-32768-cpuffn16",
+      "samples": 28,
+      "peak_total_gpu_mib": 15834,
+      "minimum_available_ram_bytes": 9259753472
+    },
+    {
+      "label": "mimo26-9b-32768",
+      "samples": 0,
+      "peak_total_gpu_mib": null,
+      "minimum_available_ram_bytes": null
+    }
+  ],
+  "memory_scope": "One-second samples; total GPU use includes other Windows applications and can miss short peaks. Qwen8K monitoring began during the benchmark. No samples cover MiMo32K.",
+  "checks": {
+    "launcher": "Passed on Mac and PC",
+    "evaluator": "Passed with Docker bounds, timeout cleanup and fixed-test integrity",
+    "review": "Independent review found no blockers",
+    "setup": "PC verified runtime archive and default model SHA256",
+    "live_server": {
+      "health": {
+        "status": "ok"
+      },
+      "context": 8192,
+      "cpu_ffn": 8,
+      "reply": "READY"
+    }
+  },
+  "publication": {
+    "source": "https://github.com/M1chlCZ/local-coding-assistant",
+    "default": "Pinned public Qwen3.8-27B GGUF download",
+    "custom_derivative_weights": "Local only; not uploaded"
+  },
+  "report_sha256": {
+    "context-mimo26-9b-32768.json": "0d63f96016a51269edc87ed74f929b5df3343b36b481752903611089ff73e9c0",
+    "context-mimo26-9b-8192.json": "d3c93a5a22b5d188a0e454eb90d0ee7f561d72106cd875bbf384b96a80f7e844",
+    "context-qwen38-27b-32768-cpuffn16.json": "2c81fe2e917d4ce7bf78116e849c180d100b6988845ae5a740f8d4629736d1a0",
+    "context-qwen38-27b-8192-cpuffn8.json": "e7fcb0730c3abe21acbf78c0fc2171d663206e5113abc94bf4c1863e1e252a5f",
+    "humaneval-mimo26-9b-q4-thinking.json": "ff7c8d3fa64aeafd48d555cc514ec86bc30f7805f8b19e98be1dda6e239ba508",
+    "humaneval-mimo26-9b-q4.json": "b845e82237353ad21d11ad0f7e0bd73ee48a58de643087365719e051cc6c79cf",
+    "humaneval-qwen38-27b-cpuffn8.json": "ba45414dd234b1f38a3157d3f3e0486088a529c670a1f5f4aaaddfeb653ad5b8",
+    "pilot-mimo26-9b-q4-thinking.json": "1d20965ed54427549a0797f6dec1464d463d8543c5f9e6d33fe2399cfc982897",
+    "pilot-mimo26-9b-q4.json": "55d88517cc25be9c22af469f129ac32fddf4422c32a7516ec9f2c7f70bad1561",
+    "pilot-qwen38-27b-cpuffn8.json": "9c7f3f22be4ce2b4750612c74a6c0e90b47df773ff24827fb0d22c3e32e0553f"
+  }
+}

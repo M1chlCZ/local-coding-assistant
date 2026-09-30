@@ -72,9 +72,9 @@ def request(base, route, payload=None):
         return json.load(response)
 
 
-def chat(base, messages, tools=None, max_tokens=768):
+def chat(base, messages, tools=None, max_tokens=768, thinking=False):
     payload = {"model": "local-coding-assistant", "messages": messages, "temperature": 0,
-               "max_tokens": max_tokens, "chat_template_kwargs": {"enable_thinking": False}}
+               "max_tokens": max_tokens, "chat_template_kwargs": {"enable_thinking": thinking}}
     if tools:
         payload["tools"] = tools
     started = time.monotonic()
@@ -135,7 +135,7 @@ def check_code(code, checks, timeout=20):
         subprocess.run(['docker', 'rm', '-f', name], capture_output=True, timeout=15)
 
 
-def run_agent(base):
+def run_agent(base, thinking=False):
     initial = "def unique_sorted(values):\n    return sorted(values)\n"
     tests = ("import importlib.util\ns=importlib.util.spec_from_file_location('solver','/workspace/solver.py')\n"
              "m=importlib.util.module_from_spec(s);s.loader.exec_module(m)\n"
@@ -170,7 +170,7 @@ def run_agent(base):
         messages = [{"role": "system", "content": "You are an English coding assistant. Use the provided tools to inspect, edit, and test the repository. Repair failed tests before reporting success."},
                     {"role": "user", "content": "Fix unique_sorted in solver.py so it returns sorted unique values without changing the input. Inspect the files and run the tests."}]
         for step in range(6):
-            result, elapsed = chat(base, messages, TOOLS)
+            result, elapsed = chat(base, messages, TOOLS, thinking=thinking)
             message = result["choices"][0]["message"]
             trace.append({"step": step, "message": message, "elapsed_s": elapsed, "usage": result.get("usage")})
             calls = parse_tools(message)
@@ -199,8 +199,9 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--context", type=int, default=8192, help="Context configured on the tested server")
     parser.add_argument("--label", required=True)
+    parser.add_argument("--thinking", action="store_true", help="Enable model reasoning for this separate trial")
     args = parser.parse_args()
-    report = {"label": args.label, "context": args.context, "container_image": IMAGE,
+    report = {"label": args.label, "context": args.context, "thinking": args.thinking, "container_image": IMAGE,
               "scope": "Four Python functional smoke tasks, each with a first attempt and at most one repair using test feedback, plus one bounded repository agent task. Not a general coding benchmark.",
               "server_properties": request(args.base, "/props"), "results": []}
     output = Path(args.output)
@@ -215,7 +216,7 @@ def main():
                     {"role": "user", "content": prompt}]
         try:
             for attempt in range(2):
-                result, elapsed = chat(args.base, messages)
+                result, elapsed = chat(args.base, messages, thinking=args.thinking)
                 content = result["choices"][0]["message"].get("content") or ""
                 checked = check_code(extract_code(content), checks)
                 row["attempts"].append({"elapsed_s": elapsed, "usage": result.get("usage"),
@@ -231,7 +232,7 @@ def main():
         save()
         print(f"{name}: {'PASS' if row['passed'] else 'FAIL'}", flush=True)
     try:
-        report["results"].append(run_agent(args.base))
+        report["results"].append(run_agent(args.base, thinking=args.thinking))
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         report["results"].append({"name": "repository_agent", "passed": False, "error": str(error)})
     save()

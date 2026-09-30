@@ -18,23 +18,22 @@
     ]
   },
   "model": {
-    "label": "Qwen3.8 27B intact Unsloth UD Q4_K_M comparison",
-    "repo": "unsloth/Qwen3.8-27B-GGUF",
-    "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
-    "name": "Qwen3.8-27B-UD-Q4_K_M.gguf",
-    "url": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf?download=true",
-    "size": 16464440224,
-    "sha256": "322e194ff79741c7baa497c240f677f54b201b0efab44ca8e50f122b39123482",
-    "license": "Apache-2.0",
+    "label": "MiMo V2.6 Distill Qwen 9B Q4_K_M comparison",
+    "repo": "mradermacher/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+    "revision": "88526399a743fecca877b981758a6fff7f9ed628",
+    "name": "MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf",
+    "url": "https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-GGUF/resolve/88526399a743fecca877b981758a6fff7f9ed628/MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf?download=true",
+    "size": 5629105856,
+    "sha256": "50319f206cefe426d5be4e2bc9d91a552c0bc090aa94757156c2de2de1b2e0e8",
+    "license": "MIT",
     "custom_derivative": false,
-    "source_repo": "Qwen/Qwen3.8-27B",
-    "source_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
-    "source_created_at": "2026-08-05T08:22:59.000Z"
+    "source_repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+    "source_revision": "2367e865d009c13ac81713a2878291d33ab28177",
+    "source_created_at": "2026-09-21T18:18:40.000Z"
   },
   "defaults": {
     "context": 8192,
     "cpu_moe": 0,
-    "cpu_ffn": 8,
     "threads": 12
   }
 }

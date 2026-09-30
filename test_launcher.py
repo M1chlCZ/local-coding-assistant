@@ -34,6 +34,10 @@ with tempfile.TemporaryDirectory(prefix="coding assistant ") as tmp:
     assert cmd[cmd.index('--repeat-last-n') + 1] == '256'
     ui = json.loads(cmd[cmd.index("--ui-config") + 1])
     assert 'English' in ui['systemMessage'] and 'coding' in ui['systemMessage']
+    dense = launcher.server_command(exe, model, 8192, 0, 8080, 12, 8)
+    assert dense[dense.index('--n-cpu-ffn') + 1] == '8'
+    for offload in (-1, 257):
+        must_reject(lambda: launcher.server_command(exe, model, 8192, 0, 8080, 12, offload))
     for ctx, offload, port, threads in [(0, 20, 8080, 12), (8192, -1, 8080, 12),
                                        (8192, 41, 8080, 12), (8192, 20, 65536, 12),
                                        (8192, 20, 8080, 0)]:
@@ -41,11 +45,17 @@ with tempfile.TemporaryDirectory(prefix="coding assistant ") as tmp:
 
     for defaults, override, expected in [({}, None, 20), ({'cpu_moe': 0}, None, 0),
                                           ({'cpu_moe': 4}, 7, 7)]:
-        args = Namespace(context=None, cpu_moe=override, threads=None, port=8080)
+        args = Namespace(context=None, cpu_moe=override, cpu_ffn=None, threads=None, port=8080)
         with patch.object(launcher, 'paths', return_value=(exe, model)), \
              patch.object(launcher, 'server_command', side_effect=RuntimeError('checked')) as build:
             must_reject(lambda: launcher.serve({'defaults': defaults}, args))
-            assert build.call_args.args[2:] == (8192, expected, 8080, 12)
+            assert build.call_args.args[2:] == (8192, expected, 8080, 12, 0)
+
+    args = Namespace(context=None, cpu_moe=None, cpu_ffn=None, threads=None, port=8080)
+    with patch.object(launcher, 'paths', return_value=(exe, model)), \
+         patch.object(launcher, 'server_command', side_effect=RuntimeError('checked')) as build:
+        must_reject(lambda: launcher.serve({'defaults': {'cpu_moe': 0, 'cpu_ffn': 8}}, args))
+        assert build.call_args.args[-1] == 8
 
     with patch.object(launcher.sys, 'platform', 'win32'), patch.object(launcher, 'health', return_value=True):
         must_reject(lambda: launcher.setup({}))

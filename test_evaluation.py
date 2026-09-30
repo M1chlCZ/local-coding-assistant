@@ -10,6 +10,11 @@ import subprocess
 import sys
 from unittest.mock import patch
 
+for thinking in (False, True):
+    with patch.object(evaluation, 'request', return_value={}) as api:
+        evaluation.chat('unused', [], thinking=thinking)
+        assert api.call_args.args[2]['chat_template_kwargs']['enable_thinking'] is thinking
+
 command = evaluation.container_command("python:3.14-slim", interactive=True)
 assert command[command.index("--network") + 1] == "none"
 assert "--read-only" in command and "--cap-drop=ALL" in command

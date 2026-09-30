@@ -1,0 +1,390 @@
+{
+  "label": "mimo26-9b-q4",
+  "context": 8192,
+  "container_image": "python@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d",
+  "scope": "Four Python functional smoke tasks, each with a first attempt and at most one repair using test feedback, plus one bounded repository agent task. Not a general coding benchmark.",
+  "server_properties": {
+    "default_generation_settings": {
+      "params": {
+        "seed": 4294967295,
+        "temperature": 0.6000000238418579,
+        "dynatemp_range": 0.0,
+        "dynatemp_exponent": 1.0,
+        "top_k": 20,
+        "top_p": 0.949999988079071,
+        "min_p": 0.05000000074505806,
+        "top_n_sigma": -1.0,
+        "xtc_probability": 0.0,
+        "xtc_threshold": 0.10000000149011612,
+        "typical_p": 1.0,
+        "repeat_last_n": 256,
+        "repeat_penalty": 1.100000023841858,
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "dry_multiplier": 0.0,
+        "dry_base": 1.75,
+        "dry_allowed_length": 2,
+        "dry_penalty_last_n": 64,
+        "mirostat": 0,
+        "mirostat_tau": 5.0,
+        "mirostat_eta": 0.10000000149011612,
+        "adaptive_target": -1.0,
+        "adaptive_decay": 0.8999999761581421,
+        "max_tokens": -1,
+        "n_predict": -1,
+        "n_keep": 0,
+        "n_discard": 0,
+        "ignore_eos": false,
+        "stream": false,
+        "n_probs": 0,
+        "min_keep": 0,
+        "chat_format": "Content-only",
+        "reasoning_format": "none",
+        "reasoning_in_content": false,
+        "generation_prompt": "",
+        "samplers": [
+          "penalties",
+          "dry",
+          "top_n_sigma",
+          "top_k",
+          "typ_p",
+          "top_p",
+          "min_p",
+          "xtc",
+          "temperature"
+        ],
+        "speculative.types": "none",
+        "timings_per_token": false,
+        "post_sampling_probs": false,
+        "backend_sampling": false,
+        "lora": []
+      },
+      "n_ctx": 8192
+    },
+    "total_slots": 1,
+    "model_alias": "local-coding-assistant",
+    "model_ftype": "Q4_K - Medium",
+    "model_path": ".cache\\models\\MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf",
+    "modalities": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "media_marker": "<__media_VjTuRtQ7QcrUoSnbpl9RM2BWD9gDaUAs__>",
+    "endpoint_slots": true,
+    "endpoint_props": false,
+    "endpoint_metrics": false,
+    "ui": true,
+    "ui_settings": {
+      "systemMessage": "You are a coding assistant. Respond in English. Write correct, simple code. State assumptions and distinguish verified results from suggestions."
+    },
+    "chat_template": "{%- macro render_value(value) -%}\n    {%- if value is string -%}\n        {{- value -}}\n    {%- else -%}\n        {{- value | tojson(ensure_ascii=False) -}}\n    {%- endif -%}\n{%- endmacro -%}\n\n{%- macro render_content(message_content) -%}\n    {%- if message_content is string -%}\n        {{- message_content -}}\n    {%- elif message_content is iterable -%}\n        {%- for part in message_content -%}\n            {%- if part is not mapping -%}\n                {{- part -}}\n            {%- elif part['type'] == 'image' or 'image' in part or 'image_url' in part -%}\n                {{- '<|vision_start|><|image_pad|><|vision_end|>' -}}\n            {%- elif part['type'] == 'audio' or part['type'] == 'input_audio' or 'audio' in part or 'audio_url' in part or 'input_audio' in part -%}\n                {{- '<|mimo_audio_start|><|audio_pad|><|mimo_audio_end|>' -}}\n            {%- elif part['type'] == 'video' or 'video' in part or 'video_url' in part -%}\n                {{- '<|vision_start|><|video_pad|><|vision_end|>' -}}\n            {%- elif 'text' in part -%}\n                {{- part['text'] -}}\n            {%- endif -%}\n        {%- endfor -%}\n    {%- endif -%}\n{%- endmacro -%}\n\n{%- macro render_tools(tools) -%}\n    {{- 'You are provided with the following tools:\\n\\n<tools>' -}}\n    {%- for tool in tools -%}\n        {{- '\\n' ~ (tool | tojson(ensure_ascii=False)) -}}\n    {%- endfor -%}\n    {{- '\\n</tools>' -}}\n{%- endmacro -%}\n\n{%- macro render_tool_calls(tool_calls) -%}\n    {%- for tool_call in tool_calls -%}\n        {%- if tool_call.function is defined -%}\n            {%- set tool_call = tool_call.function -%}\n        {%- elif tool_call.custom is defined -%}\n            {%- set tool_call = tool_call.custom -%}\n        {%- endif -%}\n        {{- '<tool_call><function=' ~ tool_call.name ~ '>' -}}\n        {%- if tool_call.input is defined and tool_call.input is string -%}\n            {{- tool_call.input -}}\n        {%- elif tool_call.arguments -%}\n            {%- if tool_call.arguments is string -%}\n                {{- tool_call.arguments -}}\n            {%- else -%}\n                {%- for args_name, args_value in tool_call.arguments | items -%}\n                    {{- '<parameter=' ~ args_name ~ '>' ~ render_value(args_value) ~ '</parameter>' -}}\n                {%- endfor -%}\n            {%- endif -%}\n        {%- endif -%}\n        {{- '</function></tool_call>' -}}\n    {%- endfor -%}\n{%- endmacro -%}\n\n{%- macro render_assistant_message(message) -%}\n    {%- generation -%}\n    {%- set content = render_content(message.content) -%}\n    {%- set reasoning = message.reasoning_content if message.reasoning_content is string else '' -%}\n    {{- '<|im_start|>assistant\\n<think>' ~ reasoning ~ '</think>' ~ content -}}\n    {%- if message.tool_calls is defined and message.tool_calls is iterable and message.tool_calls | length > 0 -%}\n        {{- render_tool_calls(message.tool_calls) -}}\n    {%- endif -%}\n    {{- '<|im_end|>' -}}\n    {%- endgeneration -%}\n{%- endmacro -%}\n\n{%- if tools is defined and tools is iterable and tools | length > 0 -%}\n    {{- '<|im_start|>system\\n' ~ render_tools(tools) ~ '<|im_end|>' -}}\n{%- endif -%}\n\n{%- for message in messages -%}\n    {%- if message.role == 'assistant' -%}\n        {{- render_assistant_message(message) -}}\n    {%- else -%}\n        {%- set body = render_content(message.content) -%}\n        {{- '<|im_start|>' ~ message.role ~ '\\n' ~ body -}}\n        {%- if message.tools is defined and message.tools is iterable and message.tools | length > 0 -%}\n            {%- if body -%}\n                {{- '\\n\\n' -}}\n            {%- endif -%}\n            {{- render_tools(message.tools) -}}\n        {%- endif -%}\n        {{- '<|im_end|>' -}}\n    {%- endif -%}\n{%- endfor -%}\n\n{%- if add_generation_prompt -%}\n    {{- '<|im_start|>assistant\\n' -}}\n    {%- if enable_thinking is false -%}\n        {{- '<think></think>' -}}\n    {%- endif -%}\n{%- endif -%}",
+    "chat_template_caps": {
+      "supports_object_arguments": true,
+      "supports_parallel_tool_calls": true,
+      "supports_preserve_reasoning": true,
+      "supports_reasoning_effort": false,
+      "supports_string_content": true,
+      "supports_system_role": true,
+      "supports_tool_calls": true,
+      "supports_tools": true,
+      "supports_typed_content": true
+    },
+    "bos_token": ",",
+    "eos_token": "<|im_end|>",
+    "build_info": "b11146-7fe450e19",
+    "is_sleeping": false,
+    "cors_proxy_enabled": false
+  },
+  "results": [
+    {
+      "name": "merge_intervals",
+      "attempts": [
+        {
+          "elapsed_s": 2.677,
+          "usage": {
+            "completion_tokens": 259,
+            "prompt_tokens": 65,
+            "total_tokens": 324,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 65,
+            "prompt_ms": 64.679,
+            "prompt_per_token_ms": 0.9950615384615384,
+            "prompt_per_second": 1004.9629709797615,
+            "predicted_n": 259,
+            "predicted_ms": 2187.976,
+            "predicted_per_token_ms": 8.480527131782946,
+            "predicted_per_second": 117.91719836049388
+          },
+          "content": "```python\ndef merge_intervals(intervals):\n    \"\"\"Merge overlapping or touching intervals into a new sorted list of lists.\"\"\"\n    if not intervals:\n        return []\n\n    # Sort by start time without modifying the caller's list.\n    merged = []\n    for start, end in sorted(intervals, key=lambda pair: (pair[0], pair[1])):\n        if merged and start <= merged[-1][1]:\n            merged[-1] = [merged[-1][0], max(merged[-1][1], end)]\n        else:\n            merged.append([start, end])\n\n    return merged\n\n\nif __name__ == \"__main__\":\n    print(merge_intervals([]))\n    print(merge_intervals([[1, 3], [2, 6], [5, 9], [10, 12]]))\n    print(merge_intervals([[8, 10], [1, 3], [15, 19], [4, 6]]))\n    print(merge_intervals([[1, 4], [4, 5]]))\n    print(merge_intervals([[0, 1], [2, 3]]))\n```",
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "[]\n[[1, 9], [10, 12]]\n[[1, 3], [4, 6], [8, 10], [15, 19]]\n[[1, 5]]\n[[0, 1], [2, 3]]\nPILOT_CHECKS_PASSED\n"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "name": "parse_duration",
+      "attempts": [
+        {
+          "elapsed_s": 2.302,
+          "usage": {
+            "completion_tokens": 236,
+            "prompt_tokens": 105,
+            "total_tokens": 341,
+            "prompt_tokens_details": {
+              "cached_tokens": 24
+            }
+          },
+          "timings": {
+            "cache_n": 24,
+            "prompt_n": 81,
+            "prompt_ms": 57.668,
+            "prompt_per_token_ms": 0.7119506172839506,
+            "prompt_per_second": 1404.5918013456337,
+            "predicted_n": 236,
+            "predicted_ms": 1988.424,
+            "predicted_per_token_ms": 8.461378723404255,
+            "predicted_per_second": 118.18404927721653
+          },
+          "content": "```python\ndef parse_duration(s):\n    total = 0\n    i = 0\n    n = len(s)\n\n    while i < n:\n        if not (s[i].isdigit()):\n            raise ValueError(f\"invalid duration: {s!r}\")\n\n        start = i\n        while i < n and s[i].isdigit():\n            i += 1\n\n        if i >= n or s[i] not in \"hms\":\n            raise ValueError(f\"invalid duration: {s!r}\")\n\n        unit = s[i]\n        i += 1\n\n        if unit == \"h\":\n            total += int(s[start:i]) * 3600\n        elif unit == \"m\":\n            total += int(s[start:i]) * 60\n        else:\n            total += int(s[start:i])\n\n    return total\n\n\nif __name__ == \"__main__\":\n    for value in (\"1h30m\", \"0s\", \"45m\", \"2h3s\"):\n        print(value, \"->\", parse_duration(value))\n```",
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 32, in <module>\n  File \"<stdin>\", line 21, in parse_duration\nValueError: invalid literal for int() with base 10: '1h'\n"
+        },
+        {
+          "elapsed_s": 0.53,
+          "usage": {
+            "completion_tokens": 26,
+            "prompt_tokens": 418,
+            "total_tokens": 444,
+            "prompt_tokens_details": {
+              "cached_tokens": 340
+            }
+          },
+          "timings": {
+            "cache_n": 340,
+            "prompt_n": 78,
+            "prompt_ms": 70.397,
+            "prompt_per_token_ms": 0.9025256410256411,
+            "prompt_per_second": 1108.0017614386975,
+            "predicted_n": 26,
+            "predicted_ms": 218.319,
+            "predicted_per_token_ms": 8.732759999999999,
+            "predicted_per_second": 114.51133433187218
+          },
+          "content": "<tool_call><function=bash><parameter=command>python -c \"print(1h)\"</parameter></function></tool_call>",
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "  File \"<stdin>\", line 1\n    <tool_call><function=bash><parameter=command>python -c \"print(1h)\"</parameter></function></tool_call>\n    ^\nSyntaxError: invalid syntax\n"
+        }
+      ],
+      "passed": false
+    },
+    {
+      "name": "top_k",
+      "attempts": [
+        {
+          "elapsed_s": 1.027,
+          "usage": {
+            "completion_tokens": 79,
+            "prompt_tokens": 83,
+            "total_tokens": 162,
+            "prompt_tokens_details": {
+              "cached_tokens": 24
+            }
+          },
+          "timings": {
+            "cache_n": 24,
+            "prompt_n": 59,
+            "prompt_ms": 66.379,
+            "prompt_per_token_ms": 1.1250677966101696,
+            "prompt_per_second": 888.8353244248933,
+            "predicted_n": 79,
+            "predicted_ms": 655.175,
+            "predicted_per_token_ms": 8.399679487179487,
+            "predicted_per_second": 119.05216163620408
+          },
+          "content": "```python\nfrom collections import Counter\n\n\ndef top_k(items, k):\n    if k <= 0:\n        return []\n\n    counts = Counter(items)\n    # Sort by (-frequency, string) so ties break lexicographically ascending.\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:k]\n```",
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 11, in <module>\nAssertionError\n"
+        },
+        {
+          "elapsed_s": 0.8,
+          "usage": {
+            "completion_tokens": 75,
+            "prompt_tokens": 209,
+            "total_tokens": 284,
+            "prompt_tokens_details": {
+              "cached_tokens": 161
+            }
+          },
+          "timings": {
+            "cache_n": 161,
+            "prompt_n": 48,
+            "prompt_ms": 65.527,
+            "prompt_per_token_ms": 1.3651458333333333,
+            "prompt_per_second": 732.5224716529065,
+            "predicted_n": 75,
+            "predicted_ms": 647.042,
+            "predicted_per_token_ms": 8.74381081081081,
+            "predicted_per_second": 114.36660989549364
+          },
+          "content": "```python\nfrom collections import Counter\n\n\ndef top_k(items, k):\n    if k <= 0:\n        return []\n\n    counts = Counter(items)\n    return [word for word, _ in sorted(\n        counts.items(),\n        key=lambda item: (-item[1], item[0]),\n    )][:k]\n```",
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "name": "chunks",
+      "attempts": [
+        {
+          "elapsed_s": 1.394,
+          "usage": {
+            "completion_tokens": 124,
+            "prompt_tokens": 69,
+            "total_tokens": 193,
+            "prompt_tokens_details": {
+              "cached_tokens": 24
+            }
+          },
+          "timings": {
+            "cache_n": 24,
+            "prompt_n": 45,
+            "prompt_ms": 64.307,
+            "prompt_per_token_ms": 1.4290444444444446,
+            "prompt_per_second": 699.7682989410173,
+            "predicted_n": 124,
+            "predicted_ms": 1043.496,
+            "predicted_per_token_ms": 8.483707317073172,
+            "predicted_per_second": 117.87299615906528
+          },
+          "content": "```python\ndef chunks(items, size):\n    \"\"\"Split *items* into consecutive lists of up to *size* items each.\n\n    Raises ``ValueError`` when ``size <= 0``. The original sequence is never\n    mutated; the returned sublists contain references to its elements.\n    \"\"\"\n    if size <= 0:\n        raise ValueError(\"chunk size must be greater than zero\")\n\n    result = []\n    for start in range(0, len(items), size):\n        result.append(list(items[start : start + size]))\n    return result\n```",
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "name": "repository_agent",
+      "passed": true,
+      "output": "PILOT_CHECKS_PASSED\n",
+      "trace": [
+        {
+          "step": 0,
+          "message": {
+            "role": "assistant",
+            "content": "I'll start by reading both files to understand the current state.",
+            "tool_calls": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "read_file",
+                  "arguments": "{\"path\":\"solver.py\"}"
+                },
+                "id": "QzYZuOUcdlV2jb8OWo6onJhyZ4KM0bsE"
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "read_file",
+                  "arguments": "{\"path\":\"test_solver.py\"}"
+                },
+                "id": "dBttxCseeEYarID47LQPBOiswavCVU6o"
+              }
+            ]
+          },
+          "elapsed_s": 0.78,
+          "usage": {
+            "completion_tokens": 49,
+            "prompt_tokens": 289,
+            "total_tokens": 338,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          }
+        },
+        {
+          "step": 1,
+          "message": {
+            "role": "assistant",
+            "content": "The bug is clear: `sorted()` doesn't remove duplicates. I need to dedupe while preserving order (after sorting). Let me fix it.",
+            "tool_calls": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "write_file",
+                  "arguments": "{\"path\":\"solver.py\",\"content\":\"def unique_sorted(values):\\n    result = []\\n    for value in sorted(values):\\n        if not result or result[-1] != value:\\n            result.append(value)\\n    return result\\n\"}"
+                },
+                "id": "7v5okgP0jKogC0DEmgwuJ4AQ8raXOXx5"
+              }
+            ]
+          },
+          "elapsed_s": 1.016,
+          "usage": {
+            "completion_tokens": 98,
+            "prompt_tokens": 474,
+            "total_tokens": 572,
+            "prompt_tokens_details": {
+              "cached_tokens": 337
+            }
+          }
+        },
+        {
+          "step": 2,
+          "message": {
+            "role": "assistant",
+            "content": "Now let me run the tests to verify.",
+            "tool_calls": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "run_tests",
+                  "arguments": "{}"
+                },
+                "id": "JEQI2VbqjnWS9dG1xgyAffoXEEzT2VnC"
+              }
+            ]
+          },
+          "elapsed_s": 0.459,
+          "usage": {
+            "completion_tokens": 20,
+            "prompt_tokens": 592,
+            "total_tokens": 612,
+            "prompt_tokens_details": {
+              "cached_tokens": 571
+            }
+          }
+        },
+        {
+          "step": 3,
+          "message": {
+            "role": "assistant",
+            "content": "All checks pass.\n\n**What was wrong:** `unique_sorted` returned `sorted(values)` \u2014 which sorts but keeps every duplicate, so `[3,1,3,2]` returned `[1,2,3,3]`. It also never mutated the input, though that part was already fine since `sorted()` returns a new list.\n\n**Fix applied:** The function now sorts first, then builds a new list skipping any value equal to the previously appended one. This preserves stable sort order and guarantees uniqueness without touching the caller's list.\n\nVerified behavior:\n- `[3,1,3,2]` \u2192 `[1,2,3]` (duplicates removed)\n- `[]` \u2192 `[]` (empty input handled)\n- Input immutability confirmed: after calling on `[2,1,2]`, the original list remains `[2,1,2]`"
+          },
+          "elapsed_s": 1.801,
+          "usage": {
+            "completion_tokens": 188,
+            "prompt_tokens": 639,
+            "total_tokens": 827,
+            "prompt_tokens_details": {
+              "cached_tokens": 611
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

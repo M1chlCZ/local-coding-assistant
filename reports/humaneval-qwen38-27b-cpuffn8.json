@@ -1,0 +1,1011 @@
+{
+  "label": "qwen38-27b-cpuffn8",
+  "dataset": {
+    "repo": "openai/human-eval",
+    "revision": "6d43fb980f9fee3c892a914eda09951f772ad10d",
+    "url": "https://raw.githubusercontent.com/openai/human-eval/6d43fb980f9fee3c892a914eda09951f772ad10d/data/HumanEval.jsonl.gz",
+    "size": 44877,
+    "sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+    "license": "MIT",
+    "subset_seed": 17,
+    "subset_count": 32
+  },
+  "container_image": "python@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d",
+  "scope": "32 fixed HumanEval tasks, original tests, greedy pass@1; supplied code context retained and either full function or continuation accepted. Not the full suite or HumanEval+.",
+  "max_generation_tokens": 2048,
+  "temperature": 0,
+  "thinking": false,
+  "started_unix": 1790777151.022176,
+  "results": [
+    {
+      "task_id": "HumanEval/6",
+      "elapsed_s": 4.888,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 163,
+        "prompt_ms": 493.506,
+        "prompt_per_token_ms": 3.027644171779141,
+        "prompt_per_second": 330.28980397401455,
+        "predicted_n": 108,
+        "predicted_ms": 4281.51,
+        "predicted_per_token_ms": 40.014112149532714,
+        "predicted_per_second": 24.991183017206545
+      },
+      "usage": {
+        "completion_tokens": 108,
+        "prompt_tokens": 163,
+        "total_tokens": 271,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List\n\n\ndef parse_nested_parens(paren_string: str) -> List[int]:\n    result = []\n    for group in paren_string.split():\n        depth = 0\n        max_depth = 0\n        for ch in group:\n            if ch == '(':\n                depth += 1\n                max_depth = max(max_depth, depth)\n            elif ch == ')':\n                depth -= 1\n        result.append(max_depth)\n    return result\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/15",
+      "elapsed_s": 1.606,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 80,
+        "prompt_ms": 226.253,
+        "prompt_per_token_ms": 2.8281625,
+        "prompt_per_second": 353.5864717815897,
+        "predicted_n": 34,
+        "predicted_ms": 1307.225,
+        "predicted_per_token_ms": 39.612878787878785,
+        "predicted_per_second": 25.2443152479489
+      },
+      "usage": {
+        "completion_tokens": 34,
+        "prompt_tokens": 119,
+        "total_tokens": 153,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef string_sequence(n: int) -> str:\n    return \" \".join(str(i) for i in range(n + 1))\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/17",
+      "elapsed_s": 3.057,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 184,
+        "prompt_ms": 292.188,
+        "prompt_per_token_ms": 1.5879782608695652,
+        "prompt_per_second": 629.7315427053815,
+        "predicted_n": 68,
+        "predicted_ms": 2670.58,
+        "predicted_per_token_ms": 39.859402985074624,
+        "predicted_per_second": 25.0881830913135
+      },
+      "usage": {
+        "completion_tokens": 68,
+        "prompt_tokens": 223,
+        "total_tokens": 291,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List\n\n\ndef parse_music(music_string: str) -> List[int]:\n    mapping = {'o': 4, 'o|': 2, '.|': 1}\n    tokens = music_string.split()\n    return [mapping[tok] for tok in tokens]\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/20",
+      "elapsed_s": 5.3,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 178,
+        "prompt_ms": 309.648,
+        "prompt_per_token_ms": 1.7395955056179777,
+        "prompt_per_second": 574.8462770629876,
+        "predicted_n": 125,
+        "predicted_ms": 4911.108,
+        "predicted_per_token_ms": 39.605709677419355,
+        "predicted_per_second": 25.248884773049177
+      },
+      "usage": {
+        "completion_tokens": 125,
+        "prompt_tokens": 217,
+        "total_tokens": 342,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List, Tuple\n\n\ndef find_closest_elements(numbers: List[float]) -> Tuple[float, float]:\n    sorted_nums = sorted(numbers)\n    min_diff = float('inf')\n    result = (sorted_nums[0], sorted_nums[1])\n    for i in range(len(sorted_nums) - 1):\n        diff = sorted_nums[i + 1] - sorted_nums[i]\n        if diff < min_diff:\n            min_diff = diff\n            result = (sorted_nums[i], sorted_nums[i + 1])\n    return result\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/28",
+      "elapsed_s": 1.524,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 69,
+        "prompt_ms": 221.4,
+        "prompt_per_token_ms": 3.208695652173913,
+        "prompt_per_second": 311.6531165311653,
+        "predicted_n": 28,
+        "predicted_ms": 1080.998,
+        "predicted_per_token_ms": 40.03696296296297,
+        "predicted_per_second": 24.976919476261752
+      },
+      "usage": {
+        "completion_tokens": 28,
+        "prompt_tokens": 108,
+        "total_tokens": 136,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List\n\n\ndef concatenate(strings: List[str]) -> str:\n    return ''.join(strings)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/31",
+      "elapsed_s": 8.113,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 121,
+        "prompt_ms": 269.28,
+        "prompt_per_token_ms": 2.225454545454545,
+        "prompt_per_second": 449.3464052287582,
+        "predicted_n": 196,
+        "predicted_ms": 7668.433,
+        "predicted_per_token_ms": 39.32529743589743,
+        "predicted_per_second": 25.42892400572581
+      },
+      "usage": {
+        "completion_tokens": 196,
+        "prompt_tokens": 160,
+        "total_tokens": 356,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef is_prime(n):\n    \"\"\"Return true if a given number is prime, and false otherwise.\n    >>> is_prime(6)\n    False\n    >>> is_prime(101)\n    True\n    >>> is_prime(11)\n    True\n    >>> is_prime(13441)\n    True\n    >>> is_prime(61)\n    True\n    >>> is_prime(4)\n    False\n    >>> is_prime(1)\n    False\n    \"\"\"\n    if n < 2:\n        return False\n    if n == 2:\n        return True\n    if n % 2 == 0:\n        return False\n    for i in range(3, int(n ** 0.5) + 1, 2):\n        if n % i == 0:\n            return False\n    return True\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/35",
+      "elapsed_s": 1.053,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 97,
+        "prompt_ms": 233.95,
+        "prompt_per_token_ms": 2.4118556701030927,
+        "prompt_per_second": 414.6185082282539,
+        "predicted_n": 19,
+        "predicted_ms": 717.919,
+        "predicted_per_token_ms": 39.884388888888886,
+        "predicted_per_second": 25.072466392448174
+      },
+      "usage": {
+        "completion_tokens": 19,
+        "prompt_tokens": 136,
+        "total_tokens": 155,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef max_element(l: list):\n    return max(l)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/38",
+      "elapsed_s": 6.06,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 176,
+        "prompt_ms": 272.08,
+        "prompt_per_token_ms": 1.545909090909091,
+        "prompt_per_second": 646.8685680682153,
+        "predicted_n": 142,
+        "predicted_ms": 5592.346,
+        "predicted_per_token_ms": 39.662028368794324,
+        "predicted_per_second": 25.21303224085205
+      },
+      "usage": {
+        "completion_tokens": 142,
+        "prompt_tokens": 215,
+        "total_tokens": 357,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef decode_cyclic(s: str):\n    \"\"\"\n    takes as input string encoded with encode_cyclic function. Returns decoded string.\n    \"\"\"\n    # split string to groups. Each of length 3.\n    groups = [s[(3 * i):min((3 * i + 3), len(s))] for i in range((len(s) + 2) // 3)]\n    # reverse the cyclic shift: move last char to front for full-length groups\n    groups = [(group[-1] + group[:-1]) if len(group) == 3 else group for group in groups]\n    return \"\".join(groups)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/44",
+      "elapsed_s": 2.986,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 113,
+        "prompt_ms": 261.392,
+        "prompt_per_token_ms": 2.3132035398230086,
+        "prompt_per_second": 432.3009120401543,
+        "predicted_n": 67,
+        "predicted_ms": 2625.311,
+        "predicted_per_token_ms": 39.777439393939396,
+        "predicted_per_second": 25.139878665803785
+      },
+      "usage": {
+        "completion_tokens": 67,
+        "prompt_tokens": 152,
+        "total_tokens": 219,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef change_base(x: int, base: int):\n    if x == 0:\n        return \"0\"\n    digits = []\n    while x > 0:\n        digits.append(str(x % base))\n        x //= base\n    return ''.join(reversed(digits))\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/50",
+      "elapsed_s": 5.671,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 105,
+        "prompt_ms": 232.957,
+        "prompt_per_token_ms": 2.218638095238095,
+        "prompt_per_second": 450.7269581940015,
+        "predicted_n": 133,
+        "predicted_ms": 5235.294,
+        "predicted_per_token_ms": 39.66131818181818,
+        "predicted_per_second": 25.213483712662555
+      },
+      "usage": {
+        "completion_tokens": 133,
+        "prompt_tokens": 144,
+        "total_tokens": 277,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef encode_shift(s: str):\n    \"\"\"\n    returns encoded string by shifting every character by 5 in the alphabet.\n    \"\"\"\n    return \"\".join([chr(((ord(ch) + 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n\n\ndef decode_shift(s: str):\n    \"\"\"\n    takes as input string encoded with encode_shift function. Returns decoded string.\n    \"\"\"\n    return \"\".join([chr(((ord(ch) - 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/53",
+      "elapsed_s": 1.159,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 63,
+        "prompt_ms": 224.04,
+        "prompt_per_token_ms": 3.556190476190476,
+        "prompt_per_second": 281.19978575254424,
+        "predicted_n": 22,
+        "predicted_ms": 833.937,
+        "predicted_per_token_ms": 39.711285714285715,
+        "predicted_per_second": 25.18175833426266
+      },
+      "usage": {
+        "completion_tokens": 22,
+        "prompt_tokens": 102,
+        "total_tokens": 124,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef add(x: int, y: int):\n    return x + y\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/63",
+      "elapsed_s": 4.089,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 163,
+        "prompt_ms": 263.79,
+        "prompt_per_token_ms": 1.6183435582822088,
+        "prompt_per_second": 617.9157663292771,
+        "predicted_n": 95,
+        "predicted_ms": 3728.808,
+        "predicted_per_token_ms": 39.66817021276596,
+        "predicted_per_second": 25.209128493609754
+      },
+      "usage": {
+        "completion_tokens": 95,
+        "prompt_tokens": 202,
+        "total_tokens": 297,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef fibfib(n: int):\n    if n == 0 or n == 1:\n        return 0\n    if n == 2:\n        return 1\n    \n    a, b, c = 0, 0, 1\n    for _ in range(3, n + 1):\n        a, b, c = b, c, a + b + c\n    return c\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/64",
+      "elapsed_s": 7.468,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 141,
+        "prompt_ms": 265.791,
+        "prompt_per_token_ms": 1.8850425531914894,
+        "prompt_per_second": 530.4920031152296,
+        "predicted_n": 179,
+        "predicted_ms": 7045.869,
+        "predicted_per_token_ms": 39.583533707865165,
+        "predicted_per_second": 25.263030010918456
+      },
+      "usage": {
+        "completion_tokens": 179,
+        "prompt_tokens": 180,
+        "total_tokens": 359,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef vowels_count(s):\n    \"\"\"Write a function vowels_count which takes a string representing\n    a word as input and returns the number of vowels in the string.\n    Vowels in this case are 'a', 'e', 'i', 'o', 'u'. Here, 'y' is also a\n    vowel, but only when it is at the end of the given word.\n\n    Example:\n    >>> vowels_count(\"abcde\")\n    2\n    >>> vowels_count(\"ACEDY\")\n    3\n    \"\"\"\n    s_lower = s.lower()\n    count = sum(1 for c in s_lower if c in 'aeiou')\n    if len(s) > 0 and s_lower[-1] == 'y':\n        count += 1\n    return count\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/71",
+      "elapsed_s": 4.6,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 133,
+        "prompt_ms": 269.461,
+        "prompt_per_token_ms": 2.0260225563909775,
+        "prompt_per_second": 493.57792036695474,
+        "predicted_n": 107,
+        "predicted_ms": 4201.449,
+        "predicted_per_token_ms": 39.636311320754714,
+        "predicted_per_second": 25.229391098166374
+      },
+      "usage": {
+        "completion_tokens": 107,
+        "prompt_tokens": 172,
+        "total_tokens": 279,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nimport math\n\n\ndef triangle_area(a, b, c):\n    # Check for valid triangle\n    if a + b <= c or a + c <= b or b + c <= a:\n        return -1\n    \n    # Heron's formula\n    s = (a + b + c) / 2\n    area = math.sqrt(s * (s - a) * (s - b) * (s - c))\n    \n    return round(area, 2)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/74",
+      "elapsed_s": 3.03,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 208,
+        "prompt_ms": 291.44,
+        "prompt_per_token_ms": 1.4011538461538462,
+        "prompt_per_second": 713.6975020587428,
+        "predicted_n": 68,
+        "predicted_ms": 2658.457,
+        "predicted_per_token_ms": 39.678462686567165,
+        "predicted_per_second": 25.20258932155006
+      },
+      "usage": {
+        "completion_tokens": 68,
+        "prompt_tokens": 247,
+        "total_tokens": 315,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef total_match(lst1, lst2):\n    sum1 = sum(len(s) for s in lst1)\n    sum2 = sum(len(s) for s in lst2)\n    if sum1 <= sum2:\n        return lst1\n    else:\n        return lst2\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/77",
+      "elapsed_s": 2.989,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 124,
+        "prompt_ms": 247.804,
+        "prompt_per_token_ms": 1.9984193548387097,
+        "prompt_per_second": 500.39547384223016,
+        "predicted_n": 66,
+        "predicted_ms": 2595.494,
+        "predicted_per_token_ms": 39.93067692307692,
+        "predicted_per_second": 25.0434021423282
+      },
+      "usage": {
+        "completion_tokens": 66,
+        "prompt_tokens": 163,
+        "total_tokens": 229,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nimport math\n\n\ndef iscube(a):\n    if a >= 0:\n        root = round(round(a ** (1 / 3)))\n    else:\n        root = -round(round((-a) ** (1 / 3)))\n    return root ** 3 == a\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/79",
+      "elapsed_s": 3.665,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 160,
+        "prompt_ms": 273.351,
+        "prompt_per_token_ms": 1.70844375,
+        "prompt_per_second": 585.3280214815384,
+        "predicted_n": 82,
+        "predicted_ms": 3218.666,
+        "predicted_per_token_ms": 39.73661728395062,
+        "predicted_per_second": 25.165705295299354
+      },
+      "usage": {
+        "completion_tokens": 82,
+        "prompt_tokens": 199,
+        "total_tokens": 281,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef decimal_to_binary(decimal):\n    if decimal == 0:\n        return \"db0db\"\n    bits = []\n    n = decimal\n    while n > 0:\n        bits.append(str(n % 2))\n        n //= 2\n    bits.reverse()\n    return \"db\" + \"\".join(bits) + \"db\"\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/81",
+      "elapsed_s": 10.385,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 288,
+        "prompt_ms": 332.529,
+        "prompt_per_token_ms": 1.1546145833333332,
+        "prompt_per_second": 866.0898748680567,
+        "predicted_n": 253,
+        "predicted_ms": 9946.997,
+        "predicted_per_token_ms": 39.472210317460316,
+        "predicted_per_second": 25.334279280470277
+      },
+      "usage": {
+        "completion_tokens": 253,
+        "prompt_tokens": 327,
+        "total_tokens": 580,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef numerical_letter_grade(grades):\n    def gpa_to_letter(gpa):\n        if gpa == 4.0:\n            return \"A+\"\n        elif gpa > 3.7:\n            return \"A\"\n        elif gpa > 3.3:\n            return \"A-\"\n        elif gpa > 3.0:\n            return \"B+\"\n        elif gpa > 2.7:\n            return \"B\"\n        elif gpa > 2.3:\n            return \"B-\"\n        elif gpa > 2.0:\n            return \"C+\"\n        elif gpa > 1.7:\n            return \"C\"\n        elif gpa > 1.3:\n            return \"C-\"\n        elif gpa > 1.0:\n            return \"D+\"\n        elif gpa > 0.7:\n            return \"D\"\n        elif gpa > 0.0:\n            return \"D-\"\n        else:\n            return \"E\"\n    \n    return [gpa_to_letter(g) for g in grades]\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/84",
+      "elapsed_s": 1.774,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 161,
+        "prompt_ms": 271.222,
+        "prompt_per_token_ms": 1.6846086956521737,
+        "prompt_per_second": 593.609662932948,
+        "predicted_n": 35,
+        "predicted_ms": 1350.262,
+        "predicted_per_token_ms": 39.71358823529412,
+        "predicted_per_second": 25.180298342099537
+      },
+      "usage": {
+        "completion_tokens": 35,
+        "prompt_tokens": 200,
+        "total_tokens": 235,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef solve(N):\n    digit_sum = sum(int(d) for d in str(N))\n    return bin(digit_sum)[2:]\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/93",
+      "elapsed_s": 8.388,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 122,
+        "prompt_ms": 269.237,
+        "prompt_per_token_ms": 2.2068606557377053,
+        "prompt_per_second": 453.13237036514295,
+        "predicted_n": 203,
+        "predicted_ms": 8019.863,
+        "predicted_per_token_ms": 39.70229207920792,
+        "predicted_per_second": 25.187462678601868
+      },
+      "usage": {
+        "completion_tokens": 203,
+        "prompt_tokens": 161,
+        "total_tokens": 364,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef encode(message):\n    vowels = set('aeiouAEIOU')\n    result = []\n    for ch in message:\n        if ch.isalpha():\n            # Swap case\n            swapped = ch.swapcase()\n            # Check original char (before swap) for vowel replacement\n            if ch.lower() in vowels:\n                # Find position in alphabet (0-25)\n                base = ord(ch.lower()) - ord('a')\n                new_pos = (base + 2) % 26\n                new_char = chr(ord('a') + new_pos)\n                # Apply same case as swapped\n                if swapped.isupper():\n                    new_char = new_char.upper()\n                else:\n                    new_char = new_char.lower()\n                result.append(new_char)\n            else:\n                result.append(swapped)\n        else:\n            result.append(ch)\n    return ''.join(result)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/98",
+      "elapsed_s": 4.91,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 82,
+        "prompt_ms": 224.201,
+        "prompt_per_token_ms": 2.734158536585366,
+        "prompt_per_second": 365.7432393254267,
+        "predicted_n": 111,
+        "predicted_ms": 4351.915,
+        "predicted_per_token_ms": 39.56286363636364,
+        "predicted_per_second": 25.276228970464725
+      },
+      "usage": {
+        "completion_tokens": 111,
+        "prompt_tokens": 121,
+        "total_tokens": 232,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef count_upper(s):\n    \"\"\"\n    Given a string s, count the number of uppercase vowels in even indices.\n    \n    For example:\n    count_upper('aBCdEf') returns 1\n    count_upper('abcdefg') returns 0\n    count_upper('dBBE') returns 0\n    \"\"\"\n    return sum(1 for i, c in enumerate(s) if i % 2 == 0 and c.isupper() and c in 'AEIOU')\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/102",
+      "elapsed_s": 3.019,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 108,
+        "prompt_ms": 237.063,
+        "prompt_per_token_ms": 2.195027777777778,
+        "prompt_per_second": 455.57510028979635,
+        "predicted_n": 69,
+        "predicted_ms": 2696.691,
+        "predicted_per_token_ms": 39.65722058823529,
+        "predicted_per_second": 25.21608890302968
+      },
+      "usage": {
+        "completion_tokens": 69,
+        "prompt_tokens": 147,
+        "total_tokens": 216,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef choose_num(x, y):\n    if x > y:\n        return -1\n    # Find the largest even number <= y\n    candidate = y if y % 2 == 0 else y - 1\n    if candidate >= x:\n        return candidate\n    return -1\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/104",
+      "elapsed_s": 3.63,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 129,
+        "prompt_ms": 333.643,
+        "prompt_per_token_ms": 2.58637984496124,
+        "prompt_per_second": 386.64081068687193,
+        "predicted_n": 81,
+        "predicted_ms": 3163.908,
+        "predicted_per_token_ms": 39.54885,
+        "predicted_per_second": 25.285185283516462
+      },
+      "usage": {
+        "completion_tokens": 81,
+        "prompt_tokens": 168,
+        "total_tokens": 249,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef unique_digits(x):\n    def has_only_odd_digits(n):\n        while n > 0:\n            if n % 10 % 2 == 0:\n                return False\n            n //= 10\n        return True\n    \n    result = [num for num in x if has_only_odd_digits(num)]\n    return sorted(result)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/106",
+      "elapsed_s": 5.137,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 139,
+        "prompt_ms": 327.346,
+        "prompt_per_token_ms": 2.3550071942446045,
+        "prompt_per_second": 424.62715292076274,
+        "predicted_n": 118,
+        "predicted_ms": 4663.589,
+        "predicted_per_token_ms": 39.85973504273504,
+        "predicted_per_second": 25.087974090341152
+      },
+      "usage": {
+        "completion_tokens": 118,
+        "prompt_tokens": 178,
+        "total_tokens": 296,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef f(n):\n    result = []\n    for i in range(1, n + 1):\n        if i % 2 == 0:\n            # factorial of i\n            fact = 1\n            for j in range(1, i + 1):\n                fact *= j\n            result.append(fact)\n        else:\n            # sum of numbers from 1 to i\n            s = i * (i + 1) // 2\n            result.append(s)\n    return result\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/107",
+      "elapsed_s": 5.027,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 233,
+        "prompt_ms": 372.97,
+        "prompt_per_token_ms": 1.6007296137339058,
+        "prompt_per_second": 624.7151245408477,
+        "predicted_n": 113,
+        "predicted_ms": 4442.873,
+        "predicted_per_token_ms": 39.66850892857143,
+        "predicted_per_second": 25.208913241499367
+      },
+      "usage": {
+        "completion_tokens": 113,
+        "prompt_tokens": 272,
+        "total_tokens": 385,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef even_odd_palindrome(n):\n    def is_palindrome(x):\n        s = str(x)\n        return s == s[::-1]\n    \n    even_count = 0\n    odd_count = 0\n    for i in range(1, n + 1):\n        if is_palindrome(i):\n            if i % 2 == 0:\n                even_count += 1\n            else:\n                odd_count += 1\n    return (even_count, odd_count)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/128",
+      "elapsed_s": 4.61,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 133,
+        "prompt_ms": 318.343,
+        "prompt_per_token_ms": 2.3935563909774435,
+        "prompt_per_second": 417.78836035345523,
+        "predicted_n": 104,
+        "predicted_ms": 4120.902,
+        "predicted_per_token_ms": 40.0087572815534,
+        "predicted_per_second": 24.99452789704778
+      },
+      "usage": {
+        "completion_tokens": 104,
+        "prompt_tokens": 172,
+        "total_tokens": 276,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef prod_signs(arr):\n    if not arr:\n        return None\n    \n    sign_product = 1\n    magnitude_sum = 0\n    \n    for num in arr:\n        if num > 0:\n            sign = 1\n        elif num < 0:\n            sign = -1\n        else:\n            sign = 0\n        \n        sign_product *= sign\n        magnitude_sum += abs(num)\n    \n    return sign_product * magnitude_sum\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/129",
+      "elapsed_s": 31.926,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 417,
+        "prompt_ms": 560.26,
+        "prompt_per_token_ms": 1.343549160671463,
+        "prompt_per_second": 744.2972905436761,
+        "predicted_n": 782,
+        "predicted_ms": 31180.897,
+        "predicted_per_token_ms": 39.924323943661975,
+        "predicted_per_second": 25.04738718709728
+      },
+      "usage": {
+        "completion_tokens": 782,
+        "prompt_tokens": 456,
+        "total_tokens": 1238,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef minPath(grid, k):\n    n = len(grid)\n    \n    # Find position of value 1\n    start_pos = None\n    for i in range(n):\n        for j in range(n):\n            if grid[i][j] == 1:\n                start_pos = (i, j)\n                break\n        if start_pos:\n            break\n    \n    # BFS/DFS to find lexicographically smallest path of length k starting from cell with value 1\n    # Since we want lexicographically smallest, at each step we try neighbors in order of their values\n    # But we need to be careful - we should explore all possibilities and pick the best\n    \n    # Use DFS with memoization or just greedy? Let's think...\n    # Actually, since k can be up to N*N potentially, and we need exact lexicographic minimum,\n    # a simple greedy might not work. But let's use BFS-like approach where we track states.\n    \n    # State: (row, col, steps_taken) -> but this could be large\n    # Alternative: since we always start at 1, and want lex smallest, we can do:\n    # At each step, among all reachable cells after t steps, pick the one that leads to smallest continuation\n    \n    # Let's use iterative deepening / BFS tracking the best path so far\n    # For small grids this is fine. Let's do DFS with pruning.\n    \n    # Actually, let me reconsider. The key insight: we start at the cell with value 1.\n    # Then at each subsequent step, we choose the neighbor with the smallest value, \n    # but if there are ties or future considerations, we need to look ahead.\n    \n    # Given constraints aren't specified for N, let's assume N is small enough for backtracking.\n    # But worst case exponential. Let's try a smarter approach.\n    \n    # Use Dijkstra-like: state = (r, c), cost = tuple of values visited so far\n    # We want shortest path in terms of lexicographic order of the sequence.\n    \n    # Since k is fixed length, we can do level-by-level BFS where at each level we keep only\n    # the best (lexicographically smallest) prefix for each position.\n    \n    # Level 0: {(start_pos): [1]}\n    # Level i+1: for each state at level i, expand to neighbors, form new sequences,\n    #            for each position, keep only the lexicographically smallest sequence\n    \n    from collections import defaultdict\n    \n    # best[r][c] = lexicographically smallest list ending at (r,c) after current number of steps\n    best = {}\n    best[(start_pos[0], start_pos[1])] = [1]\n    \n    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]\n    \n    for step in range(1, k):\n        new_best = {}\n        for (r, c), seq in best.items():\n            for dr, dc in directions:\n                nr, nc = r + dr, c + dc\n                if 0 <= nr < n and 0 <= nc < n:\n                    val = grid[nr][nc]\n                    new_seq = seq + [val]\n                    key = (nr, nc)\n                    if key not in new_best or new_seq < new_best[key]:\n                        new_best[key] = new_seq\n        best = new_best\n    \n    # Find the minimum among all paths of length k\n    result = min(best.values())\n    return result\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/133",
+      "elapsed_s": 1.849,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 172,
+        "prompt_ms": 377.12,
+        "prompt_per_token_ms": 2.1925581395348837,
+        "prompt_per_second": 456.0882477725923,
+        "predicted_n": 31,
+        "predicted_ms": 1232.827,
+        "predicted_per_token_ms": 41.094233333333335,
+        "predicted_per_second": 24.334314546972124
+      },
+      "usage": {
+        "completion_tokens": 31,
+        "prompt_tokens": 211,
+        "total_tokens": 242,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nimport math\n\ndef sum_squares(lst):\n    return sum(math.ceil(x) ** 2 for x in lst)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/136",
+      "elapsed_s": 3.844,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 152,
+        "prompt_ms": 340.718,
+        "prompt_per_token_ms": 2.2415657894736842,
+        "prompt_per_second": 446.1167299643693,
+        "predicted_n": 81,
+        "predicted_ms": 3248.614,
+        "predicted_per_token_ms": 40.607675,
+        "predicted_per_second": 24.625886608873813
+      },
+      "usage": {
+        "completion_tokens": 81,
+        "prompt_tokens": 191,
+        "total_tokens": 272,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef largest_smallest_integers(lst):\n    negatives = [x for x in lst if x < 0]\n    positives = [x for x in lst if x > 0]\n    \n    a = max(negatives) if negatives else None\n    b = min(positives) if positives else None\n    \n    return (a, b)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/138",
+      "elapsed_s": 1.59,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 84,
+        "prompt_ms": 286.358,
+        "prompt_per_token_ms": 3.4090238095238097,
+        "prompt_per_second": 293.3391069919471,
+        "predicted_n": 29,
+        "predicted_ms": 1164.278,
+        "predicted_per_token_ms": 41.581357142857144,
+        "predicted_per_second": 24.049239099252926
+      },
+      "usage": {
+        "completion_tokens": 29,
+        "prompt_tokens": 123,
+        "total_tokens": 152,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef is_equal_to_sum_even(n):\n    return n >= 8 and n % 2 == 0\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/141",
+      "elapsed_s": 7.143,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 229,
+        "prompt_ms": 373.05,
+        "prompt_per_token_ms": 1.6290393013100437,
+        "prompt_per_second": 613.8587320734486,
+        "predicted_n": 165,
+        "predicted_ms": 6578.486,
+        "predicted_per_token_ms": 40.11271951219512,
+        "predicted_per_second": 24.929748273386917
+      },
+      "usage": {
+        "completion_tokens": 165,
+        "prompt_tokens": 268,
+        "total_tokens": 433,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef file_name_check(file_name):\n    # Check for exactly one dot\n    parts = file_name.split('.')\n    if len(parts) != 2:\n        return 'No'\n    \n    prefix, suffix = parts\n    \n    # Check prefix is not empty and starts with a letter\n    if not prefix or not prefix[0].isalpha():\n        return 'No'\n    \n    # Check suffix is valid\n    if suffix not in ['txt', 'exe', 'dll']:\n        return 'No'\n    \n    # Count digits in the entire file name\n    digit_count = sum(1 for c in file_name if c.isdigit())\n    if digit_count > 3:\n        return 'No'\n    \n    return 'Yes'\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    },
+    {
+      "task_id": "HumanEval/146",
+      "elapsed_s": 4.004,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 138,
+        "prompt_ms": 286.359,
+        "prompt_per_token_ms": 2.075065217391304,
+        "prompt_per_second": 481.9125642986601,
+        "predicted_n": 91,
+        "predicted_ms": 3617.333,
+        "predicted_per_token_ms": 40.19258888888889,
+        "predicted_per_second": 24.8802087062485
+      },
+      "usage": {
+        "completion_tokens": 91,
+        "prompt_tokens": 177,
+        "total_tokens": 268,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef specialFilter(nums):\n    count = 0\n    for num in nums:\n        if num > 10:\n            s = str(num)\n            first_digit = int(s[0])\n            last_digit = int(s[-1])\n            if first_digit % 2 == 1 and last_digit % 2 == 1:\n                count += 1\n    return count\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n"
+    }
+  ],
+  "server_properties": {
+    "default_generation_settings": {
+      "params": {
+        "seed": 4294967295,
+        "temperature": 1.0,
+        "dynatemp_range": 0.0,
+        "dynatemp_exponent": 1.0,
+        "top_k": 20,
+        "top_p": 0.949999988079071,
+        "min_p": 0.05000000074505806,
+        "top_n_sigma": -1.0,
+        "xtc_probability": 0.0,
+        "xtc_threshold": 0.10000000149011612,
+        "typical_p": 1.0,
+        "repeat_last_n": 256,
+        "repeat_penalty": 1.100000023841858,
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "dry_multiplier": 0.0,
+        "dry_base": 1.75,
+        "dry_allowed_length": 2,
+        "dry_penalty_last_n": 64,
+        "mirostat": 0,
+        "mirostat_tau": 5.0,
+        "mirostat_eta": 0.10000000149011612,
+        "adaptive_target": -1.0,
+        "adaptive_decay": 0.8999999761581421,
+        "max_tokens": -1,
+        "n_predict": -1,
+        "n_keep": 0,
+        "n_discard": 0,
+        "ignore_eos": false,
+        "stream": false,
+        "n_probs": 0,
+        "min_keep": 0,
+        "chat_format": "Content-only",
+        "reasoning_format": "none",
+        "reasoning_in_content": false,
+        "generation_prompt": "",
+        "samplers": [
+          "penalties",
+          "dry",
+          "top_n_sigma",
+          "top_k",
+          "typ_p",
+          "top_p",
+          "min_p",
+          "xtc",
+          "temperature"
+        ],
+        "speculative.types": "none",
+        "timings_per_token": false,
+        "post_sampling_probs": false,
+        "backend_sampling": false,
+        "lora": []
+      },
+      "n_ctx": 8192
+    },
+    "total_slots": 1,
+    "model_alias": "local-coding-assistant",
+    "model_ftype": "Q4_K - Medium",
+    "model_path": ".cache\\models\\Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "modalities": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "media_marker": "<__media_Ly3tKOtT9bN2TkPqfiAUQJW3Ay2vOqZA__>",
+    "endpoint_slots": true,
+    "endpoint_props": false,
+    "endpoint_metrics": false,
+    "ui": true,
+    "ui_settings": {
+      "systemMessage": "You are a coding assistant. Respond in English. Write correct, simple code. State assumptions and distinguish verified results from suggestions."
+    },
+    "chat_template": "{%- set image_count = namespace(value=0) %}\n{%- set video_count = namespace(value=0) %}\n{%- macro render_content(content, do_vision_count, is_system_content=false) %}\n    {%- if content is string %}\n        {{- content }}\n    {%- elif content is iterable and content is not mapping %}\n        {%- for item in content %}\n            {%- if 'image' in item or 'image_url' in item or item.type == 'image' %}\n                {%- if is_system_content %}\n                    {{- raise_exception('System message cannot contain images.') }}\n                {%- endif %}\n                {%- if do_vision_count %}\n                    {%- set image_count.value = image_count.value + 1 %}\n                {%- endif %}\n                {%- if add_vision_id %}\n                    {{- 'Picture ' ~ image_count.value ~ ': ' }}\n                {%- endif %}\n                {{- '<|vision_start|><|image_pad|><|vision_end|>' }}\n            {%- elif 'video' in item or item.type == 'video' %}\n                {%- if is_system_content %}\n                    {{- raise_exception('System message cannot contain videos.') }}\n                {%- endif %}\n                {%- if do_vision_count %}\n                    {%- set video_count.value = video_count.value + 1 %}\n                {%- endif %}\n                {%- if add_vision_id %}\n                    {{- 'Video ' ~ video_count.value ~ ': ' }}\n                {%- endif %}\n                {{- '<|vision_start|><|video_pad|><|vision_end|>' }}\n            {%- elif 'text' in item %}\n                {{- item.text }}\n            {%- else %}\n                {{- raise_exception('Unexpected item type in content.') }}\n            {%- endif %}\n        {%- endfor %}\n    {%- elif content is none or content is undefined %}\n        {{- '' }}\n    {%- else %}\n        {{- raise_exception('Unexpected content type.') }}\n    {%- endif %}\n{%- endmacro %}\n{%- if not messages %}\n    {{- raise_exception('No messages provided.') }}\n{%- endif %}\n{%- set sysns = namespace(count=0, text='') %}\n{%- for message in messages %}\n    {%- if sysns.count == loop.index0 and (message.role == 'system' or message.role == 'developer') %}\n        {%- set sys_content = render_content(message.content, false, true)|trim %}\n        {%- if sys_content %}\n            {%- set sysns.text = sysns.text + ('\\n' if sysns.text else '') + sys_content %}\n        {%- endif %}\n        {%- set sysns.count = sysns.count + 1 %}\n    {%- endif %}\n{%- endfor %}\n{%- set num_sys = sysns.count %}\n{%- set merged_system = sysns.text %}\n{%- set reasoning_instructions = '' %}\n{%- if enable_thinking is undefined or enable_thinking is true %}\n    {%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}\n    {%- if resolved_reasoning_effort == 'high' %}\n        {%- set resolved_reasoning_effort = 'xhigh' %}\n    {%- endif %}\n    {%- if resolved_reasoning_effort not in ('xhigh', 'medium', 'low') %}\n        {{- raise_exception('Unexpected reasoning effort ' ~ reasoning_effort ~ '. Supported types are xhigh (default), medium, and low.') }}\n    {%- endif %}\n    {%- if resolved_reasoning_effort == 'xhigh' %}\n        {%- set reasoning_instructions = 'Reasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and clarity in the final answer.' %}\n    {%- elif resolved_reasoning_effort == 'low' %}\n        {%- set reasoning_instructions = 'Reasoning effort is set to low. Keep your thinking brief and focused, moving directly to the conclusion without unnecessary elaboration.' %}\n    {%- endif %}\n{%- endif %}\n{%- if tools and tools is iterable and tools is not mapping %}\n    {{- '<|im_start|>system\\n' }}\n    {%- if reasoning_instructions %}\n        {{- reasoning_instructions + '\\n\\n' }}\n    {%- endif %}\n    {{- \"# Tools\\n\\nYou have access to the following functions:\\n\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\" }}\n    {{- '\\n\\nIf you choose to call a function ONLY reply in the following format with NO suffix:\\n\\n<tool_call>\\n<function=example_function_name>\\n<parameter=example_parameter_1>\\nvalue_1\\n</parameter>\\n<parameter=example_parameter_2>\\nThis is the value for the second parameter\\nthat can span\\nmultiple lines\\n</parameter>\\n</function>\\n</tool_call>\\n\\n<IMPORTANT>\\nReminder:\\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\\n- Required parameters MUST be specified\\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\\n</IMPORTANT>' }}\n    {%- if merged_system %}\n        {{- '\\n\\n' + merged_system }}\n    {%- endif %}\n    {{- '<|im_end|>\\n' }}\n{%- else %}\n    {%- if merged_system %}\n        {{- '<|im_start|>system\\n' + (reasoning_instructions + '\\n\\n' if reasoning_instructions else '')  + merged_system + '<|im_end|>\\n' }}\n    {%- elif reasoning_instructions %}\n        {{- '<|im_start|>system\\n' + reasoning_instructions + '<|im_end|>\\n' }}\n    {%- endif %}\n{%- endif %}\n{%- set ns = namespace(multi_step_tool=true, last_query_index=messages|length - 1) %}\n{%- for message in messages[::-1] %}\n    {%- set index = (messages|length - 1) - loop.index0 %}\n    {%- if ns.multi_step_tool and message.role == \"user\" %}\n        {%- set content = render_content(message.content, false)|trim %}\n        {%- if not(content.startswith('<tool_response>') and content.endswith('</tool_response>')) %}\n            {%- set ns.multi_step_tool = false %}\n            {%- set ns.last_query_index = index %}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- for message in messages %}\n    {%- if loop.index0 >= num_sys %}\n    {%- set content = render_content(message.content, true)|trim %}\n    {%- if message.role == \"system\" or message.role == \"developer\" %}\n        {{- raise_exception('System message must be at the beginning.') }}\n    {%- elif message.role == \"user\" %}\n        {{- '<|im_start|>' + message.role + '\\n' + content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {%- set reasoning_content = '' %}\n        {%- if message.reasoning_content is string %}\n            {%- set reasoning_content = message.reasoning_content %}\n        {%- endif %}\n        {%- set reasoning_content = reasoning_content|trim %}\n        {%- if preserve_thinking is undefined or preserve_thinking is true or loop.index0 > ns.last_query_index %}\n            {{- '<|im_start|>' + message.role + '\\n<think>\\n' + reasoning_content + '\\n</think>\\n\\n' + content }}\n        {%- else %}\n            {{- '<|im_start|>' + message.role + '\\n' + content }}\n        {%- endif %}\n        {%- if message.tool_calls and message.tool_calls is iterable and message.tool_calls is not mapping %}\n            {%- for tool_call in message.tool_calls %}\n                {%- if tool_call.function is defined %}\n                    {%- set tool_call = tool_call.function %}\n                {%- endif %}\n                {%- if tool_call.name is not defined or tool_call.name is none %}\n                    {{- raise_exception('Tool call is missing a function name.') }}\n                {%- endif %}\n                {%- if loop.first %}\n                    {%- if content|trim %}\n                        {{- '\\n\\n<tool_call>\\n<function=' + tool_call.name + '>\\n' }}\n                    {%- else %}\n                        {{- '<tool_call>\\n<function=' + tool_call.name + '>\\n' }}\n                    {%- endif %}\n                {%- else %}\n                    {{- '\\n<tool_call>\\n<function=' + tool_call.name + '>\\n' }}\n                {%- endif %}\n                {%- if tool_call.arguments is mapping %}\n                    {%- for args_name, args_value in tool_call.arguments|items %}\n                        {{- '<parameter=' + args_name + '>\\n' }}\n                        {%- set args_value = args_value | string if args_value is string else args_value | tojson | safe %}\n                        {{- args_value }}\n                        {{- '\\n</parameter>\\n' }}\n                    {%- endfor %}\n                {%- elif tool_call.arguments is string %}\n                    {%- if tool_call.arguments|trim %}\n                        {{- raise_exception('Tool call arguments for function \"' + (tool_call.name | string) + '\" were passed as a JSON string. Parse them into an object before calling apply_chat_template.') }}\n                    {%- endif %}\n                {%- elif tool_call.arguments is defined and tool_call.arguments is not none %}\n                    {{- raise_exception('Tool call arguments for function \"' + (tool_call.name | string) + '\" must be an object/mapping or a JSON string.') }}\n                {%- endif %}\n                {{- '</function>\\n</tool_call>' }}\n            {%- endfor %}\n        {%- endif %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if loop.previtem and loop.previtem.role != \"tool\" %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' }}\n        {{- content }}\n        {{- '\\n</tool_response>' }}\n        {%- if not loop.last and loop.nextitem.role != \"tool\" %}\n            {{- '<|im_end|>\\n' }}\n        {%- elif loop.last %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- else %}\n        {{- raise_exception('Unexpected message role.') }}\n    {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n    {%- if enable_thinking is defined and enable_thinking is false %}\n        {{- '<think>\\n\\n</think>\\n\\n' }}\n    {%- else %}\n        {{- '<think>\\n' }}\n    {%- endif %}\n{%- endif %}\n{#- Unsloth fixes - developer role, merged system messages, tool calling #}",
+    "chat_template_caps": {
+      "supports_object_arguments": true,
+      "supports_parallel_tool_calls": true,
+      "supports_preserve_reasoning": true,
+      "supports_reasoning_effort": true,
+      "supports_string_content": true,
+      "supports_system_role": true,
+      "supports_tool_calls": true,
+      "supports_tools": true,
+      "supports_typed_content": true
+    },
+    "bos_token": "<|endoftext|>",
+    "eos_token": "<|im_end|>",
+    "build_info": "b11146-7fe450e19",
+    "is_sleeping": false,
+    "cors_proxy_enabled": false
+  },
+  "ended_unix": 1790777322.678092
+}

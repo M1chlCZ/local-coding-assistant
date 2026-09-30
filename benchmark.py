@@ -34,11 +34,12 @@ def main():
     parser.add_argument('--label', default='reference-solutions')
     parser.add_argument('--output', required=True)
     parser.add_argument('--verify-only', action='store_true')
+    parser.add_argument("--thinking", action="store_true", help="Enable model reasoning for this separate trial")
     args = parser.parse_args()
     metadata = json.loads((ROOT / 'research/humaneval_manifest.json').read_text())
     report = {'label': args.label, 'dataset': metadata, 'container_image': IMAGE,
               'scope': '32 fixed HumanEval tasks, original tests, greedy pass@1; supplied code context retained and either full function or continuation accepted. Not the full suite or HumanEval+.',
-              'max_generation_tokens': 2048, 'temperature': 0,
+              'max_generation_tokens': 2048, 'temperature': 0, 'thinking': args.thinking,
               'started_unix': time.time(), 'results': []}
     if not args.verify_only:
         report['server_properties'] = request(args.base, '/props')
@@ -51,7 +52,7 @@ def main():
             else:
                 result, elapsed = chat(args.base, [
                     {'role': 'system', 'content': 'You are an English coding assistant. Return complete, concise Python source only, including needed imports and supplied helper functions. Do not repeat docstrings, examples, or reasoning.'},
-                    {'role': 'user', 'content': task['prompt']}], max_tokens=2048)
+                    {'role': 'user', 'content': task['prompt']}], max_tokens=2048, thinking=args.thinking)
                 content = result['choices'][0]['message'].get('content') or ''
                 row.update(elapsed_s=elapsed, timings=result.get('timings'), usage=result.get('usage'),
                            finish_reason=result['choices'][0].get('finish_reason'))

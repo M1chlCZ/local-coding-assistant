@@ -20,5 +20,6 @@
   },
   "model_integrity": "PC cached setup verified SHA256 of runtime archives and default11,373,057,920-byte model",
   "review": "Independent read-only review; runtime setup recipe,mutable agent test execution,and unbounded host output addressed; follow-up found no blockers",
-  "release": "Local source/weights only; public downloads not published"
+  "release": "Local source/weights only; public downloads not published",
+  "scope": "Historical initial prototype verification before GitHub publication and the Qwen3.8 default; current checks are in recent-comparison.json."
 }

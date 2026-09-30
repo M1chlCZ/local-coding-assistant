@@ -1,20 +1,20 @@
 # Local Coding Assistant
 
-A Windows launcher for local coding chat and agent use on a 16 GB NVIDIA GPU.
-The model runs on the PC through CUDA and llama.cpp.
-The system prompt requests English. The model weights remain multilingual.
+A Windows launcher for English coding chat and agent use on a 16 GB NVIDIA GPU.
+It runs llama.cpp on the PC through CUDA, with CPU offloading for larger models.
+The system prompt requests English. The weights remain multilingual.
 
-**Research prototype.** The default model is a pruned Qwen3.6-35B-A3B derivative.
-The repository contains source code, model hashes, and experiment reports.
-Derivative weights are not published yet.
-For a fresh installation, build them with the [recipe](research/recipe.md) or use the downloadable baseline.
+**Research prototype.** The default is Qwen3.8-27B with pinned Unsloth UD-Q4_K_M weights.
+Setup downloads the model and runtime from their upstream repositories.
+Our pruned Qwen3.6 derivative remains available through the [experiment recipe](research/recipe.md).
+Its weights are not published yet.
 
 ## Run on Windows
 
-Requirements: Windows x64, Python 3.10+, a recent NVIDIA driver, approximately 32 GB RAM, and 15 GB free disk.
-The research recipe requires more disk space.
+Requirements: Windows x64, Python 3.10+, a recent NVIDIA driver, approximately 32 GB RAM, and 20 GB free disk.
 
-If the derivative exists on your PC, run these commands:
+Before setup, stop the model server.
+Run these commands:
 
 ```powershell
 py -3 launcher.py setup
@@ -22,19 +22,18 @@ py -3 launcher.py serve --open
 ```
 
 Alternatively, double-click `start.cmd`.
-Before setup, stop the model server.
 Setup verifies download hashes. Ctrl+C stops the server.
+The default uses an 8K context and eight CPU FFN layers.
 
-For a fresh PC, run the intact baseline:
+If memory runs out, decrease `--context`.
+For dense models, increase `--cpu-ffn`.
+For MoE models, increase `--cpu-moe`.
+
+If the pruned derivative exists on your PC, run the faster preset:
 
 ```powershell
-py -3 launcher.py --manifest research/manifest-unsloth.json setup
-py -3 launcher.py --manifest research/manifest-unsloth.json serve --open
+py -3 launcher.py --manifest research/manifest-reap50.json serve --open
 ```
-
-The baseline needs more disk space and CPU expert offloading.
-The default derivative uses an 8K context and no CPU expert offloading.
-If memory runs out, decrease `--context` or increase `--cpu-moe`.
 
 ## Connect an agent
 
@@ -51,17 +50,18 @@ The API listens on loopback.
 
 ## Measured results
 
-The default retains 128 of 256 routed experts per layer and uses Q4_K_M quantization.
-On an RTX 5070 Ti, its 11.37 GB file produced these results:
+RTX 5070 Ti, Ryzen 9 9900X, 32 GB RAM, 8K context:
 
-- 29/32 tasks in a fixed HumanEval subset.
-- 5/5 tasks in a small coding and repository repair pilot.
-- 183 tokens/s median decode speed.
-- Successful synthetic retrieval with a 31,738-token prompt.
+| Model | Coding subset | Practical pilot | Median decode speed |
+| --- | ---: | ---: | ---: |
+| Qwen3.8-27B, eight CPU FFN layers | 32/32 | 5/5 | 25 tokens/s |
+| Our pruned Qwen3.6, no CPU expert offload | 29/32 | 5/5 | 183 tokens/s |
+| MiMo V2.6 Distill 9B, no thinking | 20/32 | 4/5 | 117 tokens/s |
 
-The final sampler uses a repetition penalty of 1.1 over 256 tokens.
-Tuning used a known failure. These small samples do not establish broad agent reliability.
-The [model card](MODEL_CARD.md) records failures, comparison settings, memory use, and limits.
+These small samples do not establish broad agent reliability.
+Different quantization methods prevent an isolated comparison of model architectures.
+The [comparison notes](research/candidates.md) record recent releases, memory use, and failures.
+The [model card](MODEL_CARD.md) describes our derivative and its limits.
 
 ## Reproduce
 
@@ -70,9 +70,9 @@ py -3 test_launcher.py
 py -3 test_evaluation.py
 ```
 
-See the [recipe](research/recipe.md) for model compression and evaluation commands.
+See the [recipe](research/recipe.md) for compression and evaluation commands.
 Docker isolates generated code during evaluation.
 
 Original code uses the [MIT license](LICENSE).
-Qwen derivatives use Apache-2.0 with the notices in [NOTICE.md](NOTICE.md) and [ATTRIBUTION.md](ATTRIBUTION.md).
-The calibration sources require a separate license review before a public model release.
+Upstream model licenses remain separate.
+See [NOTICE.md](NOTICE.md) and [ATTRIBUTION.md](ATTRIBUTION.md) for sources and redistribution terms.

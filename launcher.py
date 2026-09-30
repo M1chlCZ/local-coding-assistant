@@ -39,18 +39,20 @@ def extract_runtime(archive, target):
         z.extractall(target)
 
 
-def server_command(exe, model, context, cpu_moe, port, threads):
+def server_command(exe, model, context, cpu_moe, port, threads, cpu_ffn=0):
     if not 512 <= context <= 262144:
         raise ValueError("Context must be between 512 and 262144 tokens")
     if not 0 <= cpu_moe <= 40:
         raise ValueError("CPU expert offload must be between 0 and 40 layers for this model")
+    if not 0 <= cpu_ffn <= 256:
+        raise ValueError("CPU dense FFN offload must be between 0 and 256 layers")
     if not 1024 <= port <= 65535 or not 1 <= threads <= 128:
         raise ValueError("Use a port between 1024 and 65535 and 1-128 CPU threads")
     if not exe.is_file() or not model.is_file():
         raise RuntimeError("Runtime or model is missing. Run: python launcher.py setup")
     return [str(exe), "-m", str(model), "--host", "127.0.0.1", "--port", str(port),
             "--ctx-size", str(context), "--parallel", "1", "--n-gpu-layers", "all",
-            "--n-cpu-moe", str(cpu_moe), "--threads", str(threads),
+            "--n-cpu-moe", str(cpu_moe), "--n-cpu-ffn", str(cpu_ffn), "--threads", str(threads),
             "--flash-attn", "on", "--log-verbosity", "4", "--jinja", "--no-mmproj", "--no-warmup",
             "--alias", "local-coding-assistant", "--reasoning", "off",
             "--repeat-penalty", "1.1", "--repeat-last-n", "256", "--ui-config",
@@ -124,17 +126,17 @@ def health(port):
 def serve(config, args):
     exe, model = paths(config)
     defaults = config.get('defaults', {})
-    for name, fallback in [('context', 8192), ('cpu_moe', 20), ('threads', 12)]:
+    for name, fallback in [('context', 8192), ('cpu_moe', 20), ('threads', 12), ('cpu_ffn', 0)]:
         if getattr(args, name) is None:
             setattr(args, name, defaults.get(name, fallback))
-    command = server_command(exe, model, args.context, args.cpu_moe, args.port, args.threads)
+    command = server_command(exe, model, args.context, args.cpu_moe, args.port, args.threads, args.cpu_ffn)
     if health(args.port):
         raise RuntimeError(f"A model server is already using port {args.port}")
     logs = ROOT / "logs"
     logs.mkdir(exist_ok=True)
     log_path = logs / f"server-{time.time_ns()}.log"
     print(f"Model: {config['model']['label']}", flush=True)
-    print(f"Context: {args.context}; CPU expert layers: {args.cpu_moe}; log: {log_path}", flush=True)
+    print(f"Context: {args.context}; CPU expert layers: {args.cpu_moe}; CPU dense FFN layers: {args.cpu_ffn}; log: {log_path}", flush=True)
     with log_path.open("wb") as log:
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=log,
                                    stderr=subprocess.STDOUT, cwd=exe.parent)
@@ -144,7 +146,7 @@ def serve(config, args):
                 if process.poll() is not None:
                     tail = log_path.read_text(encoding="utf-8", errors="replace")[-6000:]
                     raise RuntimeError(f"Runtime exited ({process.returncode}).\n{tail}\n"
-                                       "For memory errors, increase --cpu-moe or reduce --context.")
+                                       "For memory errors, increase --cpu-moe (MoE) or --cpu-ffn (dense), or reduce --context.")
                 if time.monotonic() > deadline:
                     raise RuntimeError(f"Startup took over 5 minutes; inspect {log_path}")
                 time.sleep(1)
@@ -175,6 +177,7 @@ def main():
     start = sub.add_parser("serve", help="Start chat and a local API for agent harnesses")
     start.add_argument("--context", type=int, default=None)
     start.add_argument("--cpu-moe", type=int, default=None)
+    start.add_argument("--cpu-ffn", type=int, default=None, help="Offload dense FFN layers to CPU")
     start.add_argument("--threads", type=int, default=None)
     start.add_argument("--port", type=int, default=8080)
     start.add_argument("--open", action="store_true", help="Open the built-in chat in your browser")

@@ -11,3 +11,6 @@ This project's MIT license covers its original launcher and evaluation code. It 
 - [OpenAI HumanEval](https://github.com/openai/human-eval): MIT. The original test dataset and license are included under `research/`; the fixed 32-task subset is pinned in `humaneval_manifest.json`.
 
 The 32 selected Tulu rows all identify [FLAN v2 converted](https://huggingface.co/datasets/ai2-adapt-dev/flan_v2_converted) as their underlying source. See [Tulu source terms](https://huggingface.co/datasets/allenai/tulu-3-sft-mixture) and [FLAN](https://github.com/google-research/FLAN). Dataset collection labels do not establish clearance for every original content source.
+
+
+Recent comparison manifests reference Xiaomi MiMo V2.6 Distill Qwen 9B (MIT metadata, GGUF by mradermacher) and Qwen3.8-27B (Apache-2.0, GGUF by Unsloth, pinned license copy in `research/qwen38.LICENSE`). The MiMo checkpoint is an SFT of Qwen3.5-9B and its pinned repository lacks a LICENSE file. This repository does not redistribute either model. The hashes identify the upstream downloads, not models trained by this project.
