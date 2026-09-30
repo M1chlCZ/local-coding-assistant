@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scope": "Same RLM harness, unchanged prompt, NF4 base, greedy decoding, and shared task budgets; adapter disabled for baseline. Development only; holdout unused.",
+  "settings": {
+    "mode": "rlm",
+    "depth": 2,
+    "instruction": ""
+  },
+  "limits": {
+    "calls": 8,
+    "output_tokens": 4096,
+    "seconds": 120
+  },
+  "results": {
+    "base": {
+      "passed": 0,
+      "total": 5,
+      "calls": 36
+    },
+    "adapter": {
+      "passed": 0,
+      "total": 5,
+      "calls": 12
+    }
+  }
+}

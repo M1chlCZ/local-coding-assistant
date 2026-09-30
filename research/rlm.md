@@ -73,8 +73,9 @@ A shorter prompt candidate failed the repair checks. The original prompt remains
 
 Peak sampled GPU use reached 15,269 MiB, including the Windows desktop.
 The training exporter retained four root rows from the successful task and excluded both failed tasks.
-The dataset check passed without loading a training model. No adapter was trained.
+That dataset check passed without loading a training model. No adapter was trained in that first round.
 Four rows provide a pipeline check, not enough data for a useful adapter.
+A [later local training round](adapter-training.md) collected all ten training tasks and completed a bounded CUDA run.
 The [PC report](../reports/rlm-wsl-cuda-round1/summary.json) records these results and their limits.
 
 ## Propose a repository repair

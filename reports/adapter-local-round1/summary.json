@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "base_source_revision": "b8479a1e39b4c04d4f123df9a6efa0f96e6f0390",
+  "scope": "One bounded local CUDA adapter trial from ten authored two-file training fixtures. No general coding or autonomous learning claim.",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "gpu_total_bytes": 17066033152,
+    "environment": "Dedicated LocalCodingAssistant WSL 2 Ubuntu 24.04.5 on the PC"
+  },
+  "teacher": {
+    "model": "Qwen3.8-27B-UD-Q4_K_M",
+    "context": 8192,
+    "cpu_ffn_layers": 8,
+    "training_tasks_passed": 5,
+    "training_tasks_total": 10,
+    "child_calls": 0
+  },
+  "student": {
+    "model": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "quantization": "NF4 with double quantization",
+    "rank": 8,
+    "seed": 42,
+    "steps": 50,
+    "max_length": 2048,
+    "rows_exported": 23,
+    "rows_used": 18,
+    "rows_excluded_overlength": 5,
+    "max_fitting_row_tokens": 1819,
+    "versions": {
+      "torch": "2.14.0+cu130",
+      "transformers": "5.18.0",
+      "peft": "0.21.1",
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2"
+    },
+    "runtime_s": 151.9031,
+    "first_logged_loss": 1.7117763757705688,
+    "last_logged_loss": 0.04478520527482033,
+    "mean_training_loss": 0.3128954886458814,
+    "peak_torch_allocated_bytes": 8574097920,
+    "peak_torch_reserved_bytes": 17110663168
+  },
+  "memory_scope": "PyTorch allocator peaks, not total physical GPU use. Reservation reached approximately card capacity; one Windows GPU sample during training showed 15,962 MiB used including desktop. No claim of comfortable headroom.",
+  "adapter": {
+    "location": "Private PC cache: .cache/adapters/local-round1",
+    "weights_bytes": 66126768,
+    "weights_sha256": "2c67951031fd83a97cc9ca4d7cf4cbb799fb64f77c164f38f6d6153ee0ffadb7",
+    "config_sha256": "cd72fd2a33977077bc7c7a62550f12d21437253cf496e03df86918778d054f79",
+    "uploaded": false,
+    "promoted": false
+  },
+  "direct_development": {
+    "scope": "Direct one-pass JSON repairs, not an RLM benchmark. Same NF4 base, prompt, greedy decoding and 1024-token cap; adapter disabled for baseline. Dev fixtures only; holdout unused.",
+    "results": {
+      "base": {
+        "passed": 0,
+        "total": 5
+      },
+      "adapter": {
+        "passed": 0,
+        "total": 5
+      }
+    }
+  },
+  "rlm_development": {
+    "schema_version": 1,
+    "scope": "Same RLM harness, unchanged prompt, NF4 base, greedy decoding, and shared task budgets; adapter disabled for baseline. Development only; holdout unused.",
+    "settings": {
+      "mode": "rlm",
+      "depth": 2,
+      "instruction": ""
+    },
+    "limits": {
+      "calls": 8,
+      "output_tokens": 4096,
+      "seconds": 120
+    },
+    "results": {
+      "base": {
+        "passed": 0,
+        "total": 5,
+        "calls": 36
+      },
+      "adapter": {
+        "passed": 0,
+        "total": 5,
+        "calls": 12
+      }
+    }
+  },
+  "decision": "Keep as a training-path experiment. Both base and adapter scored 0/5 in each development harness. Fewer failed calls or lower training loss do not justify promotion.",
+  "observations": [
+    "The adapter returned a parseable patch for all five RLM development tasks, but every patch failed functional checks.",
+    "The RLM base produced no accepted patch within the chosen budgets.",
+    "Neither model used recursive child calls.",
+    "The adapter frequently echoed repository input in direct JSON repairs.",
+    "These tiny authored fixtures and 18 fitting training rows cannot establish general coding quality.",
+    "Holdout tasks were not used in this training or evaluation round."
+  ],
+  "fixes": [
+    "Render and verify chat-template text before separately tokenizing the generation prefix and continuation; this prevents BPE merging across the mask boundary.",
+    "Install gcc and Python development headers for Triton before local CUDA training.",
+    "Restore Mac access through an SSH loopback connection on port 18080; PC chat stays on port 8080."
+  ],
+  "training_script_sha256": "be0d98380ca312033239fc85d7e1daf6470721170571f360172489bf51ddf4c1",
+  "checks": [
+    "Regression check reproduced the prompt-boundary failure before the fix and passed afterward.",
+    "Real Qwen tokenizer verified complete assistant-only examples.",
+    "CUDA tensor and NF4 quantization checks passed on RTX 5070 Ti.",
+    "Training exporter and launcher self-checks passed.",
+    "Saved adapter loaded for direct and matched RLM development comparisons."
+  ]
+}

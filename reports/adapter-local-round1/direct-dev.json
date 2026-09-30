@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "scope": "Direct one-pass JSON repairs, not an RLM benchmark. Same NF4 base, prompt, greedy decoding and 1024-token cap; adapter disabled for baseline. Dev fixtures only; holdout unused.",
+  "model": "Qwen/Qwen3-4B",
+  "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "tasks": [
+    {
+      "id": "package-manifest",
+      "split": "dev",
+      "setting": "base",
+      "passed": false,
+      "response": "{\n  \"manifest.py\": \"from policy import DEFAULT_EXCLUDES\\n\\ndef collect(paths,excluded=DEFAULT_EXCLUDES):\\n    return sorted(p for p in paths if not p.startswith('.') and not any(name in p for name in excluded))\\n\",\n  \"policy.py\": \"DEFAULT_EXCLUDES = {'build', '__pycache__'}\\n\"\n}",
+      "elapsed_s": 9.628,
+      "output_tokens": 80,
+      "error": "ValueError: Answer must be a nonempty JSON patch object"
+    },
+    {
+      "id": "package-manifest",
+      "split": "dev",
+      "setting": "adapter",
+      "passed": false,
+      "response": "{\n  \"files\": {\n    \"manifest.py\": \"from policy import DEFAULT_EXCLUDES\\n\\ndef collect(paths,excluded=DEFAULT_EXCLUDES):\\n    return sorted(p for p in paths if not p.startswith('.') and not any(name in p for name in excluded))\\n\",\n    \"policy.py\": \"DEFAULT_EXCLUDES = frozenset({'build', '__pycache__'})\\n\"\n  },\n  \"editable\": [\"manifest.py\"]\n}",
+      "elapsed_s": 9.363,
+      "output_tokens": 98,
+      "error": "ValueError: Answer must be a nonempty JSON patch object"
+    },
+    {
+      "id": "source-positions",
+      "split": "dev",
+      "setting": "base",
+      "passed": false,
+      "response": "{\n  \"positions.py\": \"from source import newline_endings\\n\\ndef locate(text, offset):\\n    normalized = text.replace('\\\\r\\\\n', '\\\\n')\\n    prefix = normalized[:offset]\\n    return (prefix.count('\\\\n') + 1, len(prefix.rsplit('\\\\n', 1)[-1]) + 1)\\n\"\n}",
+      "elapsed_s": 2.011,
+      "output_tokens": 77,
+      "patch": {
+        "positions.py": "from source import newline_endings\n\ndef locate(text, offset):\n    normalized = text.replace('\\r\\n', '\\n')\n    prefix = normalized[:offset]\n    return (prefix.count('\\n') + 1, len(prefix.rsplit('\\n', 1)[-1]) + 1)\n"
+      },
+      "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 7, in <module>\n  File \"<string>\", line 3, in <module>\nAssertionError\n"
+    },
+    {
+      "id": "source-positions",
+      "split": "dev",
+      "setting": "adapter",
+      "passed": false,
+      "response": "```json\n{\n  \"task\": \"Fix source positions. Offsets are character indices in the original text, including CRLF. Return 1-based line and column. Offset len(text) is valid. Reject offsets outside 0..len(text). Newline characters belong to the preceding line.\",\n  \"files\": {\n    \"positions.py\": \"from source import newline_endings\\n\\ndef locate(text, offset):\\n    normalized = text.replace('\\\\r\\\\n', '\\\\n')\\n    prefix = normalized[:offset]\\n    line = prefix.count('\\\\n') + 1\\n    if not prefix:\\n        return (1, 1)\\n    parts = prefix.rsplit('\\\\n', 1)\\n    content = parts[0] if len(parts) == 2 else prefix\\n    col = len(content) + 1\\n    return (line, col)\\n\"\n  }\n}\n```",
+      "elapsed_s": 12.741,
+      "output_tokens": 190,
+      "error": "ValueError: Answer must be a nonempty JSON patch object"
+    },
+    {
+      "id": "unique-slugs",
+      "split": "dev",
+      "setting": "base",
+      "passed": false,
+      "response": "{\n  \"slugs.py\": \"from text import base_slug\\n\\ndef unique_slug(title, used, max_length=40):\\n    if max_length < 3:\\n        raise ValueError(\\\"max_length must be at least 3\\\")\\n    base = base_slug(title)[:max_length]\\n    result = base\\n    number = 2\\n    while result in used:\\n        result = f'{base}-{number}'\\n        number += 1\\n    return result\\n\"\n}",
+      "elapsed_s": 4.707,
+      "output_tokens": 106,
+      "patch": {
+        "slugs.py": "from text import base_slug\n\ndef unique_slug(title, used, max_length=40):\n    if max_length < 3:\n        raise ValueError(\"max_length must be at least 3\")\n    base = base_slug(title)[:max_length]\n    result = base\n    number = 2\n    while result in used:\n        result = f'{base}-{number}'\n        number += 1\n    return result\n"
+      },
+      "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 7, in <module>\n  File \"<string>\", line 3, in <module>\nAssertionError\n"
+    },
+    {
+      "id": "unique-slugs",
+      "split": "dev",
+      "setting": "adapter",
+      "passed": false,
+      "response": "```json\n{\n  \"task\": \"Fix unique slugs. Use the existing ASCII slug helper. The complete slug must fit max_length. Resolve collisions with -2, -3 and later suffixes, truncating the base to leave suffix space. Do not change the used set. Reject max_length below 3.\",\n  \"files\": {\n    \"slugs.py\": \"from text import base_slug\\n\\ndef unique_slug(title, used, max_length=40):\\n    if max_length < 3:\\n        raise ValueError('max_length must be at least 3')\\n    base = base_slug(title)[:max_length]\\n    result = base\\n    number = 2\\n    while result in used:\\n        # Truncate base to leave space for suffix\\n        if len(base) + len(f'-{number}') > max_length:\\n            base = base[-(max_length - len(f'-{number}')):] if max_length - len(f'-{number}') > 0 else ''\\n        result = f'{base}-{number}'\\n        number += 1\\n    return result\\n\",\n    \"text.py\": \"import re\\n\\ndef base_slug(title):\\n    return re.sub(r'[^a-z0-9]+','-',title.lower()).strip('-') or 'item'\\n\"\n  },\n  \"editable\": [\"slugs.py\"]\n}\n```",
+      "elapsed_s": 20.392,
+      "output_tokens": 292,
+      "error": "ValueError: Answer must be a nonempty JSON patch object"
+    },
+    {
+      "id": "checkout-transitions",
+      "split": "dev",
+      "setting": "base",
+      "passed": false,
+      "response": "{\n  \"checkout.py\": \"from states import TRANSITIONS\\n\\nclass Order:\\n    def __init__(self):\\n        self.state = 'draft'\\n        self.items = []\\n    \\n    def add(self, item):\\n        self.items.append(item)\\n    \\n    def transition(self, target):\\n        if target not in TRANSITIONS[self.state]:\\n            raise ValueError('invalid transition')\\n        \\n        if self.state == 'draft' and target == 'paid':\\n            if not self.items:\\n                raise ValueError('no items to pay for')\\n        \\n        if self.state == 'draft' and target == 'shipped':\\n            if not self.items:\\n                raise ValueError('no items to ship')\\n        \\n        if self.state == 'draft' and target == 'cancelled':\\n            pass\\n        \\n        if self.state == 'paid' and target == 'shipped':\\n            pass\\n        \\n        if self.state == 'paid' and target == 'cancelled':\\n            pass\\n        \\n        if self.state == 'shipped' and target == 'completed':\\n            pass\\n        \\n        if self.state in ['completed', 'cancelled']:\\n            if target != self.state:\\n                raise ValueError('no further transitions')\\n        \\n        self.state = target\\n\"\n}",
+      "elapsed_s": 8.868,
+      "output_tokens": 304,
+      "patch": {
+        "checkout.py": "from states import TRANSITIONS\n\nclass Order:\n    def __init__(self):\n        self.state = 'draft'\n        self.items = []\n    \n    def add(self, item):\n        self.items.append(item)\n    \n    def transition(self, target):\n        if target not in TRANSITIONS[self.state]:\n            raise ValueError('invalid transition')\n        \n        if self.state == 'draft' and target == 'paid':\n            if not self.items:\n                raise ValueError('no items to pay for')\n        \n        if self.state == 'draft' and target == 'shipped':\n            if not self.items:\n                raise ValueError('no items to ship')\n        \n        if self.state == 'draft' and target == 'cancelled':\n            pass\n        \n        if self.state == 'paid' and target == 'shipped':\n            pass\n        \n        if self.state == 'paid' and target == 'cancelled':\n            pass\n        \n        if self.state == 'shipped' and target == 'completed':\n            pass\n        \n        if self.state in ['completed', 'cancelled']:\n            if target != self.state:\n                raise ValueError('no further transitions')\n        \n        self.state = target\n"
+      },
+      "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 7, in <module>\n  File \"<string>\", line 11, in <module>\nAssertionError: changed locked order\n"
+    },
+    {
+      "id": "checkout-transitions",
+      "split": "dev",
+      "setting": "adapter",
+      "passed": false,
+      "response": "Let me fix the `checkout.py` to properly implement the transition logic based on the task description. The key points are:\n\n1. Only draft orders allow item changes (i.e., `add` should be on `Draft` state only)\n2. Payment requires at least one item\n3. Invalid operations leave state and items unchanged\n4. Completed/cancelled orders have no further transitions\n\nHere's the corrected version:\n\n```json\n{\n  \"checkout.py\": \"\"\"from states import TRANSITIONS\n\nclass Order:\n    def __init__(self):\n        self.state='draft'\n        self.items=[]\n    def add(self,item):\n        if self.state != 'draft':\n            raise ValueError('cannot add item to non-draft order')\n        self.items.append(item)\n    def transition(self,target):\n        if target not in TRANSITIONS:\n            raise ValueError('unknown state')\n        if self.state == 'draft':\n            if target == 'paid' and not self.items:\n                raise ValueError('payment requires at least one item')\n            if target in ('shipped', 'completed', 'cancelled'):\n                self.state = target\n            elif target == 'draft':\n                # self.state is already draft, no change needed\n                pass\n            else:\n                raise ValueError('invalid transition from draft')\n        elif self.state == 'paid':\n            if target in ('shipped', 'cancelled'):\n                self.state = target\n            else:\n                raise ValueError('invalid transition from paid')\n        elif self.state == 'shipped':\n            if target == 'completed':\n                self.state = target\n            else:\n                raise ValueError('invalid transition from shipped')\n        elif self.state in ('completed', 'cancelled'):\n            # no further transitions allowed\n            pass\n        else:\n            raise ValueError('invalid state')\n\"\"\"\n}\n```",
+      "elapsed_s": 23.597,
+      "output_tokens": 367,
+      "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "id": "http-byte-ranges",
+      "split": "dev",
+      "setting": "base",
+      "passed": false,
+      "response": "{\n  \"ranges.py\": \"from headers import RANGE_PREFIX\\n\\ndef parse_range(header,size):\\n    if not header:\\n        raise ValueError(\\\"Invalid range header\\\")\\n    \\n    # Extract the range part\\n    range_part = header[len(RANGE_PREFIX):].strip()\\n    \\n    # Check for multiple ranges\\n    if ',' in range_part:\\n        raise ValueError(\\\"Multiple ranges are not supported\\\")\\n    \\n    # Split the range into start and end\\n    parts = range_part.split('-')\\n    \\n    # Parse start and end\\n    if len(parts) != 2:\\n        raise ValueError(\\\"Invalid range format\\\")\\n    \\n    start_str = parts[0]\\n    end_str = parts[1] if len(parts) > 1 else \\\"\\\"\\n    \\n    # Parse start\\n    start = 0\\n    if start_str:\\n        start = int(start_str)\\n        if start < 0:\\n            raise ValueError(\\\"Start cannot be negative\\\")\\n    \\n    # Parse end\\n    end = size\\n    if end_str:\\n        end = int(end_str)\\n        if end < 0:\\n            raise ValueError(\\\"End cannot be negative\\\")\\n        if end > size:\\n            raise ValueError(\\\"End exceeds resource size\\\")\\n    \\n    # Clamp end to resource length\\n    end = min(end, size)\\n    \\n    # Check if the range is valid\\n    if start > end:\\n        raise ValueError(\\\"Unsatisfiable range\\\")\\n    \\n    return (start, end)\"\n}",
+      "elapsed_s": 13.595,
+      "output_tokens": 349,
+      "patch": {
+        "ranges.py": "from headers import RANGE_PREFIX\n\ndef parse_range(header,size):\n    if not header:\n        raise ValueError(\"Invalid range header\")\n    \n    # Extract the range part\n    range_part = header[len(RANGE_PREFIX):].strip()\n    \n    # Check for multiple ranges\n    if ',' in range_part:\n        raise ValueError(\"Multiple ranges are not supported\")\n    \n    # Split the range into start and end\n    parts = range_part.split('-')\n    \n    # Parse start and end\n    if len(parts) != 2:\n        raise ValueError(\"Invalid range format\")\n    \n    start_str = parts[0]\n    end_str = parts[1] if len(parts) > 1 else \"\"\n    \n    # Parse start\n    start = 0\n    if start_str:\n        start = int(start_str)\n        if start < 0:\n            raise ValueError(\"Start cannot be negative\")\n    \n    # Parse end\n    end = size\n    if end_str:\n        end = int(end_str)\n        if end < 0:\n            raise ValueError(\"End cannot be negative\")\n        if end > size:\n            raise ValueError(\"End exceeds resource size\")\n    \n    # Clamp end to resource length\n    end = min(end, size)\n    \n    # Check if the range is valid\n    if start > end:\n        raise ValueError(\"Unsatisfiable range\")\n    \n    return (start, end)"
+      },
+      "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 7, in <module>\n  File \"<string>\", line 3, in <module>\nAssertionError\n"
+    },
+    {
+      "id": "http-byte-ranges",
+      "split": "dev",
+      "setting": "adapter",
+      "passed": false,
+      "response": "```json\n{\n  \"task\": \"Fix a single HTTP byte range parser. Return inclusive (start, end). Support bytes=start-end, bytes=start- and bytes=-suffix. Clamp end to resource length. Reject empty resources, multiple ranges, wrong units and unsatisfiable or malformed ranges with ValueError.\",\n  \"files\": {\n    \"ranges.py\": \"from headers import RANGE_PREFIX\\nimport re\\n\\ndef parse_range(header,size):\\n    if not header:\\n        raise ValueError('empty range')\\n    if header.startswith(RANGE_PREFIX):\\n        parts=header[len(RANGE_PREFIX):].split('-',1)\\n        if len(parts)!=2:\\n            raise ValueError('malformed range')\\n        first=parts[0]\\n        last=parts[1] if len(parts)>1 else str(size)\\n        if not first.isdigit() or (last is not None and not (last.isdigit() or last==\\\"\\\" or last==\\\"%s\\\"%%size)):\\n            raise ValueError('invalid range unit')\\n        start=int(first) if first else 0\\n        end=int(last) if last else size\\n        if end > size:\\n            end=size\\n        if start > end:\\n            raise ValueError('unsatisfiable range')\\n        if start <0:\\n            raise ValueError('negative start')\\n        if end <0:\\n            raise ValueError('negative end')\\n        return (start,end)\\n    else:\\n        raise ValueError('range header must start with %s'%%RANGE_PREFIX)\"\n  },\n  \"editable\": [\"ranges.py\"]\n}\n```",
+      "elapsed_s": 21.898,
+      "output_tokens": 340,
+      "error": "ValueError: Answer must be a nonempty JSON patch object"
+    }
+  ],
+  "summary": {
+    "base": {
+      "passed": 0,
+      "total": 5
+    },
+    "adapter": {
+      "passed": 0,
+      "total": 5
+    }
+  }
+}

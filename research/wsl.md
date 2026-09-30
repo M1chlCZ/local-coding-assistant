@@ -130,4 +130,18 @@ From a second Linux terminal, run the [recursive experiment commands](rlm.md).
 The [adapter recipe](adapter-training.md) describes the separate training path.
 Stop the model before a training run.
 
+## Connect from the Mac
+
+The PC serves chat at `http://127.0.0.1:8080` on the PC itself.
+From the Mac, open a terminal and run this command:
+
+```bash
+ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -L 127.0.0.1:18080:127.0.0.1:8080 coding-pc
+```
+
+Keep the terminal open. On the Mac, open `http://127.0.0.1:18080`.
+Ctrl+C closes the connection.
+Both endpoints remain on loopback. The model API requires no public port.
+Chat requests pause while training uses the GPU and the inference server is stopped.
+
 Sources: [Microsoft WSL commands](https://learn.microsoft.com/en-us/windows/wsl/basic-commands), [WSL networking](https://learn.microsoft.com/en-us/windows/wsl/networking), [Docker installation](https://docs.docker.com/engine/install/ubuntu/), [llama.cpp release](https://github.com/ggml-org/llama.cpp/releases/tag/b11146).

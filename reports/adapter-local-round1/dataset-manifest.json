@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "split": "train",
+  "tasks_sha256": "b57c5a195bccb5851996ffdc2477cfbb79fce8c07d8e789d4c0ce51f780d7cc0",
+  "dataset_sha256": "a5482365fe3dfbe97313ac72511631acfefad171f20ed7c54043c9da242560a7",
+  "rows": 23,
+  "sources": [
+    {
+      "name": "train.json",
+      "sha256": "abd9aa14156f884f834eb99b126c0d7f7619b1c936627f5693d3f1ad162f00dd"
+    }
+  ],
+  "excluded": {
+    "failed_or_baseline": 5
+  },
+  "trust": "Local evaluator reports are inputs, not cryptographic proof of correct grading."
+}

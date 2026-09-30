@@ -38,13 +38,18 @@ def validate_args(args):
 def encode_row(tokenizer, row, max_length):
     messages = row['messages']
     # Prefix validation prevents masking the wrong tokens when chat templates differ.
-    prefix = tokenizer.apply_chat_template(messages[:-1], tokenize=True, add_generation_prompt=True,
+    prefix_text = tokenizer.apply_chat_template(messages[:-1], tokenize=False, add_generation_prompt=True,
                                            enable_thinking=False)
-    tokens = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False,
+    full_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False,
                                            enable_thinking=False)
+    if not full_text.startswith(prefix_text) or len(full_text) <= len(prefix_text):
+        raise ValueError('Chat template does not preserve the generation prefix')
+    # Separate tokenization prevents BPE merging prompt whitespace into the first target token.
+    prefix = tokenizer.encode(prefix_text, add_special_tokens=False)
+    tokens = prefix + tokenizer.encode(full_text[len(prefix_text):], add_special_tokens=False)
     if len(tokens) > max_length:
         return None  # No truncated prompts or partial targets enter training.
-    if tokens[:len(prefix)] != prefix or len(tokens) <= len(prefix):
+    if len(tokens) <= len(prefix):
         raise ValueError('Chat template does not preserve the generation prefix')
     return {'input_ids': tokens, 'attention_mask': [1] * len(tokens),
             'labels': [-100] * len(prefix) + tokens[len(prefix):]}
@@ -126,6 +131,7 @@ def main():
                     'versions': versions, 'max_steps': args.max_steps, 'max_length': args.max_length,
                     'rank': args.rank, 'seed': args.seed, 'gpu': torch.cuda.get_device_name(0),
                     'gpu_total_bytes': total, 'peak_allocated_bytes': torch.cuda.max_memory_allocated(0),
+                    'peak_reserved_bytes': torch.cuda.max_memory_reserved(0),
                     'metrics': trainer.state.log_history, 'evaluated': False}
         (args.output / 'training.json').write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
         print('Adapter saved locally. Evaluate it before promotion; training loss is not coding quality.')

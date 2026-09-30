@@ -1,6 +1,7 @@
 """Run with python test_training_data.py. No GPU or extra packages needed."""
 import copy
 import json
+import re
 import tempfile
 from pathlib import Path
 
@@ -67,11 +68,14 @@ with tempfile.TemporaryDirectory() as temporary:
 
 
 class Tokenizer:
+    def encode(self, text, add_special_tokens=False):
+        return [ord(character) for character in text]
+
     def apply_chat_template(self, messages, tokenize, add_generation_prompt, **kwargs):
         text = ''.join(f"<{m['role']}>{m['content']}" for m in messages)
         if add_generation_prompt:
             text += '<assistant>'
-        return [ord(character) for character in text]
+        return self.encode(text) if tokenize else text
 
 messages = [{'role': 'user', 'content': 'first'}, {'role': 'assistant', 'content': 'old answer'},
             {'role': 'user', 'content': 'question'}, {'role': 'assistant', 'content': 'answer'}]
@@ -79,10 +83,16 @@ encoded = train_adapter.encode_row(Tokenizer(), {'messages': messages}, 100)
 assert encoded['labels'][-6:] == list(map(ord, 'answer'))
 assert all(label == -100 for label in encoded['labels'][:-6])
 assert train_adapter.encode_row(Tokenizer(), {'messages': messages}, 2) is None
+class BoundaryTokenizer(Tokenizer):
+    def encode(self, text, add_special_tokens=False):
+        return [999 if part == '>a' else ord(part) for part in re.findall(r'>a|.', text)]
+# A token can merge the prompt terminator with the first response character.
+encoded = train_adapter.encode_row(BoundaryTokenizer(), {'messages': messages}, 100)
+assert encoded['labels'][-6:] == list(map(ord, 'answer'))
 class InconsistentTokenizer(Tokenizer):
     def apply_chat_template(self, messages, tokenize, add_generation_prompt, **kwargs):
         tokens = super().apply_chat_template(messages, tokenize, add_generation_prompt, **kwargs)
-        return tokens if add_generation_prompt else [0] + tokens
+        return tokens if add_generation_prompt else ([0] + tokens if tokenize else 'X' + tokens)
 rejected(lambda: train_adapter.encode_row(InconsistentTokenizer(), {'messages': messages}, 100))
 rejected(lambda: train_adapter.validate_args(train_adapter.parser().parse_args([
     '--dataset', 'data.jsonl', '--model', 'Qwen/model', '--revision', 'main', '--output', 'adapter'])))

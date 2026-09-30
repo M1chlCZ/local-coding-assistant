@@ -37,7 +37,8 @@ py -3 launcher.py --manifest research/manifest-reap50.json serve --open
 
 ## Connect an agent
 
-Chat: `http://127.0.0.1:8080`.
+On the PC, open chat at `http://127.0.0.1:8080`.
+For Mac access, use the [SSH connection instructions](research/wsl.md#connect-from-the-mac).
 
 | API setting | Value |
 | --- | --- |
@@ -52,8 +53,8 @@ The API listens on loopback.
 
 The [RLM experiment](research/rlm.md) adds a bounded Python REPL and optional model subcalls.
 A finite search compares instructions and recursion depth on separate development and holdout tasks.
-The [adapter recipe](research/adapter-training.md) prepares local QLoRA from successful training traces.
-Adapter training and its GPU memory use remain unverified.
+The [adapter recipe](research/adapter-training.md) runs local QLoRA from successful training traces.
+A 50-step CUDA trial completed on the 16 GB GPU. This small run does not establish a coding improvement.
 The [WSL recipe](research/wsl.md) runs the complete experiment on the PC through CUDA.
 After WSL setup, `start-rlm.cmd` starts its model server.
 
