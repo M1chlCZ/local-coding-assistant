@@ -1,0 +1,44 @@
+{
+  "runtime": {
+    "version": "v0.5.0",
+    "tag": "b11146",
+    "artifacts": [
+      {
+        "name": "cudart-llama-bin-win-cuda-13.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/cudart-llama-bin-win-cuda-13.4-x64.zip",
+        "size": 423535356,
+        "sha256": "738f8c251ac22b70c3ae6f83a10cf222725df0395246a2cf58f32bdb85fbe668"
+      },
+      {
+        "name": "llama-b11146-bin-win-cuda-13.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/llama-b11146-bin-win-cuda-13.4-x64.zip",
+        "size": 149758833,
+        "sha256": "b1866c0ce76bc7bfb0c24b33e9a37e9669f1be18539b12c74ce361f81c41f047"
+      }
+    ]
+  },
+  "model": {
+    "name": "Qwen3.6-local-code-reap75-Q4_K_M.gguf",
+    "label": "Local coding pilot reap75 Q4_K_M",
+    "url": null,
+    "size": 16269907840,
+    "sha256": "5f8300a7388240942f1cc26b2097e24274ed189bff28ea2bc9d739bc911652b3",
+    "license": "Apache-2.0",
+    "source_repo": "Qwen/Qwen3.6-35B-A3B",
+    "source_revision": "995ad96eacd98c81ed38be0c5b274b04031597b0",
+    "custom_derivative": true,
+    "keep_ratio": 0.75,
+    "quantization": "Q4_K_M",
+    "importance_matrix": false,
+    "converter_commit": "7fe450e19305b828c199d602c23a8337aaa1f03b",
+    "criterion": "reap",
+    "calibration_sha256": "181ea2f8a553cff48cb3893c2cd94ffbe5664b0ce611fc5c81643ed7edc57aca",
+    "windows_sha256": "3765ba7f40a9a69ed863952e2156a94886f8fca1ad60e997a284925fca50cb2a",
+    "selection_sha256": "d33a4e482c74bed9c7b206f6475f792385c82a62b8e0d9aca6d9fe12504a3d10"
+  },
+  "defaults": {
+    "context": 8192,
+    "cpu_moe": 8,
+    "threads": 12
+  }
+}

@@ -1,0 +1,1173 @@
+{
+  "scope": "Re-execute saved model outputs using the final bounded-output evaluator; no new model generations.",
+  "output_cap_bytes": 4096,
+  "started_unix": 1790773605.5206091,
+  "results": [
+    {
+      "report": "humaneval-intact.json",
+      "source_sha256": "9e698a828998b2a44622e07b2695b7ade905e261a8304294be0a5d8e9039838a",
+      "passed": 31,
+      "count": 32,
+      "unchanged": true,
+      "results": [
+        {
+          "task_id": "HumanEval/6",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/15",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/17",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/20",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/28",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/31",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/35",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/38",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/44",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/50",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/53",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/63",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/64",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/71",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/74",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/77",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 57, in <module>\n  File \"<stdin>\", line 46, in check\nAssertionError: Third test error: False\n"
+        },
+        {
+          "task_id": "HumanEval/79",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/81",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/84",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/93",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/98",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/102",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/104",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/106",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/107",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/128",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/129",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/133",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/136",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/138",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/141",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/146",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        }
+      ]
+    },
+    {
+      "report": "humaneval-reap75.json",
+      "source_sha256": "6b24eae738e2d2d7ff138dbbf38edffa15a1662842a6657485845cc78e8298c3",
+      "passed": 30,
+      "count": 32,
+      "unchanged": true,
+      "results": [
+        {
+          "task_id": "HumanEval/6",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/15",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/17",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/20",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/28",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/31",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/35",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/38",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/44",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/50",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/53",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/63",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/64",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/71",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/74",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/77",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/79",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/81",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/84",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/93",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 63, in <module>\n  File \"<stdin>\", line 54, in check\nAssertionError: This prints if this assert fails 1 (good for debugging!)\n"
+        },
+        {
+          "task_id": "HumanEval/98",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/102",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/104",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/106",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/107",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/128",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/129",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "  File \"<stdin>\", line 33\n    ```python\n    ^\nSyntaxError: invalid syntax\n"
+        },
+        {
+          "task_id": "HumanEval/133",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/136",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/138",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/141",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/146",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        }
+      ]
+    },
+    {
+      "report": "humaneval-reap50.json",
+      "source_sha256": "66046d221182e5d3dcdb31dfad1ffe44fea6e8582b761cfd8de888f389cb641e",
+      "passed": 29,
+      "count": 32,
+      "unchanged": true,
+      "results": [
+        {
+          "task_id": "HumanEval/6",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/15",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/17",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/20",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/28",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/31",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/35",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/38",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/44",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/50",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/53",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/63",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/64",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 59, in <module>\n  File \"<stdin>\", line 51, in check\nAssertionError: Test 5\n"
+        },
+        {
+          "task_id": "HumanEval/71",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 73, in <module>\n  File \"<stdin>\", line 62, in check\nAssertionError\n"
+        },
+        {
+          "task_id": "HumanEval/74",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/77",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/79",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/81",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/84",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/93",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/98",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/102",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/104",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/106",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/107",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/128",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/129",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "  File \"<stdin>\", line 33\n    ```python\n    ^\nSyntaxError: invalid syntax\n"
+        },
+        {
+          "task_id": "HumanEval/133",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/136",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/138",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/141",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/146",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        }
+      ]
+    },
+    {
+      "report": "humaneval-reap75-repeat1.1.json",
+      "source_sha256": "f2f22fa33727a0e2a4e63b7e1fbaabb048283b973cbfc74eb5b3af449b67d1b2",
+      "passed": 30,
+      "count": 32,
+      "unchanged": true,
+      "results": [
+        {
+          "task_id": "HumanEval/6",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/15",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/17",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/20",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/28",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/31",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/35",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/38",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/44",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/50",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/53",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/63",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/64",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/71",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/74",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/77",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/79",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/81",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/84",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/93",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 65, in <module>\n  File \"<stdin>\", line 56, in check\nAssertionError: This prints if this assert fails 1 (good for debugging!)\n"
+        },
+        {
+          "task_id": "HumanEval/98",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/102",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/104",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/106",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/107",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/128",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/129",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "  File \"<stdin>\", line 33\n    ```python\n    ^\nSyntaxError: invalid syntax\n"
+        },
+        {
+          "task_id": "HumanEval/133",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/136",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/138",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/141",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/146",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        }
+      ]
+    },
+    {
+      "report": "humaneval-reap50-repeat1.1.json",
+      "source_sha256": "ed0397073179b74d8ced96b834b9a73cd560203e0e0a817f72390e3bdce9167f",
+      "passed": 29,
+      "count": 32,
+      "unchanged": true,
+      "results": [
+        {
+          "task_id": "HumanEval/6",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/15",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/17",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/20",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/28",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/31",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/35",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/38",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/44",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/50",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/53",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/63",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/64",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 52, in <module>\nAssertionError\n"
+        },
+        {
+          "task_id": "HumanEval/71",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 86, in <module>\n  File \"<stdin>\", line 75, in check\nAssertionError\n"
+        },
+        {
+          "task_id": "HumanEval/74",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/77",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/79",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/81",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/84",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/93",
+          "original_passed": false,
+          "passed": false,
+          "exit_code": 1,
+          "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 72, in <module>\n  File \"<stdin>\", line 63, in check\nAssertionError: This prints if this assert fails 1 (good for debugging!)\n"
+        },
+        {
+          "task_id": "HumanEval/98",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/102",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/104",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/106",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/107",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/128",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/129",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/133",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/136",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/138",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/141",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        },
+        {
+          "task_id": "HumanEval/146",
+          "original_passed": true,
+          "passed": true,
+          "exit_code": 0,
+          "feedback": "PILOT_CHECKS_PASSED\n"
+        }
+      ]
+    }
+  ],
+  "ended_unix": 1790773643.036685
+}

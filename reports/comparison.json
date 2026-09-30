@@ -1,0 +1,63 @@
+{
+  "hardware_report": "hardware.json",
+  "runtime_tag": "b11146",
+  "comparison_quantization": "Q4_K_M",
+  "sampling_note": "Original matched-quantization comparison uses repeat penalty 1.0. Final prototype uses repeat penalty 1.1 over 256 tokens, tuned using a known smoke failure.",
+  "models": [
+    {
+      "label": "intact",
+      "report": "humaneval-intact.json",
+      "source_sha256": "9e698a828998b2a44622e07b2695b7ade905e261a8304294be0a5d8e9039838a",
+      "context": 8192,
+      "cpu_expert_layers": 20,
+      "repeat_penalty": 1.0,
+      "passed": 31,
+      "count": 32,
+      "median_decode_tokens_s": 82.61807089998273
+    },
+    {
+      "label": "reap75",
+      "report": "humaneval-reap75.json",
+      "source_sha256": "6b24eae738e2d2d7ff138dbbf38edffa15a1662842a6657485845cc78e8298c3",
+      "context": 8192,
+      "cpu_expert_layers": 4,
+      "repeat_penalty": 1.0,
+      "passed": 30,
+      "count": 32,
+      "median_decode_tokens_s": 152.16060595430554
+    },
+    {
+      "label": "reap50",
+      "report": "humaneval-reap50.json",
+      "source_sha256": "66046d221182e5d3dcdb31dfad1ffe44fea6e8582b761cfd8de888f389cb641e",
+      "context": 8192,
+      "cpu_expert_layers": 0,
+      "repeat_penalty": 1.0,
+      "passed": 29,
+      "count": 32,
+      "median_decode_tokens_s": 206.4761644026501
+    },
+    {
+      "label": "reap75-tuned",
+      "report": "humaneval-reap75-repeat1.1.json",
+      "source_sha256": "f2f22fa33727a0e2a4e63b7e1fbaabb048283b973cbfc74eb5b3af449b67d1b2",
+      "context": 8192,
+      "cpu_expert_layers": 8,
+      "repeat_penalty": 1.1,
+      "passed": 30,
+      "count": 32,
+      "median_decode_tokens_s": 118.1338174401107
+    },
+    {
+      "label": "reap50-final",
+      "report": "humaneval-reap50-repeat1.1.json",
+      "source_sha256": "ed0397073179b74d8ced96b834b9a73cd560203e0e0a817f72390e3bdce9167f",
+      "context": 8192,
+      "cpu_expert_layers": 0,
+      "repeat_penalty": 1.1,
+      "passed": 29,
+      "count": 32,
+      "median_decode_tokens_s": 183.400017890931
+    }
+  ]
+}

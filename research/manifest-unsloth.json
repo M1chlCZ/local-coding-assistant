@@ -1,0 +1,31 @@
+{
+  "runtime": {
+    "version": "v0.5.0",
+    "tag": "b11146",
+    "artifacts": [
+      {
+        "name": "cudart-llama-bin-win-cuda-13.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/cudart-llama-bin-win-cuda-13.4-x64.zip",
+        "size": 423535356,
+        "sha256": "738f8c251ac22b70c3ae6f83a10cf222725df0395246a2cf58f32bdb85fbe668"
+      },
+      {
+        "name": "llama-b11146-bin-win-cuda-13.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/llama-b11146-bin-win-cuda-13.4-x64.zip",
+        "size": 149758833,
+        "sha256": "b1866c0ce76bc7bfb0c24b33e9a37e9669f1be18539b12c74ce361f81c41f047"
+      }
+    ]
+  },
+  "model": {
+    "label": "Unmodified Qwen3.6-35B-A3B baseline (Unsloth UD-Q4_K_M)",
+    "repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
+    "revision": "a483e9e6cbd595906af30beda3187c2663a1118c",
+    "name": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+    "url": "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/a483e9e6cbd595906af30beda3187c2663a1118c/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true",
+    "size": 22134528992,
+    "sha256": "ac0e2c1189e055faa36eff361580e79c5bd6f8e76bffb4ce547f167d53e31a61",
+    "license": "Apache-2.0",
+    "custom_derivative": false
+  }
+}

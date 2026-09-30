@@ -1,0 +1,45 @@
+{
+  "stage": "prune_reap50",
+  "status": "ok",
+  "finished": "2026-09-30T14:10:21+0200",
+  "wall_s": 51.1,
+  "params": {
+    "selection": ".cache/research/calibrated/keep_reap_0.5.json",
+    "out": ".cache/research/reap50"
+  },
+  "outputs": {
+    "model": ".cache\\research\\reap50\\model.safetensors.index.json"
+  },
+  "evidence": {
+    "sliced": 120,
+    "renamed": 0,
+    "copied": 906,
+    "dropped": 19,
+    "kept_experts": 128,
+    "original_experts": 256,
+    "out_bytes": 37981137632,
+    "row_checks": 360,
+    "selection_info": {
+      "criterion": "reap",
+      "keep_ratio": 0.5,
+      "keep_per_layer": 128,
+      "num_experts": 256,
+      "seed": null,
+      "score_stats": {
+        "min": 0.0,
+        "median": 0.1484452486038208,
+        "max": 4.4093241691589355
+      },
+      "stats_meta": {
+        "model": ".cache\\research\\base",
+        "calib": "research\\calib.jsonl",
+        "seq_len": 256,
+        "n_samples": 128,
+        "started_unix": 1790769112.3116648,
+        "ended_unix": 1790769991.0028837,
+        "max_gpu_gib": 10,
+        "batch_size": 8
+      }
+    }
+  }
+}

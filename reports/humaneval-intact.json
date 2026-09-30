@@ -1,0 +1,1170 @@
+{
+  "label": "intact-Q4_K_M",
+  "dataset": {
+    "repo": "openai/human-eval",
+    "revision": "6d43fb980f9fee3c892a914eda09951f772ad10d",
+    "url": "https://raw.githubusercontent.com/openai/human-eval/6d43fb980f9fee3c892a914eda09951f772ad10d/data/HumanEval.jsonl.gz",
+    "size": 44877,
+    "sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+    "license": "MIT",
+    "subset_seed": 17,
+    "subset_count": 32
+  },
+  "container_image": "python@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d",
+  "scope": "32 fixed HumanEval tasks, original tests, greedy pass@1; supplied code context retained and either full function or continuation accepted. Not the full suite or HumanEval+.",
+  "max_generation_tokens": 2048,
+  "temperature": 0,
+  "started_unix": 1790770544.327177,
+  "results": [
+    {
+      "task_id": "HumanEval/6",
+      "elapsed_s": 3.735,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 163,
+        "prompt_ms": 1079.977,
+        "prompt_per_token_ms": 6.625625766871166,
+        "prompt_per_second": 150.92914015761446,
+        "predicted_n": 214,
+        "predicted_ms": 2550.441,
+        "predicted_per_token_ms": 11.973901408450704,
+        "predicted_per_second": 83.51496858778542
+      },
+      "usage": {
+        "completion_tokens": 214,
+        "prompt_tokens": 163,
+        "total_tokens": 377,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List\n\n\ndef parse_nested_parens(paren_string: str) -> List[int]:\n    \"\"\" Input to this function is a string represented multiple groups for nested parentheses separated by spaces.\n    For each of the group, output the deepest level of nesting of parentheses.\n    E.g. (()()) has maximum two levels of nesting while ((())) has three.\n\n    >>> parse_nested_parens('(()()) ((())) () ((())()())')\n    [2, 3, 1, 3]\n    \"\"\"\n    groups = paren_string.split()\n    result = []\n    for group in groups:\n        max_depth = 0\n        current_depth = 0\n        for char in group:\n            if char == '(':\n                current_depth += 1\n                if current_depth > max_depth:\n                    max_depth = current_depth\n            elif char == ')':\n                current_depth -= 1\n        result.append(max_depth)\n    return result\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/15",
+      "elapsed_s": 1.553,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 80,
+        "prompt_ms": 363.246,
+        "prompt_per_token_ms": 4.540575,
+        "prompt_per_second": 220.23642380095032,
+        "predicted_n": 92,
+        "predicted_ms": 1107.255,
+        "predicted_per_token_ms": 12.167637362637365,
+        "predicted_per_second": 82.18522381926475
+      },
+      "usage": {
+        "completion_tokens": 92,
+        "prompt_tokens": 119,
+        "total_tokens": 211,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef string_sequence(n: int) -> str:\n    \"\"\" Return a string containing space-delimited numbers starting from 0 upto n inclusive.\n    >>> string_sequence(0)\n    '0'\n    >>> string_sequence(5)\n    '0 1 2 3 4 5'\n    \"\"\"\n    return ' '.join(str(i) for i in range(n + 1))\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/17",
+      "elapsed_s": 3.626,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 184,
+        "prompt_ms": 585.409,
+        "prompt_per_token_ms": 3.181570652173913,
+        "prompt_per_second": 314.3101660548437,
+        "predicted_n": 248,
+        "predicted_ms": 2983.147,
+        "predicted_per_token_ms": 12.077518218623482,
+        "predicted_per_second": 82.79846752439622
+      },
+      "usage": {
+        "completion_tokens": 248,
+        "prompt_tokens": 223,
+        "total_tokens": 471,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List\n\n\ndef parse_music(music_string: str) -> List[int]:\n    \"\"\" Input to this function is a string representing musical notes in a special ASCII format.\n    Your task is to parse this string and return list of integers corresponding to how many beats does each\n    not last.\n\n    Here is a legend:\n    'o' - whole note, lasts four beats\n    'o|' - half note, lasts two beats\n    '.|' - quater note, lasts one beat\n\n    >>> parse_music('o o| .| o| o| .| .| .| .| o o')\n    [4, 2, 1, 2, 2, 1, 1, 1, 1, 4, 4]\n    \"\"\"\n    notes = music_string.split()\n    result = []\n    for note in notes:\n        if note == 'o':\n            result.append(4)\n        elif note == 'o|':\n            result.append(2)\n        elif note == '.|':\n            result.append(1)\n    return result\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/20",
+      "elapsed_s": 4.413,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 178,
+        "prompt_ms": 585.224,
+        "prompt_per_token_ms": 3.2877752808988765,
+        "prompt_per_second": 304.1570407228685,
+        "predicted_n": 310,
+        "predicted_ms": 3779.163,
+        "predicted_per_token_ms": 12.230300970873786,
+        "predicted_per_second": 81.7641366620069
+      },
+      "usage": {
+        "completion_tokens": 310,
+        "prompt_tokens": 217,
+        "total_tokens": 527,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List, Tuple\n\n\ndef find_closest_elements(numbers: List[float]) -> Tuple[float, float]:\n    \"\"\" From a supplied list of numbers (of length at least two) select and return two that are the closest to each\n    other and return them in order (smaller number, larger number).\n    >>> find_closest_elements([1.0, 2.0, 3.0, 4.0, 5.0, 2.2])\n    (2.0, 2.2)\n    >>> find_closest_elements([1.0, 2.0, 3.0, 4.0, 5.0, 2.0])\n    (2.0, 2.0)\n    \"\"\"\n    if len(numbers) < 2:\n        raise ValueError(\"List must contain at least two elements.\")\n    \n    # Sort the numbers to easily find the closest pair\n    sorted_numbers = sorted(numbers)\n    \n    min_diff = float('inf')\n    closest_pair = (sorted_numbers[0], sorted_numbers[1])\n    \n    for i in range(len(sorted_numbers) - 1):\n        diff = sorted_numbers[i + 1] - sorted_numbers[i]\n        if diff < min_diff:\n            min_diff = diff\n            closest_pair = (sorted_numbers[i], sorted_numbers[i + 1])\n    \n    return closest_pair\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/28",
+      "elapsed_s": 1.292,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 69,
+        "prompt_ms": 355.598,
+        "prompt_per_token_ms": 5.153594202898551,
+        "prompt_per_second": 194.03933655419883,
+        "predicted_n": 70,
+        "predicted_ms": 850.461,
+        "predicted_per_token_ms": 12.325521739130435,
+        "predicted_per_second": 81.13246815550625
+      },
+      "usage": {
+        "completion_tokens": 70,
+        "prompt_tokens": 108,
+        "total_tokens": 178,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nfrom typing import List\n\n\ndef concatenate(strings: List[str]) -> str:\n    \"\"\" Concatenate list of strings into a single string\n    >>> concatenate([])\n    ''\n    >>> concatenate(['a', 'b', 'c'])\n    'abc'\n    \"\"\"\n    return ''.join(strings)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/31",
+      "elapsed_s": 2.94,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 121,
+        "prompt_ms": 455.301,
+        "prompt_per_token_ms": 3.7628181818181816,
+        "prompt_per_second": 265.7582566258365,
+        "predicted_n": 195,
+        "predicted_ms": 2416.74,
+        "predicted_per_token_ms": 12.45742268041237,
+        "predicted_per_second": 80.27342618568817
+      },
+      "usage": {
+        "completion_tokens": 195,
+        "prompt_tokens": 160,
+        "total_tokens": 355,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef is_prime(n):\n    \"\"\"Return true if a given number is prime, and false otherwise.\n    >>> is_prime(6)\n    False\n    >>> is_prime(101)\n    True\n    >>> is_prime(11)\n    True\n    >>> is_prime(13441)\n    True\n    >>> is_prime(61)\n    True\n    >>> is_prime(4)\n    False\n    >>> is_prime(1)\n    False\n    \"\"\"\n    if n < 2:\n        return False\n    if n == 2:\n        return True\n    if n % 2 == 0:\n        return False\n    for i in range(3, int(n**0.5) + 1, 2):\n        if n % i == 0:\n            return False\n    return True\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/35",
+      "elapsed_s": 1.797,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 97,
+        "prompt_ms": 463.918,
+        "prompt_per_token_ms": 4.782659793814433,
+        "prompt_per_second": 209.08867515379873,
+        "predicted_n": 97,
+        "predicted_ms": 1191.249,
+        "predicted_per_token_ms": 12.40884375,
+        "predicted_per_second": 80.58768569795231
+      },
+      "usage": {
+        "completion_tokens": 97,
+        "prompt_tokens": 136,
+        "total_tokens": 233,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef max_element(l: list):\n    \"\"\"Return maximum element in the list.\n    >>> max_element([1, 2, 3])\n    3\n    >>> max_element([5, 3, -5, 2, -3, 3, 9, 0, 123, 1, -10])\n    123\n    \"\"\"\n    return max(l)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/38",
+      "elapsed_s": 2.009,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 176,
+        "prompt_ms": 517.376,
+        "prompt_per_token_ms": 2.9396363636363634,
+        "prompt_per_second": 340.17812963879265,
+        "predicted_n": 112,
+        "predicted_ms": 1372.548,
+        "predicted_per_token_ms": 12.365297297297298,
+        "predicted_per_second": 80.87148864739157
+      },
+      "usage": {
+        "completion_tokens": 112,
+        "prompt_tokens": 215,
+        "total_tokens": 327,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\n    # split string to groups. Each of length 3.\n    groups = [s[(3 * i):min((3 * i + 3), len(s))] for i in range((len(s) + 2) // 3)]\n    # reverse cycle elements in each group. Unless group has fewer elements than 3.\n    groups = [(group[-1] + group[:-1]) if len(group) == 3 else group for group in groups]\n    return \"\".join(groups)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": false,
+        "feedback": "  File \"<stdin>\", line 2\n    groups = [s[(3 * i):min((3 * i + 3), len(s))] for i in range((len(s) + 2) // 3)]\nIndentationError: unexpected indent\n",
+        "exit_code": 1
+      }
+    },
+    {
+      "task_id": "HumanEval/44",
+      "elapsed_s": 2.819,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 113,
+        "prompt_ms": 464.667,
+        "prompt_per_token_ms": 4.112097345132743,
+        "prompt_per_second": 243.18490445846166,
+        "predicted_n": 186,
+        "predicted_ms": 2289.389,
+        "predicted_per_token_ms": 12.375075675675676,
+        "predicted_per_second": 80.80758665303274
+      },
+      "usage": {
+        "completion_tokens": 186,
+        "prompt_tokens": 152,
+        "total_tokens": 338,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef change_base(x: int, base: int):\n    \"\"\"Change numerical base of input number x to base.\n    return string representation after the conversion.\n    base numbers are less than 10.\n    >>> change_base(8, 3)\n    '22'\n    >>> change_base(8, 2)\n    '1000'\n    >>> change_base(7, 2)\n    '111'\n    \"\"\"\n    if x == 0:\n        return '0'\n    \n    negative = x < 0\n    x = abs(x)\n    digits = []\n    \n    while x > 0:\n        digits.append(str(x % base))\n        x //= base\n    \n    if negative:\n        digits.append('-')\n    \n    return ''.join(reversed(digits))\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/50",
+      "elapsed_s": 1.395,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 105,
+        "prompt_ms": 423.171,
+        "prompt_per_token_ms": 4.0302,
+        "prompt_per_second": 248.12664383901546,
+        "predicted_n": 69,
+        "predicted_ms": 846.892,
+        "predicted_per_token_ms": 12.45429411764706,
+        "predicted_per_second": 80.29359115448014
+      },
+      "usage": {
+        "completion_tokens": 69,
+        "prompt_tokens": 144,
+        "total_tokens": 213,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef decode_shift(s: str):\n    \"\"\"\n    takes as input string encoded with encode_shift function. Returns decoded string.\n    \"\"\"\n    return \"\".join([chr(((ord(ch) - 5 - ord(\"a\")) % 26) + ord(\"a\")) for ch in s])\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": false,
+        "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 23, in <module>\n  File \"<stdin>\", line 19, in check\nNameError: name 'encode_shift' is not defined. Did you mean: 'decode_shift'?\n",
+        "exit_code": 1
+      }
+    },
+    {
+      "task_id": "HumanEval/53",
+      "elapsed_s": 1.235,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 63,
+        "prompt_ms": 420.416,
+        "prompt_per_token_ms": 6.673269841269841,
+        "prompt_per_second": 149.85157558228042,
+        "predicted_n": 58,
+        "predicted_ms": 718.912,
+        "predicted_per_token_ms": 12.612491228070176,
+        "predicted_per_second": 79.28647734354135
+      },
+      "usage": {
+        "completion_tokens": 58,
+        "prompt_tokens": 102,
+        "total_tokens": 160,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "def add(x: int, y: int):\n    \"\"\"Add two numbers x and y\n    >>> add(2, 3)\n    5\n    >>> add(5, 7)\n    12\n    \"\"\"\n    return x + y",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/63",
+      "elapsed_s": 4.127,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 163,
+        "prompt_ms": 554.376,
+        "prompt_per_token_ms": 3.401079754601227,
+        "prompt_per_second": 294.02427233502175,
+        "predicted_n": 284,
+        "predicted_ms": 3490.149,
+        "predicted_per_token_ms": 12.332681978798586,
+        "predicted_per_second": 81.0853634042558
+      },
+      "usage": {
+        "completion_tokens": 284,
+        "prompt_tokens": 202,
+        "total_tokens": 486,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef fibfib(n: int):\n    \"\"\"The FibFib number sequence is a sequence similar to the Fibbonacci sequnece that's defined as follows:\n    fibfib(0) == 0\n    fibfib(1) == 0\n    fibfib(2) == 1\n    fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n    Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n    >>> fibfib(1)\n    0\n    >>> fibfib(5)\n    4\n    >>> fibfib(8)\n    24\n    \"\"\"\n    if n == 0:\n        return 0\n    if n == 1:\n        return 0\n    if n == 2:\n        return 1\n    \n    # Use iterative approach with O(1) space\n    a, b, c = 0, 0, 1  # fibfib(0), fibfib(1), fibfib(2)\n    \n    for i in range(3, n + 1):\n        next_val = a + b + c\n        a, b, c = b, c, next_val\n    \n    return c\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/64",
+      "elapsed_s": 3.052,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 141,
+        "prompt_ms": 495.9,
+        "prompt_per_token_ms": 3.5170212765957447,
+        "prompt_per_second": 284.33151845130067,
+        "predicted_n": 200,
+        "predicted_ms": 2490.661,
+        "predicted_per_token_ms": 12.515884422110553,
+        "predicted_per_second": 79.8984687197495
+      },
+      "usage": {
+        "completion_tokens": 200,
+        "prompt_tokens": 180,
+        "total_tokens": 380,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef vowels_count(s):\n    \"\"\"Write a function vowels_count which takes a string representing\n    a word as input and returns the number of vowels in the string.\n    Vowels in this case are 'a', 'e', 'i', 'o', 'u'. Here, 'y' is also a\n    vowel, but only when it is at the end of the given word.\n\n    Example:\n    >>> vowels_count(\"abcde\")\n    2\n    >>> vowels_count(\"ACEDY\")\n    3\n    \"\"\"\n    vowels = set('aeiouAEIOU')\n    count = 0\n    for i, char in enumerate(s):\n        if char in vowels:\n            count += 1\n        elif char == 'y' or char == 'Y':\n            if i == len(s) - 1:\n                count += 1\n    return count\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/71",
+      "elapsed_s": 3.649,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 133,
+        "prompt_ms": 490.618,
+        "prompt_per_token_ms": 3.6888571428571426,
+        "prompt_per_second": 271.08667028115565,
+        "predicted_n": 249,
+        "predicted_ms": 3067.911,
+        "predicted_per_token_ms": 12.370608870967741,
+        "predicted_per_second": 80.83676482140453
+      },
+      "usage": {
+        "completion_tokens": 249,
+        "prompt_tokens": 172,
+        "total_tokens": 421,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nimport math\n\ndef triangle_area(a, b, c):\n    '''\n    Given the lengths of the three sides of a triangle. Return the area of\n    the triangle rounded to 2 decimal points if the three sides form a valid triangle. \n    Otherwise return -1\n    Three sides make a valid triangle when the sum of any two sides is greater \n    than the third side.\n    Example:\n    triangle_area(3, 4, 5) == 6.00\n    triangle_area(1, 2, 10) == -1\n    '''\n    # Check if the sides form a valid triangle\n    if (a + b <= c) or (a + c <= b) or (b + c <= a):\n        return -1\n    \n    # Calculate the semi-perimeter\n    s = (a + b + c) / 2\n    \n    # Calculate the area using Heron's formula\n    area = math.sqrt(s * (s - a) * (s - b) * (s - c))\n    \n    # Round to 2 decimal points\n    return round(area, 2)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/74",
+      "elapsed_s": 3.753,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 208,
+        "prompt_ms": 527.267,
+        "prompt_per_token_ms": 2.5349375000000003,
+        "prompt_per_second": 394.48704356616287,
+        "predicted_n": 255,
+        "predicted_ms": 3154.573,
+        "predicted_per_token_ms": 12.41957874015748,
+        "predicted_per_second": 80.51802890597239
+      },
+      "usage": {
+        "completion_tokens": 255,
+        "prompt_tokens": 247,
+        "total_tokens": 502,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef total_match(lst1, lst2):\n    '''\n    Write a function that accepts two lists of strings and returns the list that has \n    total number of chars in the all strings of the list less than the other list.\n\n    if the two lists have the same number of chars, return the first list.\n\n    Examples\n    total_match([], []) \u279e []\n    total_match(['hi', 'admin'], ['hI', 'Hi']) \u279e ['hI', 'Hi']\n    total_match(['hi', 'admin'], ['hi', 'hi', 'admin', 'project']) \u279e ['hi', 'admin']\n    total_match(['hi', 'admin'], ['hI', 'hi', 'hi']) \u279e ['hI', 'hi', 'hi']\n    total_match(['4'], ['1', '2', '3', '4', '5']) \u279e ['4']\n    '''\n    total1 = sum(len(s) for s in lst1)\n    total2 = sum(len(s) for s in lst2)\n    if total1 <= total2:\n        return lst1\n    else:\n        return lst2\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/77",
+      "elapsed_s": 4.327,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 124,
+        "prompt_ms": 475.76,
+        "prompt_per_token_ms": 3.8367741935483872,
+        "prompt_per_second": 260.6356145955944,
+        "predicted_n": 306,
+        "predicted_ms": 3777.974,
+        "predicted_per_token_ms": 12.386800000000001,
+        "predicted_per_second": 80.73110084929118
+      },
+      "usage": {
+        "completion_tokens": 306,
+        "prompt_tokens": 163,
+        "total_tokens": 469,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef iscube(a):\n    '''\n    Write a function that takes an integer a and returns True \n    if this ingeger is a cube of some integer number.\n    Note: you may assume the input is always valid.\n    Examples:\n    iscube(1) ==> True\n    iscube(2) ==> False\n    iscube(-1) ==> True\n    iscube(64) ==> True\n    iscube(0) ==> True\n    iscube(180) ==> False\n    '''\n    if a == 0:\n        return True\n    if a < 0:\n        return iscube(-a) == False == False  # Wait, let me think again.\n        # For negative numbers, we need to check if there exists an integer n such that n^3 = a.\n        # Since a < 0, n must be negative. Let n = -k where k > 0. Then (-k)^3 = -k^3 = a, so k^3 = -a.\n        # So we can just check if -a is a perfect cube.\n    \n    # For positive a, check if there exists integer n such that n^3 = a.\n    # We can compute the cube root and check if it's an integer.\n    n = round(a ** (1/3))\n    return n ** 3 == a\n```",
+      "passed": false,
+      "exit_code": 1,
+      "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 57, in <module>\n  File \"<stdin>\", line 46, in check\nAssertionError: Third test error: False\n",
+      "source_only_check": {
+        "passed": false,
+        "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 42, in <module>\n  File \"<stdin>\", line 31, in check\nAssertionError: Third test error: False\n",
+        "exit_code": 1
+      }
+    },
+    {
+      "task_id": "HumanEval/79",
+      "elapsed_s": 3.572,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 160,
+        "prompt_ms": 498.466,
+        "prompt_per_token_ms": 3.1154125,
+        "prompt_per_second": 320.9847813090562,
+        "predicted_n": 234,
+        "predicted_ms": 2949.413,
+        "predicted_per_token_ms": 12.658424892703863,
+        "predicted_per_second": 78.99877026377791
+      },
+      "usage": {
+        "completion_tokens": 234,
+        "prompt_tokens": 199,
+        "total_tokens": 433,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef decimal_to_binary(decimal):\n    \"\"\"You will be given a number in decimal form and your task is to convert it to\n    binary format. The function should return a string, with each character representing a binary\n    number. Each character in the string will be '0' or '1'.\n\n    There will be an extra couple of characters 'db' at the beginning and at the end of the string.\n    The extra characters are there to help with the format.\n\n    Examples:\n    decimal_to_binary(15)   # returns \"db1111db\"\n    decimal_to_binary(32)   # returns \"db100000db\"\n    \"\"\"\n    if decimal == 0:\n        return \"db0db\"\n    binary_digits = []\n    n = decimal\n    while n > 0:\n        binary_digits.append(str(n % 2))\n        n //= 2\n    binary_digits.reverse()\n    binary_str = ''.join(binary_digits)\n    return f\"db{binary_str}db\"\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/81",
+      "elapsed_s": 7.293,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 288,
+        "prompt_ms": 633.408,
+        "prompt_per_token_ms": 2.1993333333333336,
+        "prompt_per_second": 454.68323734464985,
+        "predicted_n": 560,
+        "predicted_ms": 6579.601,
+        "predicted_per_token_ms": 11.770305903398926,
+        "predicted_per_second": 84.95955909788451
+      },
+      "usage": {
+        "completion_tokens": 560,
+        "prompt_tokens": 327,
+        "total_tokens": 887,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef numerical_letter_grade(grades):\n    \"\"\"It is the last week of the semester and the teacher has to give the grades\n    to students. The teacher has been making her own algorithm for grading.\n    The only problem is, she has lost the code she used for grading.\n    She has given you a list of GPAs for some students and you have to write \n    a function that can output a list of letter grades using the following table:\n             GPA       |    Letter grade\n              4.0                A+\n            > 3.7                A \n            > 3.3                A- \n            > 3.0                B+\n            > 2.7                B \n            > 2.3                B-\n            > 2.0                C+\n            > 1.7                C\n            > 1.3                C-\n            > 1.0                D+ \n            > 0.7                D \n            > 0.0                D-\n              0.0                E\n    \n\n    Example:\n    grade_equation([4.0, 3, 1.7, 2, 3.5]) ==> ['A+', 'B', 'C-', 'C', 'A-']\n    \"\"\"\n    letter_grades = []\n    for gpa in grades:\n        if gpa == 4.0:\n            letter_grades.append('A+')\n        elif gpa > 3.7:\n            letter_grades.append('A')\n        elif gpa > 3.3:\n            letter_grades.append('A-')\n        elif gpa > 3.0:\n            letter_grades.append('B+')\n        elif gpa > 2.7:\n            letter_grades.append('B')\n        elif gpa > 2.3:\n            letter_grades.append('B-')\n        elif gpa > 2.0:\n            letter_grades.append('C+')\n        elif gpa > 1.7:\n            letter_grades.append('C')\n        elif gpa > 1.3:\n            letter_grades.append('C-')\n        elif gpa > 1.0:\n            letter_grades.append('D+')\n        elif gpa > 0.7:\n            letter_grades.append('D')\n        elif gpa > 0.0:\n            letter_grades.append('D-')\n        else:\n            letter_grades.append('E')\n    return letter_grades\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/84",
+      "elapsed_s": 2.597,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 161,
+        "prompt_ms": 445.386,
+        "prompt_per_token_ms": 2.7663726708074536,
+        "prompt_per_second": 361.4841957313431,
+        "predicted_n": 180,
+        "predicted_ms": 2088.615,
+        "predicted_per_token_ms": 11.668240223463686,
+        "predicted_per_second": 85.70272644790927
+      },
+      "usage": {
+        "completion_tokens": 180,
+        "prompt_tokens": 200,
+        "total_tokens": 380,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef solve(N):\n    \"\"\"Given a positive integer N, return the total sum of its digits in binary.\n    \n    Example\n        For N = 1000, the sum of digits will be 1 the output should be \"1\".\n        For N = 150, the sum of digits will be 6 the output should be \"110\".\n        For N = 147, the sum of digits will be 12 the output should be \"1100\".\n    \n    Variables:\n        @N integer\n             Constraints: 0 \u2264 N \u2264 10000.\n    Output:\n         a string of binary number\n    \"\"\"\n    digit_sum = sum(int(d) for d in str(N))\n    return bin(digit_sum)[2:]\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/93",
+      "elapsed_s": 4.385,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 122,
+        "prompt_ms": 405.122,
+        "prompt_per_token_ms": 3.320672131147541,
+        "prompt_per_second": 301.1438529628112,
+        "predicted_n": 342,
+        "predicted_ms": 3923.326,
+        "predicted_per_token_ms": 11.505354838709678,
+        "predicted_per_second": 86.91605031037442
+      },
+      "usage": {
+        "completion_tokens": 342,
+        "prompt_tokens": 161,
+        "total_tokens": 503,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef encode(message):\n    \"\"\"\n    Write a function that takes a message, and encodes in such a \n    way that it swaps case of all letters, replaces all vowels in \n    the message with the letter that appears 2 places ahead of that \n    vowel in the english alphabet. \n    Assume only letters. \n    \n    Examples:\n    >>> encode('test')\n    'TGST'\n    >>> encode('This is a message')\n    'tHKS KS C MGSSCGG'\n    \"\"\"\n    vowels = 'aeiouAEIOU'\n    result = []\n    for char in message:\n        if char in vowels:\n            # Replace vowel with the letter 2 places ahead\n            if char.islower():\n                # Find the vowel index in lowercase vowels\n                idx = vowels.index(char)\n                # Get the letter 2 places ahead in the alphabet\n                new_char = chr(ord('a') + (ord(char) - ord('a') + 2) % 26)\n                # Swap case (make it uppercase)\n                new_char = new_char.upper()\n            else:\n                idx = vowels.index(char)\n                new_char = chr(ord('A') + (ord(char) - ord('A') + 2) % 26)\n                new_char = new_char.lower()\n            result.append(new_char)\n        else:\n            # Swap case\n            if char.islower():\n                result.append(char.upper())\n            else:\n                result.append(char.lower())\n    return ''.join(result)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/98",
+      "elapsed_s": 2.072,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 82,
+        "prompt_ms": 357.271,
+        "prompt_per_token_ms": 4.356963414634147,
+        "prompt_per_second": 229.51764906751455,
+        "predicted_n": 132,
+        "predicted_ms": 1510.202,
+        "predicted_per_token_ms": 11.528259541984733,
+        "predicted_per_second": 86.74336280841901
+      },
+      "usage": {
+        "completion_tokens": 132,
+        "prompt_tokens": 121,
+        "total_tokens": 253,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef count_upper(s):\n    \"\"\"\n    Given a string s, count the number of uppercase vowels in even indices.\n    \n    For example:\n    count_upper('aBCdEf') returns 1\n    count_upper('abcdefg') returns 0\n    count_upper('dBBE') returns 0\n    \"\"\"\n    uppercase_vowels = set('AEIOU')\n    count = 0\n    for i in range(0, len(s), 2):\n        if s[i] in uppercase_vowels:\n            count += 1\n    return count\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/102",
+      "elapsed_s": 2.574,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 108,
+        "prompt_ms": 404.379,
+        "prompt_per_token_ms": 3.74425,
+        "prompt_per_second": 267.07618348133803,
+        "predicted_n": 174,
+        "predicted_ms": 2062.884,
+        "predicted_per_token_ms": 11.924184971098265,
+        "predicted_per_second": 83.86317408055906
+      },
+      "usage": {
+        "completion_tokens": 174,
+        "prompt_tokens": 147,
+        "total_tokens": 321,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef choose_num(x, y):\n    \"\"\"This function takes two positive numbers x and y and returns the\n    biggest even integer number that is in the range [x, y] inclusive. If \n    there's no such number, then the function should return -1.\n\n    For example:\n    choose_num(12, 15) = 14\n    choose_num(13, 12) = -1\n    \"\"\"\n    if x > y:\n        return -1\n    \n    # Start from y and go down to find the first even number\n    if y % 2 == 0:\n        return y\n    else:\n        if y - 1 >= x:\n            return y - 1\n        else:\n            return -1\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/104",
+      "elapsed_s": 2.672,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 129,
+        "prompt_ms": 475.279,
+        "prompt_per_token_ms": 3.6843333333333335,
+        "prompt_per_second": 271.41952411110105,
+        "predicted_n": 185,
+        "predicted_ms": 2117.617,
+        "predicted_per_token_ms": 11.508788043478262,
+        "predicted_per_second": 86.89012224590186
+      },
+      "usage": {
+        "completion_tokens": 185,
+        "prompt_tokens": 168,
+        "total_tokens": 353,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef unique_digits(x):\n    \"\"\"Given a list of positive integers x. return a sorted list of all \n    elements that hasn't any even digit.\n\n    Note: Returned list should be sorted in increasing order.\n    \n    For example:\n    >>> unique_digits([15, 33, 1422, 1])\n    [1, 15, 33]\n    >>> unique_digits([152, 323, 1422, 10])\n    []\n    \"\"\"\n    def has_no_even_digit(n):\n        for digit in str(n):\n            if int(digit) % 2 == 0:\n                return False\n        return True\n    \n    result = [num for num in x if has_no_even_digit(num)]\n    return sorted(result)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/106",
+      "elapsed_s": 3.274,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 139,
+        "prompt_ms": 443.252,
+        "prompt_per_token_ms": 3.1888633093525183,
+        "prompt_per_second": 313.591365633996,
+        "predicted_n": 234,
+        "predicted_ms": 2716.136,
+        "predicted_per_token_ms": 11.657236051502146,
+        "predicted_per_second": 85.7836279184842
+      },
+      "usage": {
+        "completion_tokens": 234,
+        "prompt_tokens": 178,
+        "total_tokens": 412,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef f(n):\n    \"\"\" Implement the function f that takes n as a parameter,\n    and returns a list of size n, such that the value of the element at index i is the factorial of i if i is even\n    or the sum of numbers from 1 to i otherwise.\n    i starts from 1.\n    the factorial of i is the multiplication of the numbers from 1 to i (1 * 2 * ... * i).\n    Example:\n    f(5) == [1, 2, 6, 24, 15]\n    \"\"\"\n    result = []\n    for i in range(1, n + 1):\n        if i % 2 == 0:\n            # factorial of i\n            fact = 1\n            for j in range(1, i + 1):\n                fact *= j\n            result.append(fact)\n        else:\n            # sum from 1 to i\n            result.append(i * (i + 1) // 2)\n    return result\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/107",
+      "elapsed_s": 4.238,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 233,
+        "prompt_ms": 552.272,
+        "prompt_per_token_ms": 2.370266094420601,
+        "prompt_per_second": 421.8935596952226,
+        "predicted_n": 310,
+        "predicted_ms": 3616.627,
+        "predicted_per_token_ms": 11.704294498381877,
+        "predicted_per_second": 85.43872508832125
+      },
+      "usage": {
+        "completion_tokens": 310,
+        "prompt_tokens": 272,
+        "total_tokens": 582,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef even_odd_palindrome(n):\n    \"\"\"\n    Given a positive integer n, return a tuple that has the number of even and odd\n    integer palindromes that fall within the range(1, n), inclusive.\n\n    Example 1:\n\n        Input: 3\n        Output: (1, 2)\n        Explanation:\n        Integer palindrome are 1, 2, 3. one of them is even, and two of them are odd.\n\n    Example 2:\n\n        Input: 12\n        Output: (4, 6)\n        Explanation:\n        Integer palindrome are 1, 2, 3, 4, 5, 6, 7, 8, 9, 11. four of them are even, and 6 of them are odd.\n\n    Note:\n        1. 1 <= n <= 10^3\n        2. returned tuple has the number of even and odd integer palindromes respectively.\n    \"\"\"\n    even_count = 0\n    odd_count = 0\n    for i in range(1, n + 1):\n        s = str(i)\n        if s == s[::-1]:\n            if i % 2 == 0:\n                even_count += 1\n            else:\n                odd_count += 1\n    return (even_count, odd_count)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/128",
+      "elapsed_s": 3.355,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 133,
+        "prompt_ms": 456.409,
+        "prompt_per_token_ms": 3.4316466165413533,
+        "prompt_per_second": 291.40529656514224,
+        "predicted_n": 239,
+        "predicted_ms": 2822.908,
+        "predicted_per_token_ms": 11.860957983193277,
+        "predicted_per_second": 84.31022194134559
+      },
+      "usage": {
+        "completion_tokens": 239,
+        "prompt_tokens": 172,
+        "total_tokens": 411,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef prod_signs(arr):\n    \"\"\"\n    You are given an array arr of integers and you need to return\n    sum of magnitudes of integers multiplied by product of all signs\n    of each number in the array, represented by 1, -1 or 0.\n    Note: return None for empty arr.\n\n    Example:\n    >>> prod_signs([1, 2, 2, -4]) == -9\n    >>> prod_signs([0, 1]) == 0\n    >>> prod_signs([]) == None\n    \"\"\"\n    if not arr:\n        return None\n    \n    # Calculate the product of signs\n    sign_product = 1\n    for num in arr:\n        if num > 0:\n            sign_product *= 1\n        elif num < 0:\n            sign_product *= -1\n        else:\n            sign_product = 0\n            break\n    \n    # Calculate the sum of magnitudes\n    sum_magnitudes = sum(abs(num) for num in arr)\n    \n    return sign_product * sum_magnitudes\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/129",
+      "elapsed_s": 18.178,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 417,
+        "prompt_ms": 795.641,
+        "prompt_per_token_ms": 1.9080119904076738,
+        "prompt_per_second": 524.105721047558,
+        "predicted_n": 1470,
+        "predicted_ms": 17315.143,
+        "predicted_per_token_ms": 11.78702722940776,
+        "predicted_per_second": 84.83903367127837
+      },
+      "usage": {
+        "completion_tokens": 1470,
+        "prompt_tokens": 456,
+        "total_tokens": 1926,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef minPath(grid, k):\n    \"\"\"\n    Given a grid with N rows and N columns (N >= 2) and a positive integer k, \n    each cell of the grid contains a value. Every integer in the range [1, N * N]\n    inclusive appears exactly once on the cells of the grid.\n\n    You have to find the minimum path of length k in the grid. You can start\n    from any cell, and in each step you can move to any of the neighbor cells,\n    in other words, you can go to cells which share an edge with you current\n    cell.\n    Please note that a path of length k means visiting exactly k cells (not\n    necessarily distinct).\n    You CANNOT go off the grid.\n    A path A (of length k) is considered less than a path B (of length k) if\n    after making the ordered lists of the values on the cells that A and B go\n    through (let's call them lst_A and lst_B), lst_A is lexicographically less\n    than lst_B, in other words, there exist an integer index i (1 <= i <= k)\n    such that lst_A[i] < lst_B[i] and for any j (1 <= j < i) we have\n    lst_A[j] = lst_B[j].\n    It is guaranteed that the answer is unique.\n    Return an ordered list of the values on the cells that the minimum path go through.\n\n    Examples:\n\n        Input: grid = [ [1,2,3], [4,5,6], [7,8,9]], k = 3\n        Output: [1, 2, 1]\n\n        Input: grid = [ [5,9,3], [4,1,6], [7,8,2]], k = 1\n        Output: [1]\n    \"\"\"\n    n = len(grid)\n    \n    # For k=1, just find the minimum value in the grid\n    if k == 1:\n        min_val = float('inf')\n        for i in range(n):\n            for j in range(n):\n                if grid[i][j] < min_val:\n                    min_val = grid[i][j]\n        return [min_val]\n    \n    # For k > 1, we need to find the lexicographically smallest path of length k.\n    # The first element of the path should be as small as possible.\n    # Then the second element should be as small as possible given the first, etc.\n    \n    # Strategy: \n    # 1. Find all cells with the minimum value. These are candidates for the first element.\n    # 2. For each candidate, we need to find the lexicographically smallest path of length k starting from that cell.\n    # 3. Among all such paths, pick the lexicographically smallest one.\n    \n    # But this could be expensive. Let's think more carefully.\n    \n    # The key insight: the first element of the optimal path must be the minimum value in the grid.\n    # Why? Because if the first element is not the minimum, we could start from the cell with the minimum value\n    # and get a lexicographically smaller path (since the first element would be smaller).\n    \n    # So step 1: find the minimum value in the grid and all cells that have this value.\n    min_val = float('inf')\n    for i in range(n):\n        for j in range(n):\n            if grid[i][j] < min_val:\n                min_val = grid[i][j]\n    \n    # Find all cells with the minimum value\n    start_cells = []\n    for i in range(n):\n        for j in range(n):\n            if grid[i][j] == min_val:\n                start_cells.append((i, j))\n    \n    # Now, for each start cell, we need to find the lexicographically smallest path of length k starting from it.\n    # Then among all these paths, pick the lexicographically smallest one.\n    \n    # To find the lexicographically smallest path of length k starting from a given cell, we can use BFS/dynamic programming.\n    # At each step, we want to pick the neighbor with the smallest value.\n    # But wait, it's not just greedy. We need to consider the entire path.\n    \n    # Actually, for lexicographically smallest path, we can use a BFS-like approach where at each step we consider all cells\n    # that can be part of the lexicographically smallest path so far, and then pick the one with the smallest next value.\n    \n    # Let me think about this differently. We can use a priority queue or BFS layer by layer.\n    \n    # Approach:\n    # - Start with all cells that have the minimum value as the set of possible current positions.\n    # - For each step from 1 to k-1:\n    #   - Find the minimum value among all neighbors of the current possible positions.\n    #   - Update the set of possible positions to be all neighbors that have this minimum value.\n    # - This gives us the lexicographically smallest path.\n    \n    # Let's implement this.\n    \n    # Current set of possible positions (as a set of (row, col))\n    current_positions = set(start_cells)\n    \n    # The path so far\n    path = [min_val]\n    \n    for step in range(1, k):\n        # Find the minimum value among all neighbors of current positions\n        min_next_val = float('inf')\n        for (r, c) in current_positions:\n            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:\n                nr, nc = r + dr, c + dc\n                if 0 <= nr < n and 0 <= nc < n:\n                    if grid[nr][nc] < min_next_val:\n                        min_next_val = grid[nr][nc]\n        \n        # Add the minimum value to the path\n        path.append(min_next_val)\n        \n        # Update current positions to be all neighbors that have this minimum value\n        next_positions = set()\n        for (r, c) in current_positions:\n            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:\n                nr, nc = r + dr, c + dc\n                if 0 <= nr < n and 0 <= nc < n:\n                    if grid[nr][nc] == min_next_val:\n                        next_positions.add((nr, nc))\n        \n        current_positions = next_positions\n    \n    return path\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/133",
+      "elapsed_s": 2.739,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 172,
+        "prompt_ms": 458.317,
+        "prompt_per_token_ms": 2.6646337209302327,
+        "prompt_per_second": 375.28610110469396,
+        "predicted_n": 185,
+        "predicted_ms": 2134.476,
+        "predicted_per_token_ms": 11.60041304347826,
+        "predicted_per_second": 86.20382707512287
+      },
+      "usage": {
+        "completion_tokens": 185,
+        "prompt_tokens": 211,
+        "total_tokens": 396,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\nimport math\n\ndef sum_squares(lst):\n    \"\"\"You are given a list of numbers.\n    You need to return the sum of squared numbers in the given list,\n    round each element in the list to the upper int(Ceiling) first.\n    Examples:\n    For lst = [1,2,3] the output should be 14\n    For lst = [1,4,9] the output should be 98\n    For lst = [1,3,5,7] the output should be 84\n    For lst = [1.4,4.2,0] the output should be 29\n    For lst = [-2.4,1,1] the output should be 6\n    \n\n    \"\"\"\n    return sum(math.ceil(x) ** 2 for x in lst)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/136",
+      "elapsed_s": 3.05,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 152,
+        "prompt_ms": 440.888,
+        "prompt_per_token_ms": 2.900578947368421,
+        "prompt_per_second": 344.7587595942734,
+        "predicted_n": 213,
+        "predicted_ms": 2490.268,
+        "predicted_per_token_ms": 11.74654716981132,
+        "predicted_per_second": 85.1313995120204
+      },
+      "usage": {
+        "completion_tokens": 213,
+        "prompt_tokens": 191,
+        "total_tokens": 404,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef largest_smallest_integers(lst):\n    '''\n    Create a function that returns a tuple (a, b), where 'a' is\n    the largest of negative integers, and 'b' is the smallest\n    of positive integers in a list.\n    If there is no negative or positive integers, return them as None.\n\n    Examples:\n    largest_smallest_integers([2, 4, 1, 3, 5, 7]) == (None, 1)\n    largest_smallest_integers([]) == (None, None)\n    largest_smallest_integers([0]) == (None, None)\n    '''\n    negatives = [x for x in lst if x < 0]\n    positives = [x for x in lst if x > 0]\n    \n    a = max(negatives) if negatives else None\n    b = min(positives) if positives else None\n    \n    return (a, b)\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/138",
+      "elapsed_s": 2.938,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 84,
+        "prompt_ms": 724.579,
+        "prompt_per_token_ms": 8.625940476190475,
+        "prompt_per_second": 115.92938796183715,
+        "predicted_n": 177,
+        "predicted_ms": 2120.095,
+        "predicted_per_token_ms": 12.045994318181817,
+        "predicted_per_second": 83.01514790610798
+      },
+      "usage": {
+        "completion_tokens": 177,
+        "prompt_tokens": 123,
+        "total_tokens": 300,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef is_equal_to_sum_even(n):\n    \"\"\"Evaluate whether the given number n can be written as the sum of exactly 4 positive even numbers\n    Example\n    is_equal_to_sum_even(4) == False\n    is_equal_to_sum_even(6) == False\n    is_equal_to_sum_even(8) == True\n    \"\"\"\n    # The smallest sum of 4 positive even numbers is 2 + 2 + 2 + 2 = 8\n    # All positive even numbers are >= 2\n    # So the minimum sum is 8\n    # Also, the sum of 4 even numbers is always even\n    # So n must be even and >= 8\n    if n < 8 or n % 2 != 0:\n        return False\n    return True\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/141",
+      "elapsed_s": 5.488,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 229,
+        "prompt_ms": 586.446,
+        "prompt_per_token_ms": 2.5608995633187774,
+        "prompt_per_second": 390.48778574668427,
+        "predicted_n": 407,
+        "predicted_ms": 4839.404,
+        "predicted_per_token_ms": 11.919714285714287,
+        "predicted_per_second": 83.89462834679642
+      },
+      "usage": {
+        "completion_tokens": 407,
+        "prompt_tokens": 268,
+        "total_tokens": 675,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef file_name_check(file_name):\n    \"\"\"Create a function which takes a string representing a file's name, and returns\n    'Yes' if the the file's name is valid, and returns 'No' otherwise.\n    A file's name is considered to be valid if and only if all the following conditions \n    are met:\n    - There should not be more than three digits ('0'-'9') in the file's name.\n    - The file's name contains exactly one dot '.'\n    - The substring before the dot should not be empty, and it starts with a letter from \n    the latin alphapet ('a'-'z' and 'A'-'Z').\n    - The substring after the dot should be one of these: ['txt', 'exe', 'dll']\n    Examples:\n    file_name_check(\"example.txt\") # => 'Yes'\n    file_name_check(\"1example.dll\") # => 'No' (the name should start with a latin alphapet letter)\n    \"\"\"\n    # Check for exactly one dot\n    if file_name.count('.') != 1:\n        return 'No'\n    \n    # Split into name and extension\n    name, ext = file_name.split('.')\n    \n    # Check that name is not empty\n    if not name:\n        return 'No'\n    \n    # Check that name starts with a letter\n    if not name[0].isalpha():\n        return 'No'\n    \n    # Check that extension is one of the allowed ones\n    if ext not in ['txt', 'exe', 'dll']:\n        return 'No'\n    \n    # Check that there are not more than three digits in the file name\n    digit_count = sum(1 for c in file_name if c.isdigit())\n    if digit_count > 3:\n        return 'No'\n    \n    return 'Yes'\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    },
+    {
+      "task_id": "HumanEval/146",
+      "elapsed_s": 4.437,
+      "timings": {
+        "cache_n": 39,
+        "prompt_n": 138,
+        "prompt_ms": 449.464,
+        "prompt_per_token_ms": 3.2569855072463767,
+        "prompt_per_second": 307.032376341598,
+        "predicted_n": 320,
+        "predicted_ms": 3869.59,
+        "predicted_per_token_ms": 12.130376175548589,
+        "predicted_per_second": 82.43767427556924
+      },
+      "usage": {
+        "completion_tokens": 320,
+        "prompt_tokens": 177,
+        "total_tokens": 497,
+        "prompt_tokens_details": {
+          "cached_tokens": 39
+        }
+      },
+      "finish_reason": "stop",
+      "content": "```python\ndef specialFilter(nums):\n    \"\"\"Write a function that takes an array of numbers as input and returns \n    the number of elements in the array that are greater than 10 and both \n    first and last digits of a number are odd (1, 3, 5, 7, 9).\n    For example:\n    specialFilter([15, -73, 14, -15]) => 1 \n    specialFilter([33, -2, -3, 45, 21, 109]) => 2\n    \"\"\"\n    def get_first_and_last_digits(n):\n        # Work with absolute value to handle negative numbers\n        n = abs(n)\n        if n == 0:\n            return 0, 0\n        # Get last digit\n        last_digit = n % 10\n        # Get first digit\n        while n >= 10:\n            n = n // 10\n        first_digit = n\n        return first_digit, last_digit\n    \n    def is_odd(digit):\n        return digit in [1, 3, 5, 7, 9]\n    \n    count = 0\n    for num in nums:\n        if num > 10:\n            first_digit, last_digit = get_first_and_last_digits(num)\n            if is_odd(first_digit) and is_odd(last_digit):\n                count += 1\n    return count\n```",
+      "passed": true,
+      "exit_code": 0,
+      "feedback": "PILOT_CHECKS_PASSED\n",
+      "source_only_check": {
+        "passed": true,
+        "feedback": "PILOT_CHECKS_PASSED\n",
+        "exit_code": 0
+      }
+    }
+  ],
+  "server_properties": {
+    "default_generation_settings": {
+      "params": {
+        "seed": 4294967295,
+        "temperature": 1.0,
+        "dynatemp_range": 0.0,
+        "dynatemp_exponent": 1.0,
+        "top_k": 20,
+        "top_p": 0.949999988079071,
+        "min_p": 0.05000000074505806,
+        "top_n_sigma": -1.0,
+        "xtc_probability": 0.0,
+        "xtc_threshold": 0.10000000149011612,
+        "typical_p": 1.0,
+        "repeat_last_n": 64,
+        "repeat_penalty": 1.0,
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "dry_multiplier": 0.0,
+        "dry_base": 1.75,
+        "dry_allowed_length": 2,
+        "dry_penalty_last_n": 64,
+        "mirostat": 0,
+        "mirostat_tau": 5.0,
+        "mirostat_eta": 0.10000000149011612,
+        "adaptive_target": -1.0,
+        "adaptive_decay": 0.8999999761581421,
+        "max_tokens": -1,
+        "n_predict": -1,
+        "n_keep": 0,
+        "n_discard": 0,
+        "ignore_eos": false,
+        "stream": false,
+        "n_probs": 0,
+        "min_keep": 0,
+        "chat_format": "Content-only",
+        "reasoning_format": "none",
+        "reasoning_in_content": false,
+        "generation_prompt": "",
+        "samplers": [
+          "penalties",
+          "dry",
+          "top_n_sigma",
+          "top_k",
+          "typ_p",
+          "top_p",
+          "min_p",
+          "xtc",
+          "temperature"
+        ],
+        "speculative.types": "none",
+        "timings_per_token": false,
+        "post_sampling_probs": false,
+        "backend_sampling": false,
+        "lora": []
+      },
+      "n_ctx": 8192
+    },
+    "total_slots": 1,
+    "model_alias": "local-coding-assistant",
+    "model_ftype": "Q4_K - Medium",
+    "model_path": ".cache\\models\\Qwen3.6-intact-Q4_K_M.gguf",
+    "modalities": {
+      "vision": false,
+      "video": false,
+      "audio": false
+    },
+    "media_marker": "<__media_7n8hhEACIDzHZRFph9Zaa3FyQZoiTI5F__>",
+    "endpoint_slots": true,
+    "endpoint_props": false,
+    "endpoint_metrics": false,
+    "ui": true,
+    "ui_settings": {
+      "systemMessage": "You are a coding assistant. Respond in English. Write correct, simple code. State assumptions and distinguish verified results from suggestions."
+    },
+    "chat_template": "{%- set image_count = namespace(value=0) %}\n{%- set video_count = namespace(value=0) %}\n{%- macro render_content(content, do_vision_count, is_system_content=false) %}\n    {%- if content is string %}\n        {{- content }}\n    {%- elif content is iterable and content is not mapping %}\n        {%- for item in content %}\n            {%- if 'image' in item or 'image_url' in item or item.type == 'image' %}\n                {%- if is_system_content %}\n                    {{- raise_exception('System message cannot contain images.') }}\n                {%- endif %}\n                {%- if do_vision_count %}\n                    {%- set image_count.value = image_count.value + 1 %}\n                {%- endif %}\n                {%- if add_vision_id %}\n                    {{- 'Picture ' ~ image_count.value ~ ': ' }}\n                {%- endif %}\n                {{- '<|vision_start|><|image_pad|><|vision_end|>' }}\n            {%- elif 'video' in item or item.type == 'video' %}\n                {%- if is_system_content %}\n                    {{- raise_exception('System message cannot contain videos.') }}\n                {%- endif %}\n                {%- if do_vision_count %}\n                    {%- set video_count.value = video_count.value + 1 %}\n                {%- endif %}\n                {%- if add_vision_id %}\n                    {{- 'Video ' ~ video_count.value ~ ': ' }}\n                {%- endif %}\n                {{- '<|vision_start|><|video_pad|><|vision_end|>' }}\n            {%- elif 'text' in item %}\n                {{- item.text }}\n            {%- else %}\n                {{- raise_exception('Unexpected item type in content.') }}\n            {%- endif %}\n        {%- endfor %}\n    {%- elif content is none or content is undefined %}\n        {{- '' }}\n    {%- else %}\n        {{- raise_exception('Unexpected content type.') }}\n    {%- endif %}\n{%- endmacro %}\n{%- if not messages %}\n    {{- raise_exception('No messages provided.') }}\n{%- endif %}\n{%- if tools and tools is iterable and tools is not mapping %}\n    {{- '<|im_start|>system\\n' }}\n    {{- \"# Tools\\n\\nYou have access to the following functions:\\n\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\" }}\n    {{- '\\n\\nIf you choose to call a function ONLY reply in the following format with NO suffix:\\n\\n<tool_call>\\n<function=example_function_name>\\n<parameter=example_parameter_1>\\nvalue_1\\n</parameter>\\n<parameter=example_parameter_2>\\nThis is the value for the second parameter\\nthat can span\\nmultiple lines\\n</parameter>\\n</function>\\n</tool_call>\\n\\n<IMPORTANT>\\nReminder:\\n- Function calls MUST follow the specified format: an inner <function=...></function> block must be nested within <tool_call></tool_call> XML tags\\n- Required parameters MUST be specified\\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after\\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\\n</IMPORTANT>' }}\n    {%- if messages[0].role == 'system' %}\n        {%- set content = render_content(messages[0].content, false, true)|trim %}\n        {%- if content %}\n            {{- '\\n\\n' + content }}\n        {%- endif %}\n    {%- endif %}\n    {{- '<|im_end|>\\n' }}\n{%- else %}\n    {%- if messages[0].role == 'system' %}\n        {%- set content = render_content(messages[0].content, false, true)|trim %}\n        {{- '<|im_start|>system\\n' + content + '<|im_end|>\\n' }}\n    {%- endif %}\n{%- endif %}\n{%- set ns = namespace(multi_step_tool=true, last_query_index=messages|length - 1) %}\n{%- for message in messages[::-1] %}\n    {%- set index = (messages|length - 1) - loop.index0 %}\n    {%- if ns.multi_step_tool and message.role == \"user\" %}\n        {%- set content = render_content(message.content, false)|trim %}\n        {%- if not(content.startswith('<tool_response>') and content.endswith('</tool_response>')) %}\n            {%- set ns.multi_step_tool = false %}\n            {%- set ns.last_query_index = index %}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if ns.multi_step_tool %}\n    {{- raise_exception('No user query found in messages.') }}\n{%- endif %}\n{%- for message in messages %}\n    {%- set content = render_content(message.content, true)|trim %}\n    {%- if message.role == \"system\" %}\n        {%- if not loop.first %}\n            {{- raise_exception('System message must be at the beginning.') }}\n        {%- endif %}\n    {%- elif message.role == \"user\" %}\n        {{- '<|im_start|>' + message.role + '\\n' + content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {%- set reasoning_content = '' %}\n        {%- if message.reasoning_content is string %}\n            {%- set reasoning_content = message.reasoning_content %}\n        {%- else %}\n            {%- if '</think>' in content %}\n                {%- set reasoning_content = content.split('</think>')[0].rstrip('\\n').split('<think>')[-1].lstrip('\\n') %}\n                {%- set content = content.split('</think>')[-1].lstrip('\\n') %}\n            {%- endif %}\n        {%- endif %}\n        {%- set reasoning_content = reasoning_content|trim %}\n        {%- if (preserve_thinking is defined and preserve_thinking is true) or (loop.index0 > ns.last_query_index) %}\n            {{- '<|im_start|>' + message.role + '\\n<think>\\n' + reasoning_content + '\\n</think>\\n\\n' + content }}\n        {%- else %}\n            {{- '<|im_start|>' + message.role + '\\n' + content }}\n        {%- endif %}\n        {%- if message.tool_calls and message.tool_calls is iterable and message.tool_calls is not mapping %}\n            {%- for tool_call in message.tool_calls %}\n                {%- if tool_call.function is defined %}\n                    {%- set tool_call = tool_call.function %}\n                {%- endif %}\n                {%- if loop.first %}\n                    {%- if content|trim %}\n                        {{- '\\n\\n<tool_call>\\n<function=' + tool_call.name + '>\\n' }}\n                    {%- else %}\n                        {{- '<tool_call>\\n<function=' + tool_call.name + '>\\n' }}\n                    {%- endif %}\n                {%- else %}\n                    {{- '\\n<tool_call>\\n<function=' + tool_call.name + '>\\n' }}\n                {%- endif %}\n                {%- if tool_call.arguments is defined %}\n                    {%- for args_name, args_value in tool_call.arguments|items %}\n                        {{- '<parameter=' + args_name + '>\\n' }}\n                        {%- set args_value = args_value | string if args_value is string else args_value | tojson | safe %}\n                        {{- args_value }}\n                        {{- '\\n</parameter>\\n' }}\n                    {%- endfor %}\n                {%- endif %}\n                {{- '</function>\\n</tool_call>' }}\n            {%- endfor %}\n        {%- endif %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if loop.previtem and loop.previtem.role != \"tool\" %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' }}\n        {{- content }}\n        {{- '\\n</tool_response>' }}\n        {%- if not loop.last and loop.nextitem.role != \"tool\" %}\n            {{- '<|im_end|>\\n' }}\n        {%- elif loop.last %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- else %}\n        {{- raise_exception('Unexpected message role.') }}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n    {%- if enable_thinking is defined and enable_thinking is false %}\n        {{- '<think>\\n\\n</think>\\n\\n' }}\n    {%- else %}\n        {{- '<think>\\n' }}\n    {%- endif %}\n{%- endif %}",
+    "chat_template_caps": {
+      "supports_object_arguments": true,
+      "supports_parallel_tool_calls": true,
+      "supports_preserve_reasoning": true,
+      "supports_reasoning_effort": false,
+      "supports_string_content": true,
+      "supports_system_role": true,
+      "supports_tool_calls": true,
+      "supports_tools": true,
+      "supports_typed_content": true
+    },
+    "bos_token": "<|endoftext|>",
+    "eos_token": "<|im_end|>",
+    "build_info": "b11146-7fe450e19",
+    "is_sleeping": false,
+    "cors_proxy_enabled": false
+  },
+  "ended_unix": 1790770669.7677372
+}

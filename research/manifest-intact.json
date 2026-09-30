@@ -1,0 +1,40 @@
+{
+  "runtime": {
+    "version": "v0.5.0",
+    "tag": "b11146",
+    "artifacts": [
+      {
+        "name": "cudart-llama-bin-win-cuda-13.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/cudart-llama-bin-win-cuda-13.4-x64.zip",
+        "size": 423535356,
+        "sha256": "738f8c251ac22b70c3ae6f83a10cf222725df0395246a2cf58f32bdb85fbe668"
+      },
+      {
+        "name": "llama-b11146-bin-win-cuda-13.4-x64.zip",
+        "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/llama-b11146-bin-win-cuda-13.4-x64.zip",
+        "size": 149758833,
+        "sha256": "b1866c0ce76bc7bfb0c24b33e9a37e9669f1be18539b12c74ce361f81c41f047"
+      }
+    ]
+  },
+  "model": {
+    "name": "Qwen3.6-intact-Q4_K_M.gguf",
+    "label": "Intact Qwen3.6-35B-A3B Q4_K_M comparison",
+    "url": null,
+    "size": 21166757760,
+    "sha256": "044b006fd6ade94dc1f0137faa93e02fd8caaeb97912d9dccc9207831fdfdab1",
+    "license": "Apache-2.0",
+    "source_repo": "Qwen/Qwen3.6-35B-A3B",
+    "source_revision": "995ad96eacd98c81ed38be0c5b274b04031597b0",
+    "custom_derivative": false,
+    "keep_ratio": 1.0,
+    "quantization": "Q4_K_M",
+    "importance_matrix": false,
+    "converter_commit": "7fe450e19305b828c199d602c23a8337aaa1f03b"
+  },
+  "defaults": {
+    "context": 8192,
+    "cpu_moe": 20,
+    "threads": 12
+  }
+}

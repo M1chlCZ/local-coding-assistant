@@ -1,0 +1,9 @@
+# Third-party notices and model modifications
+
+The base model is Qwen3.6-35B-A3B, copyright 2026 Alibaba Cloud, licensed under Apache License 2.0. An unchanged copy of its pinned license is in `research/qwen.LICENSE`. Source revision: `995ad96eacd98c81ed38be0c5b274b04031597b0`.
+
+The two GGUF files named in MODEL_CARD.md are modified derivatives: routed experts were pruned using measured REAP scores, MTP was removed, the visual projector was omitted, and text weights were converted and quantized to Q4_K_M. No new foundation-model training or recovery training was performed. Preserve this modification notice, the model card, and the Apache license when distributing the weights. Qwen and Alibaba are credited as the base-model providers; this is an independent experiment and does not imply their endorsement.
+
+The project uses MIT-licensed llama.cpp and moep. The moep Windows/Accelerate adaptations are recorded in `research/moep-windows.patch`, with the upstream MIT notice in `research/moep.LICENSE`. HumanEval data and its original MIT license are under `research/`. The MIT license at repository root applies to original project code, not to third-party model weights or datasets.
+
+Calibration used evol-codealpaca-v1, Hermes function calling, and Tulu 3 SFT Mixture. Contains calibration information obtained from [Tulu 3 SFT Mixture](https://huggingface.co/datasets/allenai/tulu-3-sft-mixture), whose collection is available under the [ODC Attribution License 1.0](https://opendatacommons.org/licenses/by/1-0/). The 32 selected Tulu rows identify `ai2-adapt-dev/flan_v2_converted` as their source. The Tulu collection license does not replace the terms of its underlying contents. Raw calibration rows are excluded from the repository. See ATTRIBUTION.md and research/calibration_manifest.json for source revisions and hashes.

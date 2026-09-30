@@ -1,0 +1,156 @@
+diff --git a/src/moep/loader.py b/src/moep/loader.py
+index 6f49906..7c96b56 100644
+--- a/src/moep/loader.py
++++ b/src/moep/loader.py
+@@ -49,6 +49,8 @@ def _shards(model_dir: Path) -> list[Path]:
+ 
+ 
+ def _drop_page_cache(path: Path):
++    if not hasattr(os, "posix_fadvise"):
++        return  # Windows manages mapped-file cache; monitor available RAM instead.
+     fd = os.open(path, os.O_RDONLY)
+     try:
+         os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_DONTNEED)
+@@ -139,6 +141,7 @@ def load_offloaded(model_dir: str | Path, max_gpu_gib: int, offload_dir: str | P
+     # both GPU and CPU tightly so accelerate is forced to spill the remainder to NVMe.
+     model = AutoModelForCausalLM.from_pretrained(
+         str(model_dir),
++        dtype="auto",
+         device_map="auto",
+         max_memory={0: f"{max_gpu_gib}GiB", "cpu": "2GiB"},
+         offload_folder=str(offload_dir),
+diff --git a/src/moep/profiler.py b/src/moep/profiler.py
+index fbf4cab..0587d76 100644
+--- a/src/moep/profiler.py
++++ b/src/moep/profiler.py
+@@ -50,11 +50,8 @@ def load_stats(path: str | Path) -> tuple[dict, dict]:
+     return d["stats"], d["meta"]
+ 
+ 
+-def _make_hook(stats: ExpertStats, row: int, router_weight: torch.nn.Parameter | None,
+-               count_tokens: bool, router_prob: str = "softmax"):
+-    """router_weight None means the adapter accumulates prob_mass through its own router
+-    hook (gemma4: the router input differs from the experts input, so recomputing logits
+-    here would be wrong); this hook then covers only counts, gates, and norms."""
++def _make_hook(stats: ExpertStats, row: int, count_tokens: bool):
++    """Capture routed counts, applied gates and materialized expert-output norms."""
+     E = stats.tensors["counts"].shape[1]
+ 
+     @torch.no_grad()
+@@ -68,16 +65,8 @@ def _make_hook(stats: ExpertStats, row: int, router_weight: torch.nn.Parameter |
+         st = stats.tensors
+         st["counts"][row] += torch.bincount(idx, minlength=E).float()
+         st["gate_sum"][row].scatter_add_(0, idx, w)
+-        # Full-distribution probability mass over all tokens, matching the router's own
+-        # normalization. The softmax branch is byte-identical to the original qwen path;
+-        # glm4_moe adds a per-expert sigmoid branch (DeepSeek-style routing). None means
+-        # the adapter's own router hook accumulates prob_mass instead (gemma4).
+-        if router_weight is not None:
+-            logits = torch.nn.functional.linear(hidden, router_weight)
+-            if router_prob == "sigmoid":
+-                st["prob_mass"][row] += logits.float().sigmoid().sum(dim=0)
+-            else:
+-                st["prob_mass"][row] += torch.softmax(logits.float(), dim=-1).sum(dim=0)
++        # Full-distribution probabilities are captured from the router's real output.
++        # A cached Parameter reference can point at de-materialized offloaded storage.
+         # Unweighted expert output norms, recomputed with the module's own weights.
+         gup, down, act = experts_module.gate_up_proj, experts_module.down_proj, experts_module.act_fn
+         for e in idx.unique():
+@@ -94,25 +83,53 @@ def _make_hook(stats: ExpertStats, row: int, router_weight: torch.nn.Parameter |
+     return hook
+ 
+ 
++class _OffloadTap:
++    """Observe after Accelerate materializes weights and before it offloads them."""
++    def __init__(self, module, hook):
++        self.module, self.original = module, module._old_forward
++        def forward(*args, **kwargs):
++            hook(module, args)
++            return self.original(*args, **kwargs)
++        module._old_forward = forward
++
++    def remove(self):
++        self.module._old_forward = self.original
++
++
++def _router_hook(stats, row, probability):
++    def hook(module, args, output):
++        logits = output[0].detach().float()
++        probs = logits.sigmoid() if probability == "sigmoid" else logits.softmax(dim=-1)
++        stats.tensors["prob_mass"][row] += probs.sum(dim=0)
++    return hook
++
++
++def _execution_device(model):
++    for module in model.modules():
++        hook = getattr(module, "_hf_hook", None)
++        for item in getattr(hook, "hooks", (hook,)):
++            device = getattr(item, "execution_device", None)
++            if device is not None:
++                return torch.device(device)
++    return next((p.device for p in model.parameters() if not p.is_meta), torch.device("cpu"))
++
++
+ def attach(model, adapter) -> tuple[ExpertStats, list, list[int]]:
+     """Install hooks on every sparse-MoE block. Returns (stats, handles, layer_ids)."""
+     blocks = list(adapter.moe_blocks(model))
+     layer_ids = [i for i, _ in blocks]
+-    device = next(model.parameters()).device
++    device = _execution_device(model)
+     stats = ExpertStats(len(blocks), adapter.num_experts, device)
+     handles = []
+     for row, (_, block) in enumerate(blocks):
+         if hasattr(adapter, "attach_prob_hook"):
+             handles.append(adapter.attach_prob_hook(block, stats, row))
+-            router_weight = None
+         else:
+-            router_weight = block.gate.weight
+-        handles.append(
+-            block.experts.register_forward_pre_hook(
+-                _make_hook(stats, row, router_weight, count_tokens=(row == 0),
+-                           router_prob=getattr(adapter, "router_prob", "softmax"))
+-            )
+-        )
++            handles.append(block.gate.register_forward_hook(
++                _router_hook(stats, row, getattr(adapter, "router_prob", "softmax"))))
++        hook = _make_hook(stats, row, count_tokens=(row == 0))
++        handles.append(_OffloadTap(block.experts, hook) if hasattr(block.experts, "_hf_hook")
++                       else block.experts.register_forward_pre_hook(hook))
+     return stats, handles, layer_ids
+ 
+ 
+@@ -135,8 +152,7 @@ def profile(model, adapter, batches: torch.Tensor, batch_size: int, log_every: i
+     # Under disk offload the first parameter can be on the meta device; inputs must go to the
+     # real execution device, so pick the first non-meta parameter's device (cpu for the
+     # synthetic tests, cuda:0 for an offloaded real model).
+-    device = next((p.device for p in model.parameters() if p.device.type != "meta"),
+-                  next(model.parameters()).device)
++    device = _execution_device(model)
+     t0 = time.time()
+     n = batches.shape[0]
+     try:
+--- /dev/null
++++ b/tests/test_offload.py
+@@ -0,0 +1,22 @@
++from accelerate import disk_offload
++import pytest
++import torch
++from moep.profiler import profile
++
++@pytest.mark.parametrize('device', ['cpu', 'cuda'])
++def test_disk_offload_matches_resident(tiny_ckpt, tiny_adapter, tmp_path, device):
++    if device == 'cuda' and not torch.cuda.is_available():
++        pytest.skip('CUDA unavailable')
++    from conftest import build_tiny
++    model = build_tiny()
++    ids = torch.arange(32).reshape(1, 32)
++    expected, layers = profile(model, tiny_adapter, ids, batch_size=1, log_every=0)
++    disk_offload(model, tmp_path / 'disk', execution_device=torch.device(device))
++    forwards = [(block.experts, block.experts._old_forward) for _, block in tiny_adapter.moe_blocks(model)]
++    observed, observed_layers = profile(model, tiny_adapter, ids, batch_size=1, log_every=0)
++    assert layers == observed_layers
++    assert expected.total_tokens == observed.total_tokens
++    for key in expected.tensors:
++        assert torch.isfinite(observed.tensors[key]).all()
++        assert torch.allclose(expected.tensors[key], observed.tensors[key].cpu(), atol=1e-4, rtol=1e-4), key
++    assert all(module._old_forward is original for module, original in forwards)

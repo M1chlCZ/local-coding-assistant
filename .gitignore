@@ -1,0 +1,9 @@
+.cache/
+logs/
+__pycache__/
+*.gguf
+*.safetensors
+*.partial
+*.zip
+plans/
+research/calib.jsonl

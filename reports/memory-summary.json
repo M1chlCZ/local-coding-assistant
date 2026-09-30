@@ -1,0 +1,54 @@
+{
+  "scope": "1-second samples during the referenced prompt; sampled peaks can miss shorter spikes. GPU total includes Windows and other apps. Process RSS includes mapped pages and is not a measure of physical weight storage. Runs occurred at different system workloads.",
+  "results": [
+    {
+      "report": "context-reap50-16384.json",
+      "samples": 3,
+      "gpu_total_peak_mib": 12565,
+      "ram_available_min_bytes": 14433280000,
+      "server_rss_peak_bytes": 12009209856
+    },
+    {
+      "report": "context-reap50-32768.json",
+      "samples": 6,
+      "gpu_total_peak_mib": 12905,
+      "ram_available_min_bytes": 14525067264,
+      "server_rss_peak_bytes": 12030316544
+    },
+    {
+      "report": "context-reap50-8192.json",
+      "samples": 2,
+      "gpu_total_peak_mib": 12421,
+      "ram_available_min_bytes": 5904412672,
+      "server_rss_peak_bytes": 20363468800
+    },
+    {
+      "report": "context-reap75-16384-cpu8.json",
+      "samples": 7,
+      "gpu_total_peak_mib": 14485,
+      "ram_available_min_bytes": 9463316480,
+      "server_rss_peak_bytes": 16664973312
+    },
+    {
+      "report": "context-reap75-32768-cpu8.json",
+      "samples": 14,
+      "gpu_total_peak_mib": 14952,
+      "ram_available_min_bytes": 9787453440,
+      "server_rss_peak_bytes": 16746758144
+    },
+    {
+      "report": "context-reap75-8192-cpu8.json",
+      "samples": 4,
+      "gpu_total_peak_mib": 14319,
+      "ram_available_min_bytes": 9538473984,
+      "server_rss_peak_bytes": 16587608064
+    },
+    {
+      "report": "context-reap75-8192.json",
+      "samples": 2,
+      "gpu_total_peak_mib": 15701,
+      "ram_available_min_bytes": 1965293568,
+      "server_rss_peak_bytes": 24510214144
+    }
+  ]
+}

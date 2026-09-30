@@ -1,0 +1,10 @@
+{
+  "repo": "openai/human-eval",
+  "revision": "6d43fb980f9fee3c892a914eda09951f772ad10d",
+  "url": "https://raw.githubusercontent.com/openai/human-eval/6d43fb980f9fee3c892a914eda09951f772ad10d/data/HumanEval.jsonl.gz",
+  "size": 44877,
+  "sha256": "b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef",
+  "license": "MIT",
+  "subset_seed": 17,
+  "subset_count": 32
+}

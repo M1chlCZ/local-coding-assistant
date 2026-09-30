@@ -1,0 +1,26 @@
+{
+  "total_tokens": 1024,
+  "layers": 40,
+  "experts": 256,
+  "stats_finite": {
+    "counts": true,
+    "gate_sum": true,
+    "prob_mass": true,
+    "norm_sum": true,
+    "norm_sq_sum": true,
+    "reap_sum": true
+  },
+  "usable_criteria": [
+    "freq",
+    "gate_mass",
+    "reap",
+    "man",
+    "msan"
+  ],
+  "model": ".cache\\research\\base",
+  "calib": "research\\calib.jsonl",
+  "seq_len": 512,
+  "n_samples": 128,
+  "scope": "Feasibility test on the first 1024 packed tokens; not all 128 calibration examples.",
+  "mean_layer_expert_coverage": 0.945117175579071
+}

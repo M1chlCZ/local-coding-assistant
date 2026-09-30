@@ -1,0 +1,14 @@
+{
+  "versions": {
+    "torch": "2.14.0+cu130",
+    "transformers": "5.13.1",
+    "accelerate": "1.14.0",
+    "safetensors": "0.8.0",
+    "datasets": "5.0.0",
+    "moep": "0.1.0"
+  },
+  "cuda_available": true,
+  "cuda_device": "NVIDIA GeForce RTX 5070 Ti",
+  "config_class": "Qwen3_5MoeConfig",
+  "causal_lm_class": "<class 'transformers.models.qwen3_5_moe.modeling_qwen3_5_moe.Qwen3_5MoeForCausalLM'>"
+}

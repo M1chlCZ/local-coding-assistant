@@ -1,0 +1,24 @@
+{
+  "checked_unix": 1790774237.627202,
+  "launcher_checks": "Passed on macOS Python3.10 and PC Python3.14",
+  "evaluation_checks": "Passed with Docker execution: code assembly,4096-byte output cap,timeout cleanup,fixed-test tampering detection",
+  "upstream_checks": {
+    "passed": 26,
+    "skipped": 2,
+    "scope": "Synthetic upstream models and CPU/CUDA disk-offload regressions"
+  },
+  "reference_solutions": {
+    "passed": 32,
+    "count": 32,
+    "report": "humaneval-reference-final.json"
+  },
+  "saved_generations_regraded": "All five32-task reports retained identical results under the final evaluator; regraded-final.json",
+  "final_practical_pilot": {
+    "passed": 5,
+    "count": 5,
+    "report": "pilot-reap50-final.json"
+  },
+  "model_integrity": "PC cached setup verified SHA256 of runtime archives and default11,373,057,920-byte model",
+  "review": "Independent read-only review; runtime setup recipe,mutable agent test execution,and unbounded host output addressed; follow-up found no blockers",
+  "release": "Local source/weights only; public downloads not published"
+}
