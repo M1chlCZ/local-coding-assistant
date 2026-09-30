@@ -1,0 +1,8 @@
+{
+  "round": 1,
+  "base_passed": 0,
+  "adapter_passed": 0,
+  "total": 5,
+  "accepted": false,
+  "warning": "Small repeated development set; no general quality claim. Holdout unused."
+}

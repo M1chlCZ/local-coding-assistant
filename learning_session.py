@@ -1,0 +1,413 @@
+"""Finite, checkpointed local learning with Windows controls and one GPU owner."""
+import argparse
+import copy
+import fcntl
+import json
+import os
+import random
+import re
+import signal
+import subprocess
+import time
+from pathlib import Path, PureWindowsPath
+
+from train_adapter import atomic_json, checkpoint_binding, latest_checkpoint, parser as training_parser
+from training_data import export, load_verified, manifest_path, sha256
+
+ROOT = Path(__file__).resolve().parent
+MODEL = 'Qwen/Qwen3-4B'
+REVISION = '1cfa9a7208912126459214e8b04321603b3df60c'
+LIMITS = {'calls': 8, 'output_tokens': 4096, 'seconds': 120}
+SETTINGS = {'mode': 'rlm', 'depth': 2, 'instruction': ''}
+DEFAULT = ROOT/'.cache/learning/current'
+SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
+                'recursive_agent.py', 'rlm_worker.py', 'research/adapter_eval_server.py',
+                'launcher.py', 'wsl_server.py')
+
+
+def round_tasks(index):
+    """Training-only module variants plus parameterized tasks with authored tests."""
+    originals = json.loads((ROOT/'research/rlm_tasks.json').read_text())
+    tasks = []
+    for source in originals:
+        if source['split'] != 'train':
+            continue
+        task = copy.deepcopy(source)
+        mapping = {Path(name).stem: Path(name).stem + f'_r{index}' for name in task['files']}
+        def rename(code):
+            # Rename module imports only: names like urllib's .query must remain unchanged.
+            for old, new in mapping.items():
+                code = re.sub(r'(?m)^(\s*from\s+)'+re.escape(old)+r'(\s+import\s+)',
+                              lambda m: m[1]+new+m[2], code)
+                code = re.sub(r'(?m)^(\s*import\s+)'+re.escape(old)+r'(\s*(?:\n|$))',
+                              lambda m: m[1]+new+' as '+old+m[2], code)
+            return code
+        task.update(id=task['id']+f'-r{index}', repository=task['repository']+f'-r{index}',
+                    files={mapping[Path(p).stem]+'.py': rename(c) for p, c in task['files'].items()},
+                    editable=[mapping[Path(p).stem]+'.py' for p in task['editable']],
+                    checks=rename(task['checks']),
+                    reference_patch={mapping[Path(p).stem]+'.py': rename(c) for p, c in task['reference_patch'].items()})
+        tasks.append(task)
+    rng = random.Random(42000+index)
+    low, high = rng.randint(-100, -1), rng.randint(2, 100)
+    width = rng.randint(2, 12)
+    key = f'code_{index}'
+    cases = [
+        ('clamp', f'Clamp each integer to [{low}, {high}]. Reject booleans and non-integers. Preserve input order without mutation.',
+         'def repair(values):\n    return sorted(values)\n',
+         f'def repair(values):\n    if any(type(x) is not int for x in values):\n        raise ValueError("invalid")\n    return [max({low}, min({high}, x)) for x in values]\n',
+         f'assert repair([{low-2}, {low}, 0, {high}, {high+2}]) == [{low}, {low}, 0, {high}, {high}]\nassert repair([])==[]\nfor bad in [True, 1.5, "2", None]:\n    try: repair([bad])\n    except ValueError: pass\n    else: raise AssertionError("invalid input")\nx=[{high+1}, {low-1}]; before=x.copy(); repair(x); assert x==before\n'),
+        ('chunks', f'Split a list into chunks of at most {width} elements. Keep the last partial chunk. Preserve order and input.',
+         f'def repair(values):\n    return [values[i:i+{width}] for i in range(0, len(values)-{width}+1, {width})]\n',
+         f'def repair(values):\n    return [values[i:i+{width}] for i in range(0,len(values),{width})]\n',
+         f'for n in range({3*width+2}):\n    x=list(range(n)); before=x.copy(); out=repair(x)\n    assert out==[x[i:i+{width}] for i in range(0,n,{width})]\n    assert x==before\n    if out: out[0].append(-1); assert x==before\n'),
+        ('records', f'Keep the first record for each {key!r} key. Keep records without that key. Preserve order without changing the input.',
+         f'def repair(records):\n    return list({{r.get({key!r}):r for r in records}}.values())\n',
+         f'def repair(records):\n    seen=set(); result=[]\n    for row in records:\n        if {key!r} not in row:\n            result.append(row)\n        elif row[{key!r}] not in seen:\n            seen.add(row[{key!r}]); result.append(row)\n    return result\n',
+         f'a={{{key!r}:"a","v":1}}; b={{{key!r}:"a","v":2}}; c={{"v":3}}; d={{"v":4}}\nx=[a,b,c,d,{{{key!r}:None}},{{{key!r}:None}}]; before=[r.copy() for r in x]\nassert repair(x)==[a,c,d,x[4]]\nassert repair([])==[]\nassert x==before\n'),
+        ('runs', 'Run-length encode consecutive equal values as (value, count) tuples. Separate nonconsecutive runs. Preserve the input.',
+         'def repair(values):\n    return [(x,values.count(x)) for x in dict.fromkeys(values)]\n',
+         'def repair(values):\n    out=[]\n    for value in values:\n        if out and out[-1][0]==value:\n            out[-1]=(value,out[-1][1]+1)\n        else:\n            out.append((value,1))\n    return out\n',
+         f'assert repair([{low},{low},{high},{low}])==[({low},2),({high},1),({low},1)]\nassert repair([])==[]\nassert repair([[1],[1],[2]])==[([1],2),([2],1)]\nx=["a","a","b"]; before=x.copy(); assert repair(x)==[("a",2),("b",1)]; assert x==before\n')]
+    for name, prompt, broken, fixed, checks in cases:
+        path=f'{name}_r{index}.py'
+        tasks.append({'id': f'generated-{name}-r{index}', 'repository': f'generated-{name}-r{index}',
+            'split': 'train', 'prompt': prompt, 'files': {path: broken}, 'editable': [path],
+            'checks': f'from {Path(path).stem} import repair\n'+checks, 'reference_patch': {path: fixed}})
+    return tasks
+
+
+def accepted(candidate, baseline, previous=None):
+    """All five dev tasks must complete; require more passes and no per-task regression."""
+    def passes(report):
+        return {r['id']: r.get('passed') is True for r in report['tasks']}
+    new, base = passes(candidate), passes(baseline)
+    prior = passes(previous) if previous else base
+    return (len(new) == 5 and new.keys() == base.keys() == prior.keys()
+            and sum(new.values()) > max(sum(base.values()), sum(prior.values()))
+            and all(new[k] for k in new if base[k] or prior[k]))
+
+
+class Session:
+    def __init__(self, path, hours, model):
+        self.path = path.resolve()
+        self.path.mkdir(parents=True, exist_ok=True)
+        # ponytail: one worker per session, one GPU; add a job scheduler only for multiple GPUs.
+        self.lock = (self.path/'worker.lock').open('a')
+        fcntl.flock(self.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        (ROOT/'.cache/learning').mkdir(parents=True, exist_ok=True)
+        self.gpu_lock = (ROOT/'.cache/learning/gpu.lock').open('a')
+        fcntl.flock(self.gpu_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        sources = {name: sha256(ROOT/name) for name in SOURCE_FILES}
+        self.state = json.loads((self.path/'status.json').read_text()) if (self.path/'status.json').exists() else {
+            'schema_version': 1, 'status': 'running', 'phase': 'collect', 'round': 1,
+            'active_seconds': 0, 'limit_seconds': hours*3600, 'teacher_model': str(model.resolve()),
+            'best_adapter': None, 'accepted_rounds': [], 'completed_rounds': [],
+            'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'sources': sources}
+        if self.state['tasks_sha256'] != sha256(ROOT/'research/rlm_tasks.json'):
+            raise ValueError('Original task registry changed; use a new session')
+        if self.state.get('sources') != sources:
+            raise ValueError('Session source changed; restore the original source or use a new session')
+        self.child = None
+        self.clock = time.monotonic()
+        self.recover_child()
+
+    def recover_child(self):
+        ownership = self.path/'child.json'
+        if not ownership.exists():
+            return
+        value = json.loads(ownership.read_text())
+        proc = Path('/proc')/str(value['pid'])
+        try:
+            start = proc.joinpath('stat').read_text().split(') ', 1)[1].split()[19]
+            env = proc.joinpath('environ').read_bytes().split(b'\0')
+            if start == value['start'] and ('LCA_LEARNING_SESSION='+str(self.path)).encode() in env:
+                os.killpg(value['pid'], signal.SIGTERM)
+                time.sleep(2)
+                if proc.exists():
+                    os.killpg(value['pid'], signal.SIGKILL)
+        except (FileNotFoundError, ProcessLookupError):
+            pass
+        ownership.unlink(missing_ok=True)
+
+    def save(self, **changes):
+        now = time.monotonic()
+        if self.state['status'] != 'paused':
+            self.state['active_seconds'] += now-self.clock
+        self.clock = now
+        self.state.update(changes, pid=os.getpid(), updated_at=time.time())
+        atomic_json(self.path/'status.json', self.state)
+
+    def command(self):
+        file = self.path/'command.json'
+        return json.loads(file.read_text())['action'] if file.exists() else 'resume'
+
+    def interrupted(self):
+        return self.command() in ('pause', 'stop') or self.state['active_seconds'] >= self.state['limit_seconds']
+
+    def stop_child(self):
+        if self.child:
+            if self.child.poll() is None:
+                os.killpg(self.child.pid, signal.SIGTERM)
+                try: self.child.wait(timeout=20)
+                except subprocess.TimeoutExpired:
+                    os.killpg(self.child.pid, signal.SIGKILL)
+                    self.child.wait()
+            self.child = None
+        (self.path/'child.json').unlink(missing_ok=True)
+
+    def spawn(self, command, log):
+        if self.child:
+            raise ValueError('Another session child still owns the GPU')
+        env = {**os.environ, 'PYTHONPATH': str(ROOT), 'HF_HUB_OFFLINE': '1',
+               'LCA_LEARNING_SESSION': str(self.path)}
+        with Path(log).open('ab') as output:
+            self.child = subprocess.Popen(command, cwd=ROOT, env=env, stdout=output,
+                                          stderr=subprocess.STDOUT, start_new_session=True)
+        start = Path(f'/proc/{self.child.pid}/stat').read_text().split(') ',1)[1].split()[19]
+        atomic_json(self.path/'child.json', {'pid': self.child.pid, 'start': start})
+
+    def server(self, command, port, log):
+        from launcher import health
+        import socket
+        # Refuse occupied ports, including an unrelated server that is still loading.
+        with socket.socket() as sock:
+            if sock.connect_ex(('127.0.0.1', port)) == 0:
+                raise ValueError(f'Port {port} is occupied. Stop that server before learning.')
+        self.spawn(command, log)
+        deadline = time.monotonic()+180
+        while not health(port):
+            self.save(detail='Loading model')
+            if self.child.poll() is not None or time.monotonic() > deadline:
+                raise RuntimeError('Model server failed to start; see '+str(log))
+            if self.interrupted():
+                return False
+            time.sleep(1)
+        return True
+
+    def training_command(self, round_path):
+        command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'train_adapter.py'),
+            '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
+            '--model', MODEL, '--revision', REVISION, '--output', str(round_path/'adapter'),
+            '--max-steps', '80', '--max-length', '1536', '--save-steps', '10',
+            '--pause-file', str(self.path/'pause-training')]
+        if self.state['best_adapter']:
+            command += ['--warm-start', self.state['best_adapter']]
+        return command
+
+    def collect(self, folder):
+        from recursive_agent import grade, solve
+        tasks_path = folder/'tasks.json'
+        if not tasks_path.exists():
+            old = [] if self.state['round'] == 1 else json.loads(
+                (self.path/f"round-{self.state['round']-1:03d}/tasks.json").read_text())
+            atomic_json(tasks_path, old + round_tasks(self.state['round']))
+        tasks = json.loads(tasks_path.read_text())
+        current = [t for t in tasks if t['id'].endswith(f"-r{self.state['round']}")]
+        report_path = folder/'teacher.json'
+        report = json.loads(report_path.read_text()) if report_path.exists() else {
+            'schema_version': 1, 'split': 'train', 'tasks_sha256': sha256(tasks_path),
+            'settings': SETTINGS, 'limits': LIMITS, 'tasks': []}
+        if len(report['tasks']) == len(current):
+            self.save(phase='export', detail='Teacher collection complete')
+            return
+        command = [str(ROOT/'.cache/rlm-env/bin/python'), str(ROOT/'wsl_server.py'),
+                   '--model', self.state['teacher_model']]
+        if not self.server(command, 8080, folder/'teacher.log'):
+            return
+        for task in current[len(report['tasks']):]:
+            self.save(detail='Teacher task '+task['id'])
+            if self.interrupted():
+                return
+            # Authored oracle verifies fixture consistency, never supplies a training answer.
+            if not grade(task, task['reference_patch'])['passed']:
+                raise ValueError('Authored reference failed: '+task['id'])
+            if grade(task, {p: task['files'][p] for p in task['editable']})['passed']:
+                raise ValueError('Broken task already passes: '+task['id'])
+            row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
+            if row.get('patch'):
+                row.update(grade(task, row['patch']))
+            report['tasks'].append(row)
+            atomic_json(report_path, report)
+            self.save(collected=len(report['tasks']), passed=sum(r['passed'] for r in report['tasks']))
+            if self.interrupted():
+                return
+        self.save(phase='export', detail='Teacher collection complete')
+
+    def dataset(self, folder):
+        report = json.loads((folder/'teacher.json').read_text())
+        if not any(row.get('passed') for row in report['tasks']):
+            failures = self.state.get('rounds_without_repairs', 0)+1
+            self.save(rounds_without_repairs=failures, round=self.state['round']+1, phase='collect',
+                      status='completed' if failures>=3 else 'running',
+                      detail='No verified new repairs; stopped after three empty rounds' if failures>=3
+                      else 'No verified new repairs; collecting another round')
+            return
+        self.state['rounds_without_repairs'] = 0
+        dataset = folder/'training.jsonl'
+        if dataset.exists() and not manifest_path(dataset).exists():
+            dataset.rename(folder/f'training-incomplete-{time.time_ns()}.jsonl')
+        if not dataset.exists():
+            # Bind earlier reports to the cumulative registry without modifying their originals.
+            reports = []
+            digest = sha256(folder/'tasks.json')
+            # ponytail: four recent rounds bound replay and grading cost; extend only after measured forgetting.
+            for number in range(max(1, self.state['round']-3), self.state['round']+1):
+                original = self.path/f'round-{number:03d}/teacher.json'
+                value = json.loads(original.read_text())
+                value['tasks_sha256'] = digest
+                value['original_source_sha256'] = sha256(original)
+                path = folder/f'source-{number:03d}.json'
+                atomic_json(path, value)
+                reports.append(path)
+            export(reports, folder/'tasks.json', dataset, repairs=True)
+        load_verified(dataset, folder/'tasks.json')
+        self.save(phase='train', detail='Dataset fixed for checkpoint resume')
+
+    def train(self, folder):
+        output = folder/'adapter'
+        if (output/'training.json').exists() and json.loads((output/'training.json').read_text())['status']=='completed':
+            self.save(phase='evaluate')
+            return
+        command = self.training_command(folder)
+        if output.exists() and any(output.iterdir()):
+            args = training_parser().parse_args(command[2:])
+            binding = checkpoint_binding(args)
+            if list(output.glob('checkpoint-*/complete.json')):
+                latest_checkpoint(output, binding)  # Refuse a corrupt or unbound resume.
+                command.append('--resume')
+            else:
+                if json.loads((output/'run.json').read_text()) != binding:
+                    raise ValueError('Incomplete output belongs to different training settings')
+                output.rename(folder/f'adapter-incomplete-{time.time_ns()}')
+        pause = self.path/'pause-training'
+        pause.unlink(missing_ok=True)
+        self.spawn(command, folder/'training.log')
+        while self.child.poll() is None:
+            self.save(detail='CUDA adapter training')
+            if self.interrupted():
+                pause.touch()
+                self.save(detail='Saving checkpoint before pause or stop')
+            progress = output/'progress.json'
+            if progress.exists():
+                self.save(training=json.loads(progress.read_text()))
+            time.sleep(1)
+        code = self.child.returncode
+        self.stop_child()
+        if code:
+            raise RuntimeError('Training failed; see '+str(folder/'training.log'))
+        metadata = json.loads((output/'training.json').read_text())
+        if metadata['status'] == 'completed':
+            self.save(phase='evaluate')
+
+    def evaluate(self, folder):
+        from evaluation import request
+        from recursive_agent import solve, grade
+        command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'research/adapter_eval_server.py'),
+                   '--adapter', str(folder/'adapter')]
+        if not self.server(command, 8090, folder/'evaluation-server.log'):
+            return
+        tasks = [t for t in json.loads((ROOT/'research/rlm_tasks.json').read_text()) if t['split']=='dev']
+        reports = {}
+        for mode in ('base', 'adapter'):
+            path = folder/f'dev-{mode}.json'
+            report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
+                'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': SETTINGS, 'limits': LIMITS}
+            request('http://127.0.0.1:8090', '/mode', {'mode': mode})
+            for task in tasks[len(report['tasks']):]:
+                self.save(detail=f'Development check {mode}: '+task['id'])
+                if self.interrupted():
+                    return
+                row = solve(task, 'http://127.0.0.1:8090', **SETTINGS, **LIMITS)
+                if row.get('patch'):
+                    row.update(grade(task, row['patch']))
+                report['tasks'].append(row)
+                atomic_json(path, report)
+                self.save()
+            reports[mode] = report
+        previous = self.state.get('best_dev')
+        keep = accepted(reports['adapter'], reports['base'], previous)
+        result = {'round': self.state['round'], 'base_passed': sum(r['passed'] for r in reports['base']['tasks']),
+                  'adapter_passed': sum(r['passed'] for r in reports['adapter']['tasks']), 'total': 5,
+                  'accepted': keep, 'warning': 'Small repeated development set; no general quality claim. Holdout unused.'}
+        atomic_json(folder/'result.json', result)
+        self.state['completed_rounds'].append(result)
+        if keep:
+            self.state['best_adapter'] = str(folder/'adapter')
+            self.state['best_dev'] = {'tasks': [{'id': r['id'], 'passed': r['passed']}
+                                               for r in reports['adapter']['tasks']]}
+            self.state['accepted_rounds'].append(self.state['round'])
+        self.save(round=self.state['round']+1, phase='collect', detail='Starting a new data collection round')
+
+    def run(self):
+        if self.state['status'] in ('completed', 'stopped'):
+            raise ValueError('This session is finished. Choose a new --session folder to start another.')
+        self.save(status='running')
+        try:
+            while True:
+                self.save()
+                if self.state['status']=='completed':
+                    return
+                if self.command()=='stop':
+                    self.save(status='stopped', detail='Stopped with saved progress')
+                    return
+                if self.state['active_seconds'] >= self.state['limit_seconds']:
+                    self.save(status='completed', detail='Active time limit reached; progress retained')
+                    return
+                if self.command()=='pause':
+                    self.stop_child()
+                    self.save(status='paused', detail='GPU released; checkpoints and task progress retained')
+                    time.sleep(1)
+                    continue
+                self.save(status='running')
+                if self.state['round'] > 64:
+                    self.save(status='completed', detail='64-round ceiling reached')
+                    return
+                if os.statvfs(self.path).f_bavail*os.statvfs(self.path).f_frsize < 10*1024**3:
+                    raise ValueError('Less than 10 GiB free disk; session stopped before training')
+                if self.state['phase']=='collect' and sum(p.stat().st_size for p in self.path.rglob('*') if p.is_file()) > 20*1024**3:
+                    self.save(status='completed', detail='20 GiB session storage ceiling reached')
+                    return
+                folder = self.path/f"round-{self.state['round']:03d}"
+                folder.mkdir(exist_ok=True)
+                phase = self.state['phase']
+                getattr(self, {'collect':'collect', 'export':'dataset', 'train':'train', 'evaluate':'evaluate'}[phase])(folder)
+                self.stop_child()
+        except BaseException as error:
+            self.save(status='failed', detail=f'{type(error).__name__}: {error}')
+            raise
+        finally:
+            self.stop_child()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=('run','pause','resume','stop','status'))
+    parser.add_argument('--session', type=Path, default=DEFAULT)
+    parser.add_argument('--hours', type=float, default=12)
+    parser.add_argument('--model', help='Teacher GGUF path, Windows or Linux; required for a new session')
+    args = parser.parse_args()
+    if not .01 <= args.hours <= 24:
+        parser.error('Use a session limit between 0.01 and 24 hours')
+    try:
+        if args.action == 'status':
+            print((args.session/'status.json').read_text() if (args.session/'status.json').exists() else '{}')
+        elif args.action != 'run':
+            args.session.mkdir(parents=True, exist_ok=True)
+            atomic_json(args.session/'command.json', {'action':args.action, 'requested_at':time.time()})
+            print(args.action+' requested')
+        else:
+            model = args.model
+            if model and PureWindowsPath(model).drive:
+                model = subprocess.check_output(['wslpath', '-u', model], text=True).strip()
+            if not model and (args.session/'status.json').exists():
+                model = json.loads((args.session/'status.json').read_text())['teacher_model']
+            if not model or not Path(model).is_file():
+                raise ValueError('Teacher GGUF file is missing; pass --model')
+            Session(args.session, args.hours, Path(model)).run()
+    except (ValueError, OSError, RuntimeError) as error:
+        parser.exit(1, str(error)+'\n')
+
+
+if __name__ == '__main__':
+    main()

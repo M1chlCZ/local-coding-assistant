@@ -1,0 +1,30 @@
+{
+  "binding": {
+    "model": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "dataset_sha256": "3c0b50da7d6f5c0018a9203f80ee67660ac4d9529e567fd4ec82eae591603e6b",
+    "manifest_sha256": "30d3d1156e7e905d378413e476e4d48d10e29099a5b4d52bb387e8607e96583e",
+    "tasks_sha256": "c8174475fd2c958fc60afbe7e36eba1693a35bbe9746fb31680eb92575e09906",
+    "max_steps": 80,
+    "max_length": 1536,
+    "rank": 8,
+    "seed": 42,
+    "versions": {
+      "torch": "2.14.0",
+      "transformers": "5.18.0",
+      "peft": "0.21.1",
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2"
+    },
+    "trainer_sha256": "670b2c32fac4c2f67a886bbc2e23ad953c6479a82c95e4f7af1bf57fe62a2efc",
+    "warm_start_sha256": null
+  },
+  "files": {
+    "adapter_model.safetensors": "0db1e3ec2dced678599ffffe7f7306d15ebdc4428d779dfe1e6d3c138cc07076",
+    "adapter_config.json": "c934b35f05ed854f597316720bbcb7a4614699270888dc083b9a455fbc65dcf9",
+    "optimizer.pt": "a519e07e78367195b001231326a2f120f3871522c4dcec2848991529378bbbf0",
+    "scheduler.pt": "76dbdcca905df2f0e74b2ad83541fe6a37338e2881c1fe172f497aa2a15e10e0",
+    "rng_state.pth": "802feeea2764d70b8a8e0dc24e0267d61ca9857f0cfc77673cc49b6b1fdcb701",
+    "trainer_state.json": "a9716e79458c5fab17b47897659141190110e862b38cf0a260bb4a10018e889f"
+  }
+}

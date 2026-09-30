@@ -20,6 +20,9 @@ Use original Hugging Face weights. GGUF files cannot supply this training setup.
 The candidate is [Qwen3-4B](https://huggingface.co/Qwen/Qwen3-4B), pinned below.
 The adapter remains separate from the 27B chat model.
 
+For repeated collection and training, use the [Windows learning session](learning-session.md).
+Its checkpoints support pause and resume within a round.
+
 ## Prepare in WSL
 
 Open the dedicated environment as root:

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "gpu": "NVIDIA RTX 5070 Ti, 16 GB",
+  "platform": "Dedicated LocalCodingAssistant WSL, Windows-controlled on-demand task",
+  "control_checks": {
+    "pause_step": 20,
+    "worker_restarted": true,
+    "resumed_to_step": 80,
+    "optimizer_scheduler_rng_saved": true,
+    "survived_ssh_disconnect": true,
+    "windows_panel_constructed": true,
+    "pause_gpu_used_mib": 1482,
+    "warm_start_pause_resume_steps": [
+      1,
+      2
+    ],
+    "completed_checkpoint_recovery_preserved_weights": true
+  },
+  "data": {
+    "kind": "Derived verified REPL inspect/repair turns",
+    "rows": 10,
+    "overlength_rows": 0,
+    "source": "Five previously successful training-only teacher repairs; regraded before export",
+    "dataset_sha256": "3c0b50da7d6f5c0018a9203f80ee67660ac4d9529e567fd4ec82eae591603e6b"
+  },
+  "optimizer_steps": 80,
+  "checkpoint_interval": 10,
+  "retained_checkpoint_steps": [
+    60,
+    70,
+    80
+  ],
+  "peak_allocated_bytes": 6271745536,
+  "quality": {
+    "base_passed": 0,
+    "adapter_passed": 0,
+    "total": 5,
+    "accepted": false,
+    "holdout_used": false,
+    "base_calls": 36,
+    "adapter_calls": 10,
+    "scope": "Matched greedy NF4 base/adapter through the same RLM harness and shared task budgets; five synthetic dev tasks.",
+    "base_child_calls": 0,
+    "adapter_child_calls": 0
+  },
+  "limits": "This smoke checks control and recovery. It does not establish a useful coding model.",
+  "collection_check": {
+    "new_round_started": true,
+    "new_teacher_repairs_passed_before_stop": 1,
+    "fixture": "stock-reservations-r2"
+  }
+}

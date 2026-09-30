@@ -56,7 +56,28 @@ def manifest_path(path):
     return Path(str(path) + '.manifest.json')
 
 
-def export(reports, tasks_path, output):
+def repair_calls(task, trace, patch):
+    """Derive two short supervised turns from a freshly checked teacher repair."""
+    from recursive_agent import grade, parse_patch
+    patch = parse_patch(json.dumps(patch), task)
+    if not grade(task, patch)['passed']:
+        raise ValueError('Repair no longer passes the registered functional checks')
+    first = next((call for call in trace if call.get('kind') == 'root'), None)
+    if first is None:
+        raise ValueError('Verified repair requires a root prompt')
+    messages_valid(first['messages'])
+    if first['messages'][-1]['role'] != 'user':
+        raise ValueError('Root prompt must end with a user message')
+    inspection = '```repl\nprint(context)\n```'
+    context = {'files': task['files'], 'editable': task['editable'], 'task': task['prompt']}
+    inspected = first['messages'] + [{'role': 'assistant', 'content': inspection},
+        {'role': 'user', 'content': 'REPL output:\n\n' + repr(context) + '\n'},
+        {'role': 'user', 'content': 'Turn 2/8:'}]
+    answer = "```repl\nanswer['content'] = " + repr(patch) + "\nanswer['ready'] = True\n```"
+    return [(first['messages'], inspection), (inspected, answer)]
+
+
+def export(reports, tasks_path, output, repairs=False):
     output = Path(output)
     companion = manifest_path(output)
     if output.exists() or companion.exists():
@@ -84,7 +105,11 @@ def export(reports, tasks_path, output):
             trace = task.get('trace')
             if not isinstance(trace, list) or not 1 <= len(trace) <= 128:
                 raise ValueError('Passed RLM task has no bounded trace')
-            for call in trace:
+            if repairs:
+                calls = repair_calls(original, trace, task.get('patch'))
+            else:
+                calls = []
+            for call in ([] if repairs else trace):
                 if not isinstance(call, dict):
                     raise ValueError('Malformed trace call')
                 if call.get('kind') not in ('root', 'subcall'):
@@ -100,7 +125,9 @@ def export(reports, tasks_path, output):
                     raise ValueError('Missing assistant response')
                 if any(type(call.get(key)) is not int or call[key] < 0 for key in ('input_tokens', 'output_tokens')):
                     raise ValueError('Invalid token counts')
-                messages = call['messages'] + [{'role': 'assistant', 'content': response}]
+                calls.append((call['messages'], response))
+            for prompt, response in calls:
+                messages = prompt + [{'role': 'assistant', 'content': response}]
                 messages_valid(messages)
                 identity = json.dumps(messages, sort_keys=True, ensure_ascii=False)
                 if identity in seen:
@@ -108,7 +135,8 @@ def export(reports, tasks_path, output):
                     continue
                 seen.add(identity)
                 rows.append({'messages': messages, 'task_id': original['id'],
-                             'repository': original['repository'], 'tasks_sha256': digest})
+                             'repository': original['repository'], 'tasks_sha256': digest,
+                             'example_kind': 'derived_verified_repair' if repairs else 'root_trace'})
     if not rows:
         raise ValueError('No successful train-split RLM traces to export')
     content = ''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in rows)
@@ -120,6 +148,7 @@ def export(reports, tasks_path, output):
     manifest = {'schema_version': 1, 'split': 'train', 'tasks_sha256': digest,
                 'dataset_sha256': sha256(output), 'rows': len(rows), 'sources': sources,
                 'excluded': dict(excluded),
+                'example_kind': 'derived_verified_repair' if repairs else 'root_trace',
                 'trust': 'Local evaluator reports are inputs, not cryptographic proof of correct grading.'}
     with companion.open('x', encoding='utf-8', newline='\n') as stream:
         stream.write(json.dumps(manifest, indent=2) + '\n')

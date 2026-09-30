@@ -57,6 +57,9 @@ The [adapter recipe](research/adapter-training.md) runs local QLoRA from success
 A 50-step CUDA trial completed on the 16 GB GPU. This small run does not establish a coding improvement.
 The [WSL recipe](research/wsl.md) runs the complete experiment on the PC through CUDA.
 After WSL setup, `start-rlm.cmd` starts its model server.
+The [learning session](research/learning-session.md) collects checked repairs and trains local adapters.
+Double-click `learning.cmd` for Windows Start, Pause, Resume, and Stop controls.
+Checkpoints retain the optimizer and current step. Candidates receive development checks before acceptance.
 
 ## Measured results
 
