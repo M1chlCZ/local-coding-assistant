@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "tasks_sha256": "b57c5a195bccb5851996ffdc2477cfbb79fce8c07d8e789d4c0ce51f780d7cc0",
+  "date": "2026-09-30",
+  "model": "Qwen3.8-27B UD-Q4_K_M",
+  "model_manifest": "manifest.json",
+  "hardware": "RTX 5070 Ti 16 GB, Ryzen 9 9900X, 32 GB RAM",
+  "context": 8192,
+  "cpu_ffn_layers": 8,
+  "build_info": "b11146-7fe450e19",
+  "baseline_score": [
+    3,
+    -6815,
+    -293.067
+  ],
+  "initial_rlm_score": [
+    2,
+    -7211,
+    -305.013
+  ],
+  "improved_over_baseline": false,
+  "subcalls_observed": 0,
+  "excluded_proposal": {
+    "response": "{\n\"depth\": 2,\n\"instruction\": \"Analyze the failing tests to identify specific logic errors. For 'package-manifest', verify that all required fields are present and correctly formatted; ensure no missing keys or type mismatches. For 'source-positions', debug the JSON parsing error by checking if the input is valid JSON before processing; handle empty or malformed inputs gracefully. For 'checkout-transitions', review the state transition logic to ensure that locking mechanisms do not alter the expected order of operations; add assertions to validate state consistency after each transition. Use llm_query to generate targeted fixes for these issues, focusing on minimal changes that preserve existing functionality.\"\n}",
+    "reason": "Proposal names a fixture; use a general instruction",
+    "observed_dev_passed": 3,
+    "tasks": 5
+  },
+  "holdout": "Incomplete exploratory holdout for the excluded candidate; not a final holdout result and not published as evaluation evidence.",
+  "limitations": "Five authored two-file development repairs, one run per setting. Recursion was available but unused by the model. No evidence of a recursion benefit. All submitted patches regraded after sandbox review. Raw excluded and partial runs are archived locally outside the repository."
+}

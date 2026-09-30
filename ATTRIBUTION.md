@@ -8,6 +8,9 @@
 
 This project's MIT license covers its original launcher and evaluation code. It does not replace any model, dataset, runtime or upstream research license. Preserve the corresponding licenses when distributing those artifacts.
 
+- [Recursive Language Models](https://github.com/alexzhang13/rlm): MIT library, pinned to `d04208afbad29ca675ab13478c40ee8bebc84bfe`. Installed as a dependency, with an original bounded sandbox adapter in this repository.
+- [Karpathy autoresearch](https://github.com/karpathy/autoresearch): inspiration for the finite propose, measure, and retain loop. This project searches agent instructions and depth rather than editing its training program.
+
 - [OpenAI HumanEval](https://github.com/openai/human-eval): MIT. The original test dataset and license are included under `research/`; the fixed 32-task subset is pinned in `humaneval_manifest.json`.
 
 The 32 selected Tulu rows all identify [FLAN v2 converted](https://huggingface.co/datasets/ai2-adapt-dev/flan_v2_converted) as their underlying source. See [Tulu source terms](https://huggingface.co/datasets/allenai/tulu-3-sft-mixture) and [FLAN](https://github.com/google-research/FLAN). Dataset collection labels do not establish clearance for every original content source.

@@ -1,0 +1,342 @@
+[
+  {
+    "id": "stock-reservations",
+    "repository": "stock-reservations-repo",
+    "split": "train",
+    "prompt": "Fix stock reservations. Each order has positive integer quantities. Reject invalid or unavailable quantities before changing any stock. Repeated SKU lines consume their combined quantity.",
+    "files": {
+      "stock.py": "from orders import quantities\n\ndef reserve(stock, order):\n    for sku, count in quantities(order).items():\n        if stock.get(sku, 0) < count:\n            raise ValueError('unavailable')\n        stock[sku] -= count\n    return stock\n",
+      "orders.py": "def quantities(order):\n    result = {}\n    for sku, count in order:\n        result[sku] = result.get(sku, 0) + count\n    return result\n"
+    },
+    "editable": [
+      "stock.py"
+    ],
+    "checks": "from stock import reserve\ns={'a':5,'b':1}\nassert reserve(s,[('a',2),('a',1)]) == {'a':2,'b':1}\nfor order in [[('a',1),('b',2)], [('a',0)], [('a',-1)], [('a',True)], [('a',1.5)], [('a','2')], [('a',None)]]:\n    before=s.copy()\n    try: reserve(s,order)\n    except ValueError: pass\n    else: raise AssertionError('accepted invalid order')\n    assert s==before\nassert reserve(s,[])==s\n",
+    "reference_patch": {
+      "stock.py": "from orders import quantities\n\ndef reserve(stock, order):\n    if any(type(n) is not int or n <= 0 for _, n in order):\n        raise ValueError('invalid quantity')\n    requested = quantities(order)\n    if any(stock.get(sku, 0) < n for sku, n in requested.items()):\n        raise ValueError('unavailable')\n    for sku, n in requested.items():\n        stock[sku] -= n\n    return stock\n"
+    }
+  },
+  {
+    "id": "audit-pagination",
+    "repository": "audit-pagination-repo",
+    "split": "train",
+    "prompt": "Fix audit pagination. Sort events by (timestamp, id). A cursor is the last returned (timestamp, id). Return events strictly after it, with a positive page size.",
+    "files": {
+      "paging.py": "from events import key\n\ndef page(events, after=None, limit=20):\n    ordered=sorted(events,key=key)\n    return [e for e in ordered if after is None or e['timestamp'] > after[0]][:limit]\n",
+      "events.py": "def key(event):\n    return (event['timestamp'],event['id'])\n"
+    },
+    "editable": [
+      "paging.py"
+    ],
+    "checks": "from paging import page\nes=[{'timestamp':2,'id':'c'},{'timestamp':1,'id':'b'},{'timestamp':1,'id':'a'}]\nassert [e['id'] for e in page(es,limit=2)]==['a','b']\nassert [e['id'] for e in page(es,(1,'a'),2)]==['b','c']\nassert page(es,(2,'c'))==[]\nassert page([])==[]\nfor n in [0,-1,True]:\n    try: page(es,limit=n)\n    except ValueError: pass\n    else: raise AssertionError('invalid limit')\n",
+    "reference_patch": {
+      "paging.py": "from events import key\n\ndef page(events, after=None, limit=20):\n    if type(limit) is not int or limit <= 0:\n        raise ValueError('invalid page size')\n    ordered=sorted(events,key=key)\n    return [e for e in ordered if after is None or key(e) > tuple(after)][:limit]\n"
+    }
+  },
+  {
+    "id": "invoice-rounding",
+    "repository": "invoice-rounding-repo",
+    "split": "train",
+    "prompt": "Fix invoice totals. Prices and tax rates are decimal strings. Round each line subtotal and each line tax to cents with ROUND_HALF_UP, then sum. Reject negative prices or quantities.",
+    "files": {
+      "invoice.py": "from decimal import Decimal\nfrom money import cents\n\ndef total(lines, tax_rate):\n    subtotal=sum(Decimal(price)*quantity for price,quantity in lines)\n    return cents(subtotal*(1+Decimal(tax_rate)))\n",
+      "money.py": "from decimal import Decimal, ROUND_HALF_UP\n\ndef cents(amount):\n    return amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)\n"
+    },
+    "editable": [
+      "invoice.py"
+    ],
+    "checks": "from invoice import total\nfrom decimal import Decimal\nassert total([('0.05',1),('0.05',1)],'0.10')==Decimal('0.12')\nassert total([('1.005',1)],'0')==Decimal('1.01')\nassert total([('12.50',2)],'0.20')==Decimal('30.00')\nassert total([],'0.2')==Decimal('0.00')\nfor line in [('1',-1),('-1',2),('1',True)]:\n    try: total([line],'0')\n    except ValueError: pass\n    else: raise AssertionError('invalid line')\n",
+    "reference_patch": {
+      "invoice.py": "from decimal import Decimal\nfrom money import cents\n\ndef total(lines, tax_rate):\n    rate=Decimal(tax_rate)\n    amount=Decimal('0.00')\n    for price,quantity in lines:\n        price=Decimal(price)\n        if price < 0 or type(quantity) is not int or quantity < 0:\n            raise ValueError('invalid line')\n        subtotal=cents(price*quantity)\n        amount += subtotal+cents(subtotal*rate)\n    return cents(amount)\n"
+    }
+  },
+  {
+    "id": "query-updates",
+    "repository": "query-updates-repo",
+    "split": "train",
+    "prompt": "Fix query updates on URLs. Replace every old occurrence of each supplied key. Preserve unrelated pairs, blank values, order and fragments. A replacement value of None removes that key.",
+    "files": {
+      "links.py": "from urllib.parse import urlsplit,urlunsplit,parse_qsl,urlencode\nfrom query import replacement_pairs\n\ndef update_url(url,updates):\n    parts=urlsplit(url)\n    pairs=parse_qsl(parts.query)\n    pairs.extend(replacement_pairs(updates))\n    return urlunsplit(parts._replace(query=urlencode(pairs)))\n",
+      "query.py": "def replacement_pairs(updates):\n    return [(key,str(value)) for key,value in updates.items() if value is not None]\n"
+    },
+    "editable": [
+      "links.py"
+    ],
+    "checks": "from links import update_url\nassert update_url('https://x.test/p?a=1&a=2&b=#part',{'a':'new'})=='https://x.test/p?b=&a=new#part'\nassert update_url('/p?a=1&z=hello+world',{'a':None})=='/p?z=hello+world'\nassert update_url('/p',{'q':'a&b','n':0})=='/p?q=a%26b&n=0'\nassert update_url('/p?blank=#f',{})=='/p?blank=#f'\n",
+    "reference_patch": {
+      "links.py": "from urllib.parse import urlsplit,urlunsplit,parse_qsl,urlencode\nfrom query import replacement_pairs\n\ndef update_url(url,updates):\n    parts=urlsplit(url)\n    pairs=[(k,v) for k,v in parse_qsl(parts.query,keep_blank_values=True) if k not in updates]\n    pairs.extend(replacement_pairs(updates))\n    return urlunsplit(parts._replace(query=urlencode(pairs)))\n"
+    }
+  },
+  {
+    "id": "build-order",
+    "repository": "build-order-repo",
+    "split": "train",
+    "prompt": "Fix build ordering. Return each target once, after its dependencies. Sort ready targets alphabetically for deterministic output. Raise ValueError for a missing target or any dependency cycle.",
+    "files": {
+      "build.py": "from targets import dependencies\n\ndef order(targets):\n    return sorted(targets, key=lambda name:len(dependencies(targets,name)))\n",
+      "targets.py": "def dependencies(targets,name):\n    return targets[name]\n"
+    },
+    "editable": [
+      "build.py"
+    ],
+    "checks": "from build import order\nassert order({'app':['lib'],'lib':['base'],'base':[]})==['base','lib','app']\nassert order({'z':[],'a':[],'b':['a']})==['a','b','z']\nassert order({'a':[],'b':['a','a']})==['a','b']\nassert order({})==[]\nfor graph in [{'a':['b']},{'a':['a']},{'a':['b'],'b':['a']}]:\n    try: order(graph)\n    except ValueError: pass\n    else: raise AssertionError('invalid graph')\n",
+    "reference_patch": {
+      "build.py": "from targets import dependencies\n\ndef order(targets):\n    remaining={name:set(dependencies(targets,name)) for name in targets}\n    if any(dep not in targets for deps in remaining.values() for dep in deps):\n        raise ValueError('missing target')\n    result=[]\n    while remaining:\n        ready=sorted(name for name,deps in remaining.items() if not deps)\n        if not ready:\n            raise ValueError('dependency cycle')\n        name=ready[0]\n        result.append(name)\n        del remaining[name]\n        for deps in remaining.values():\n            deps.discard(name)\n    return result\n"
+    }
+  },
+  {
+    "id": "csv-contacts",
+    "repository": "csv-contacts-repo",
+    "split": "train",
+    "prompt": "Fix contact import. Read CSV with name and email columns, including quoted commas and embedded newlines. Trim both fields, skip blank records, and reject nonblank records without either field.",
+    "files": {
+      "contacts.py": "from validation import contact\n\ndef load(text):\n    result=[]\n    for line in text.splitlines()[1:]:\n        if line.strip():\n            name,email=line.split(',')\n            result.append(contact(name,email))\n    return result\n",
+      "validation.py": "def contact(name,email):\n    name,email=name.strip(),email.strip()\n    if not name or not email:\n        raise ValueError('incomplete contact')\n    return {'name':name,'email':email}\n"
+    },
+    "editable": [
+      "contacts.py"
+    ],
+    "checks": "from contacts import load\nassert load('name,email\\n\"Doe, Jane\", jane@example.test \\n,\\n')==[{'name':'Doe, Jane','email':'jane@example.test'}]\nassert load('name,email\\n\"Line\\nTwo\",a@x.test\\n')[0]['name']=='Line\\nTwo'\nassert load('name,email\\n')==[]\ntry: load('name,email\\nJane,\\n')\nexcept ValueError: pass\nelse: raise AssertionError('missing email')\n",
+    "reference_patch": {
+      "contacts.py": "import csv\nimport io\nfrom validation import contact\n\ndef load(text):\n    result=[]\n    for row in csv.DictReader(io.StringIO(text,newline='')):\n        name=(row.get('name') or '').strip()\n        email=(row.get('email') or '').strip()\n        if not name and not email:\n            continue\n        result.append(contact(name,email))\n    return result\n"
+    }
+  },
+  {
+    "id": "request-retries",
+    "repository": "request-retries-repo",
+    "split": "train",
+    "prompt": "Fix request retries. attempts is the total call budget and must be a positive integer. Retry only TransientError. Sleep between failed attempts with base_delay times 2**failure_index. Never sleep after the last attempt.",
+    "files": {
+      "retry.py": "from errors import TransientError\n\ndef call_with_retry(call, sleep, attempts=3, base_delay=1):\n    for index in range(attempts):\n        try: return call()\n        except Exception:\n            sleep(base_delay*2**index)\n    return None\n",
+      "errors.py": "class TransientError(Exception):\n    pass\n"
+    },
+    "editable": [
+      "retry.py"
+    ],
+    "checks": "from retry import call_with_retry\nfrom errors import TransientError\ncalls=[]; waits=[]\ndef request():\n    calls.append(1)\n    if len(calls)<3: raise TransientError('busy')\n    return 'ok'\nassert call_with_retry(request,waits.append,3,0.5)=='ok'\nassert len(calls)==3 and waits==[0.5,1]\nwaits=[]\ndef bad(): raise TransientError('busy')\ntry: call_with_retry(bad,waits.append,2)\nexcept TransientError: pass\nelse: raise AssertionError('lost error')\nassert waits==[1]\ndef permanent(): raise RuntimeError('stop')\ntry: call_with_retry(permanent,waits.append)\nexcept RuntimeError: pass\nelse: raise AssertionError('retried permanent error')\nfor attempts in [0,-1,True]:\n    try: call_with_retry(lambda:1,waits.append,attempts)\n    except ValueError: pass\n    else: raise AssertionError('invalid budget')\n",
+    "reference_patch": {
+      "retry.py": "from errors import TransientError\n\ndef call_with_retry(call, sleep, attempts=3, base_delay=1):\n    if type(attempts) is not int or attempts <= 0:\n        raise ValueError('invalid attempt budget')\n    for index in range(attempts):\n        try:\n            return call()\n        except TransientError:\n            if index+1 == attempts:\n                raise\n            sleep(base_delay*2**index)\n"
+    }
+  },
+  {
+    "id": "expiring-cache",
+    "repository": "expiring-cache-repo",
+    "split": "train",
+    "prompt": "Fix the expiring cache. Entries expire when clock() reaches their deadline. Remove expired entries on access. Zero TTL expires immediately. Reject negative TTL without replacing an existing entry.",
+    "files": {
+      "cache.py": "from entry import Entry\n\nclass Cache:\n    def __init__(self,clock):\n        self.clock=clock\n        self.entries={}\n    def put(self,key,value,ttl):\n        self.entries[key]=Entry(value,self.clock()+ttl)\n    def get(self,key,default=None):\n        entry=self.entries.get(key)\n        if entry is None or self.clock()>entry.deadline:\n            return default\n        return entry.value\n",
+      "entry.py": "from dataclasses import dataclass\n\n@dataclass\nclass Entry:\n    value: object\n    deadline: float\n"
+    },
+    "editable": [
+      "cache.py"
+    ],
+    "checks": "from cache import Cache\nnow=[10]; c=Cache(lambda:now[0]); c.put('x',None,2)\nassert c.get('x','missing') is None\nnow[0]=12\nassert c.get('x','missing')=='missing' and 'x' not in c.entries\nc.put('z',9,0)\nassert c.get('z') is None\nc.put('a',7,10)\ntry: c.put('a',8,-1)\nexcept ValueError: pass\nelse: raise AssertionError('negative TTL')\nassert c.get('a')==7 and c.get('unknown',False) is False\n",
+    "reference_patch": {
+      "cache.py": "from entry import Entry\n\nclass Cache:\n    def __init__(self,clock):\n        self.clock=clock\n        self.entries={}\n    def put(self,key,value,ttl):\n        if ttl < 0:\n            raise ValueError('negative TTL')\n        self.entries[key]=Entry(value,self.clock()+ttl)\n    def get(self,key,default=None):\n        entry=self.entries.get(key)\n        if entry is None:\n            return default\n        if self.clock() >= entry.deadline:\n            del self.entries[key]\n            return default\n        return entry.value\n"
+    }
+  },
+  {
+    "id": "feature-settings",
+    "repository": "feature-settings-repo",
+    "split": "train",
+    "prompt": "Fix boolean feature settings. Accept bool values and trimmed, case-insensitive strings true/false, yes/no, on/off, 1/0. None uses the supplied default. Reject all other values.",
+    "files": {
+      "settings.py": "from flags import TRUE_WORDS,FALSE_WORDS\n\ndef enabled(value,default=False):\n    if value is None: return default\n    return bool(value)\n",
+      "flags.py": "TRUE_WORDS={'true','yes','on','1'}\nFALSE_WORDS={'false','no','off','0'}\n"
+    },
+    "editable": [
+      "settings.py"
+    ],
+    "checks": "from settings import enabled\nfor value in ['false',' NO ','Off','0',False]: assert enabled(value) is False\nfor value in ['true',' YES ','On','1',True]: assert enabled(value) is True\nassert enabled(None,True) is True and enabled(None) is False\nfor value in ['', 'maybe', 0, 1, [], {}]:\n    try: enabled(value)\n    except ValueError: pass\n    else: raise AssertionError('invalid boolean')\n",
+    "reference_patch": {
+      "settings.py": "from flags import TRUE_WORDS,FALSE_WORDS\n\ndef enabled(value,default=False):\n    if value is None:\n        return default\n    if isinstance(value,bool):\n        return value\n    if isinstance(value,str):\n        normalized=value.strip().lower()\n        if normalized in TRUE_WORDS:\n            return True\n        if normalized in FALSE_WORDS:\n            return False\n    raise ValueError('invalid boolean setting')\n"
+    }
+  },
+  {
+    "id": "delayed-mail",
+    "repository": "delayed-mail-repo",
+    "split": "train",
+    "prompt": "Fix delayed mail delivery. Return due messages ordered by (due_at, sequence). A message is due at due_at <= now. Remove only returned messages. Preserve pending messages, including their insertion order.",
+    "files": {
+      "message.py": "from dataclasses import dataclass\n\n@dataclass\nclass Message:\n    body: str\n    due_at: float\n    sequence: int\n",
+      "mailqueue.py": "from message import Message\n\nclass MailQueue:\n    def __init__(self):\n        self.pending=[]\n        self.sequence=0\n    def add(self,body,due_at):\n        self.pending.append(Message(body,due_at,self.sequence))\n        self.sequence+=1\n    def take_due(self,now):\n        due=[m for m in self.pending if m.due_at<now]\n        self.pending=[]\n        return due\n"
+    },
+    "editable": [
+      "mailqueue.py"
+    ],
+    "checks": "from mailqueue import MailQueue\nq=MailQueue(); q.add('later',10); q.add('second',5); q.add('first',2); q.add('third',5)\nassert [m.body for m in q.take_due(5)]==['first','second','third']\nassert [m.body for m in q.pending]==['later']\nassert q.take_due(5)==[]\nassert [m.body for m in q.take_due(10)]==['later']\nassert q.pending==[]\n",
+    "reference_patch": {
+      "mailqueue.py": "from message import Message\n\nclass MailQueue:\n    def __init__(self):\n        self.pending=[]\n        self.sequence=0\n    def add(self,body,due_at):\n        self.pending.append(Message(body,due_at,self.sequence))\n        self.sequence+=1\n    def take_due(self,now):\n        due=sorted((m for m in self.pending if m.due_at<=now),key=lambda m:(m.due_at,m.sequence))\n        self.pending=[m for m in self.pending if m.due_at>now]\n        return due\n"
+    }
+  },
+  {
+    "id": "package-manifest",
+    "repository": "package-manifest-repo",
+    "split": "dev",
+    "prompt": "Fix package manifests. Input paths use forward slashes. Include files unless any path component starts with a dot. Match excluded directory names by full path component. Return unique paths in alphabetical order.",
+    "files": {
+      "manifest.py": "from policy import DEFAULT_EXCLUDES\n\ndef collect(paths,excluded=DEFAULT_EXCLUDES):\n    return sorted(p for p in paths if not p.startswith('.') and not any(name in p for name in excluded))\n",
+      "policy.py": "DEFAULT_EXCLUDES={'build','__pycache__'}\n"
+    },
+    "editable": [
+      "manifest.py"
+    ],
+    "checks": "from manifest import collect\npaths=['src/a.py','src/.secret/x.py','rebuild/main.py','build/pkg.py','src/a.py','.env','src/__pycache__/x.py']\nassert collect(paths)==['rebuild/main.py','src/a.py']\nassert collect(['x/build','x/build/a.py'],{'build'})==['x/build']\nassert collect(['a.py','vendor/x.py'],{'vendor'})==['a.py']\nassert collect([])==[]\n",
+    "reference_patch": {
+      "manifest.py": "from policy import DEFAULT_EXCLUDES\n\ndef collect(paths,excluded=DEFAULT_EXCLUDES):\n    result=set()\n    for path in paths:\n        parts=path.split('/')\n        if any(part.startswith('.') for part in parts):\n            continue\n        if any(part in excluded for part in parts[:-1]):\n            continue\n        result.add(path)\n    return sorted(result)\n"
+    }
+  },
+  {
+    "id": "source-positions",
+    "repository": "source-positions-repo",
+    "split": "dev",
+    "prompt": "Fix source positions. Offsets are character indices in the original text, including CRLF. Return 1-based line and column. Offset len(text) is valid. Reject offsets outside 0..len(text). Newline characters belong to the preceding line.",
+    "files": {
+      "positions.py": "from source import newline_endings\n\ndef locate(text,offset):\n    normalized=text.replace('\\r\\n','\\n')\n    prefix=normalized[:offset]\n    return (prefix.count('\\n')+1,len(prefix.rsplit('\\n',1)[-1])+1)\n",
+      "source.py": "def newline_endings(text):\n    result=[]\n    i=0\n    while i<len(text):\n        if text[i]=='\\r':\n            i+=2 if i+1<len(text) and text[i+1]=='\\n' else 1\n            result.append(i)\n        elif text[i]=='\\n':\n            i+=1\n            result.append(i)\n        else:\n            i+=1\n    return result\n"
+    },
+    "editable": [
+      "positions.py"
+    ],
+    "checks": "from positions import locate\ntext='ab\\r\\ncd\\n'\nassert locate(text,4)==(2,1)\nassert locate(text,3)==(1,4)\nassert locate(text,7)==(3,1)\nassert locate('a\\rb',2)==(2,1)\nassert locate('',0)==(1,1)\nfor n in [-1,8,True]:\n    try: locate(text,n)\n    except ValueError: pass\n    else: raise AssertionError('invalid offset')\n",
+    "reference_patch": {
+      "positions.py": "from source import newline_endings\n\ndef locate(text,offset):\n    if type(offset) is not int or not 0<=offset<=len(text):\n        raise ValueError('invalid offset')\n    endings=newline_endings(text)\n    passed=[end for end in endings if end<=offset]\n    start=passed[-1] if passed else 0\n    return (len(passed)+1,offset-start+1)\n"
+    }
+  },
+  {
+    "id": "unique-slugs",
+    "repository": "unique-slugs-repo",
+    "split": "dev",
+    "prompt": "Fix unique slugs. Use the existing ASCII slug helper. The complete slug must fit max_length. Resolve collisions with -2, -3 and later suffixes, truncating the base to leave suffix space. Do not change the used set. Reject max_length below 3.",
+    "files": {
+      "slugs.py": "from text import base_slug\n\ndef unique_slug(title,used,max_length=40):\n    base=base_slug(title)[:max_length]\n    result=base\n    number=2\n    while result in used:\n        result=f'{base}-{number}'\n        number+=1\n    return result\n",
+      "text.py": "import re\n\ndef base_slug(title):\n    return re.sub(r'[^a-z0-9]+','-',title.lower()).strip('-') or 'item'\n"
+    },
+    "editable": [
+      "slugs.py"
+    ],
+    "checks": "from slugs import unique_slug\nused={'hello','hel-2'}\nassert unique_slug('Hello',used,5)=='hel-3'\nassert used=={'hello','hel-2'}\nassert unique_slug('***',set(),4)=='item'\nassert unique_slug('Hello World',set(),7)=='hello-w'\nassert unique_slug('ab--c',{'ab-c'},4)=='ab-2'\ntry: unique_slug('a',set(),2)\nexcept ValueError: pass\nelse: raise AssertionError('invalid length')\n",
+    "reference_patch": {
+      "slugs.py": "from text import base_slug\n\ndef unique_slug(title,used,max_length=40):\n    if type(max_length) is not int or max_length<3:\n        raise ValueError('invalid maximum length')\n    base=base_slug(title)[:max_length]\n    result=base\n    number=2\n    while result in used:\n        suffix=f'-{number}'\n        if len(suffix)>=max_length:\n            raise ValueError('suffix does not fit')\n        result=base[:max_length-len(suffix)].rstrip('-')+suffix\n        number+=1\n    return result\n"
+    }
+  },
+  {
+    "id": "checkout-transitions",
+    "repository": "checkout-transitions-repo",
+    "split": "dev",
+    "prompt": "Fix checkout transitions. Follow the transition table. Only draft orders allow item changes. Payment requires at least one item. Invalid operations leave state and items unchanged. Completed or cancelled orders have no further transitions.",
+    "files": {
+      "checkout.py": "from states import TRANSITIONS\n\nclass Order:\n    def __init__(self):\n        self.state='draft'\n        self.items=[]\n    def add(self,item):\n        self.items.append(item)\n    def transition(self,target):\n        if target not in TRANSITIONS:\n            raise ValueError('unknown state')\n        self.state=target\n",
+      "states.py": "TRANSITIONS={'draft':{'paid','cancelled'},'paid':{'shipped','cancelled'},'shipped':{'completed'},'completed':set(),'cancelled':set()}\n"
+    },
+    "editable": [
+      "checkout.py"
+    ],
+    "checks": "from checkout import Order\nq=Order()\nfor target in ['paid','completed','unknown']:\n    try: q.transition(target)\n    except ValueError: pass\n    else: raise AssertionError('invalid transition')\n    assert q.state=='draft' and q.items==[]\nq.add('book'); q.transition('paid')\ntry: q.add('pen')\nexcept ValueError: pass\nelse: raise AssertionError('changed locked order')\nassert q.items==['book']\nq.transition('shipped'); q.transition('completed')\ntry: q.transition('cancelled')\nexcept ValueError: pass\nelse: raise AssertionError('changed completed order')\nr=Order(); r.transition('cancelled')\nassert r.state=='cancelled'\n",
+    "reference_patch": {
+      "checkout.py": "from states import TRANSITIONS\n\nclass Order:\n    def __init__(self):\n        self.state='draft'\n        self.items=[]\n    def add(self,item):\n        if self.state!='draft':\n            raise ValueError('order is locked')\n        self.items.append(item)\n    def transition(self,target):\n        if target not in TRANSITIONS[self.state]:\n            raise ValueError('invalid transition')\n        if target=='paid' and not self.items:\n            raise ValueError('empty order')\n        self.state=target\n"
+    }
+  },
+  {
+    "id": "http-byte-ranges",
+    "repository": "http-byte-ranges-repo",
+    "split": "dev",
+    "prompt": "Fix a single HTTP byte range parser. Return inclusive (start, end). Support bytes=start-end, bytes=start- and bytes=-suffix. Clamp end to resource length. Reject empty resources, multiple ranges, wrong units and unsatisfiable or malformed ranges with ValueError.",
+    "files": {
+      "ranges.py": "from headers import RANGE_PREFIX\n\ndef parse_range(header,size):\n    first,last=header[len(RANGE_PREFIX):].split('-')\n    return (int(first or 0),int(last or size))\n",
+      "headers.py": "RANGE_PREFIX='bytes='\n"
+    },
+    "editable": [
+      "ranges.py"
+    ],
+    "checks": "from ranges import parse_range\nassert parse_range('bytes=2-4',10)==(2,4)\nassert parse_range('bytes=7-',10)==(7,9)\nassert parse_range('bytes=-3',10)==(7,9)\nassert parse_range('bytes=-30',10)==(0,9)\nassert parse_range('bytes=3-99',10)==(3,9)\nfor h,size in [('bytes=10-',10),('bytes=5-2',10),('bytes=-0',10),('bytes=-',10),('items=0-1',10),('bytes=0-1,3-4',10),('bytes=0-1',0),('bytes=x-2',10)]:\n    try: parse_range(h,size)\n    except ValueError: pass\n    else: raise AssertionError('invalid range')\n",
+    "reference_patch": {
+      "ranges.py": "from headers import RANGE_PREFIX\n\ndef parse_range(header,size):\n    if size<=0 or not header.startswith(RANGE_PREFIX):\n        raise ValueError('invalid range')\n    spec=header[len(RANGE_PREFIX):]\n    if spec.count('-')!=1:\n        raise ValueError('invalid range')\n    first,last=spec.split('-')\n    if (first and not first.isascii()) or (last and not last.isascii()):\n        raise ValueError('invalid range')\n    if (first and not first.isdigit()) or (last and not last.isdigit()):\n        raise ValueError('invalid range')\n    if not first:\n        if not last or int(last)<=0:\n            raise ValueError('invalid suffix')\n        return (max(0,size-int(last)),size-1)\n    start=int(first)\n    end=min(int(last),size-1) if last else size-1\n    if start>=size or end<start:\n        raise ValueError('unsatisfiable range')\n    return (start,end)\n"
+    }
+  },
+  {
+    "id": "support-opening",
+    "repository": "support-opening-repo",
+    "split": "holdout",
+    "prompt": "Fix the next support opening time. Inputs are naive local datetimes. Support opens Monday through Friday from 09:00 inclusive to 17:00 exclusive, except listed holiday dates. Return the input while open, or the next opening datetime.",
+    "files": {
+      "hours.py": "from datetime import datetime,time,timedelta\nfrom calendar_rules import is_open_day\n\ndef next_open(moment,holidays=()):\n    if moment.time()<time(9):\n        return datetime.combine(moment.date(),time(9))\n    if moment.time()<time(17):\n        return moment\n    return datetime.combine(moment.date()+timedelta(days=1),time(9))\n",
+      "calendar_rules.py": "def is_open_day(day,holidays):\n    return day.weekday()<5 and day not in holidays\n"
+    },
+    "editable": [
+      "hours.py"
+    ],
+    "checks": "from datetime import datetime,date\nfrom hours import next_open\nassert next_open(datetime(2026,10,2,17))==datetime(2026,10,5,9)\nassert next_open(datetime(2026,10,3,10))==datetime(2026,10,5,9)\nassert next_open(datetime(2026,10,5,8))==datetime(2026,10,5,9)\nassert next_open(datetime(2026,10,5,9))==datetime(2026,10,5,9)\nassert next_open(datetime(2026,10,5,16,59))==datetime(2026,10,5,16,59)\nassert next_open(datetime(2026,10,2,18),{date(2026,10,5),date(2026,10,6)})==datetime(2026,10,7,9)\nassert next_open(datetime(2026,10,5,8),{date(2026,10,5)})==datetime(2026,10,6,9)\n",
+    "reference_patch": {
+      "hours.py": "from datetime import datetime,time,timedelta\nfrom calendar_rules import is_open_day\n\ndef next_open(moment,holidays=()):\n    day=moment.date()\n    if is_open_day(day,holidays):\n        if moment.time()<time(9):\n            return datetime.combine(day,time(9))\n        if moment.time()<time(17):\n            return moment\n    day+=timedelta(days=1)\n    while not is_open_day(day,holidays):\n        day+=timedelta(days=1)\n    return datetime.combine(day,time(9))\n"
+    }
+  },
+  {
+    "id": "delivery-routes",
+    "repository": "delivery-routes-repo",
+    "split": "holdout",
+    "prompt": "Fix shortest delivery routes on a directed graph with nonnegative numeric edge weights. Return (distance, path), or None when unreachable. The start-to-start route is (0, [start]). Reject any negative edge, including unreachable edges.",
+    "files": {
+      "routes.py": "from heapq import heappush,heappop\nfrom graph import neighbors\n\ndef shortest(graph,start,goal):\n    queue=[(0,start,[start])]\n    seen=set()\n    while queue:\n        distance,node,path=heappop(queue)\n        if node==goal: return (distance,path)\n        if node in seen: continue\n        seen.add(node)\n        for target,cost in neighbors(graph,node):\n            if target==goal: return (distance+cost,path+[target])\n            heappush(queue,(distance+cost,target,path+[target]))\n    return None\n",
+      "graph.py": "def neighbors(graph,node):\n    return graph.get(node,[])\n"
+    },
+    "editable": [
+      "routes.py"
+    ],
+    "checks": "from routes import shortest\ng={'a':[('c',10),('b',2)],'b':[('c',3)],'c':[]}\nassert shortest(g,'a','c')==(5,['a','b','c'])\nassert shortest(g,'c','a') is None\nassert shortest(g,'a','a')==(0,['a'])\nassert shortest({'a':[('b',0)],'b':[('a',0),('c',1)]},'a','c')==(1,['a','b','c'])\ntry: shortest({'a':[],'unused':[('z',-1)]},'a','a')\nexcept ValueError: pass\nelse: raise AssertionError('negative edge accepted')\n",
+    "reference_patch": {
+      "routes.py": "from heapq import heappush,heappop\nfrom graph import neighbors\n\ndef shortest(graph,start,goal):\n    if any(cost<0 for edges in graph.values() for _,cost in edges):\n        raise ValueError('negative edge')\n    queue=[(0,start,[start])]\n    seen=set()\n    while queue:\n        distance,node,path=heappop(queue)\n        if node in seen: continue\n        if node==goal: return (distance,path)\n        seen.add(node)\n        for target,cost in neighbors(graph,node):\n            if target not in seen:\n                heappush(queue,(distance+cost,target,path+[target]))\n    return None\n"
+    }
+  },
+  {
+    "id": "release-ordering",
+    "repository": "release-ordering-repo",
+    "split": "holdout",
+    "prompt": "Fix semantic version ordering. Compare major/minor/patch numerically. A release is newer than its prereleases. Compare numeric prerelease identifiers numerically and before text identifiers. Compare text lexically; a shorter equal prefix comes first. Ignore build metadata.",
+    "files": {
+      "versions.py": "from parser import parse\n\ndef ordered(versions):\n    return sorted(versions,key=lambda version:(parse(version)[0],parse(version)[1] or ()))\n",
+      "parser.py": "def parse(version):\n    plain=version.split('+',1)[0]\n    main,sep,pre=plain.partition('-')\n    return (tuple(int(part) for part in main.split('.')),tuple(pre.split('.')) if sep else None)\n"
+    },
+    "editable": [
+      "versions.py"
+    ],
+    "checks": "from versions import ordered\nitems=['1.0.0','1.0.0-beta.11','1.0.0-alpha.10','1.0.0-alpha.2','1.0.0-alpha','1.0.0-beta.2','1.0.0-rc.1']\nassert ordered(items)==['1.0.0-alpha','1.0.0-alpha.2','1.0.0-alpha.10','1.0.0-beta.2','1.0.0-beta.11','1.0.0-rc.1','1.0.0']\nassert ordered(['2.0.0','10.0.0','1.9.0'])==['1.9.0','2.0.0','10.0.0']\nassert ordered(['1.0.0-alpha.a','1.0.0-alpha.3'])==['1.0.0-alpha.3','1.0.0-alpha.a']\nassert ordered(['1.0.0+z','1.0.0+a'])==['1.0.0+z','1.0.0+a']\nassert ordered([])==[]\n",
+    "reference_patch": {
+      "versions.py": "from functools import cmp_to_key\nfrom parser import parse\n\ndef compare(left,right):\n    lmain,lpre=parse(left)\n    rmain,rpre=parse(right)\n    if lmain!=rmain:\n        return (lmain>rmain)-(lmain<rmain)\n    if lpre is None or rpre is None:\n        return (lpre is None)-(rpre is None)\n    for a,b in zip(lpre,rpre):\n        if a==b: continue\n        an,bn=a.isdigit(),b.isdigit()\n        if an and bn:\n            return (int(a)>int(b))-(int(a)<int(b))\n        if an!=bn:\n            return -1 if an else 1\n        return (a>b)-(a<b)\n    return (len(lpre)>len(rpre))-(len(lpre)<len(rpre))\n\ndef ordered(versions):\n    return sorted(versions,key=cmp_to_key(compare))\n"
+    }
+  },
+  {
+    "id": "utf8-messages",
+    "repository": "utf8-messages-repo",
+    "split": "holdout",
+    "prompt": "Fix message chunking. Each returned string encodes to at most max_bytes in UTF-8. Preserve all characters and their order. Never split a character. Return no empty chunks. Reject nonpositive limits and a character larger than the limit.",
+    "files": {
+      "chunks.py": "from encoding import byte_length\n\ndef chunks(text,max_bytes):\n    return [text[i:i+max_bytes] for i in range(0,len(text),max_bytes)]\n",
+      "encoding.py": "def byte_length(text):\n    return len(text.encode('utf-8'))\n"
+    },
+    "editable": [
+      "chunks.py"
+    ],
+    "checks": "from chunks import chunks\nassert chunks('ab\u00e9\ud83d\ude42z',4)==['ab\u00e9','\ud83d\ude42','z']\nassert chunks('\u00e9\u00e9\u00e9',3)==['\u00e9','\u00e9','\u00e9']\nassert chunks('abcd',2)==['ab','cd']\nassert chunks('',1)==[]\nfor text,limit in [('\ud83d\ude42',3),('a',0),('a',-1),('',True)]:\n    try: chunks(text,limit)\n    except ValueError: pass\n    else: raise AssertionError('invalid chunk request')\nfor limit in [4,5,7]:\n    pieces=chunks('a\u00e9\ud83d\ude42bc',limit)\n    assert ''.join(pieces)=='a\u00e9\ud83d\ude42bc' and all(0<len(x.encode('utf-8'))<=limit for x in pieces)\n",
+    "reference_patch": {
+      "chunks.py": "from encoding import byte_length\n\ndef chunks(text,max_bytes):\n    if type(max_bytes) is not int or max_bytes<=0:\n        raise ValueError('invalid byte limit')\n    result=[]\n    current=''\n    size=0\n    for character in text:\n        width=byte_length(character)\n        if width>max_bytes:\n            raise ValueError('character does not fit')\n        if size+width>max_bytes:\n            result.append(current)\n            current=''\n            size=0\n        current+=character\n        size+=width\n    if current:\n        result.append(current)\n    return result\n"
+    }
+  },
+  {
+    "id": "ledger-rollback",
+    "repository": "ledger-rollback-repo",
+    "split": "holdout",
+    "prompt": "Fix in-memory ledger transactions. Apply the operation to the existing ledger dictionary and return its result on success. If it raises an exception, restore all nested values, preserve the top-level dictionary identity, and re-raise the original exception.",
+    "files": {
+      "transactions.py": "from ledger import withdraw\n\ndef transact(ledger,operation):\n    snapshot=ledger.copy()\n    try:\n        return operation(ledger)\n    except Exception:\n        ledger.clear()\n        ledger.update(snapshot)\n        raise\n",
+      "ledger.py": "def withdraw(ledger,account,amount):\n    record=ledger[account]\n    record['history'].append(-amount)\n    if record['balance']<amount:\n        raise ValueError('insufficient funds')\n    record['balance']-=amount\n    return record['balance']\n"
+    },
+    "editable": [
+      "transactions.py"
+    ],
+    "checks": "from transactions import transact\nfrom ledger import withdraw\nledger={'a':{'balance':10,'history':[]}}; identity=id(ledger)\nassert transact(ledger,lambda data:withdraw(data,'a',3))==7\nassert ledger=={'a':{'balance':7,'history':[-3]}}\ntry: transact(ledger,lambda data:withdraw(data,'a',20))\nexcept ValueError as error: assert str(error)=='insufficient funds'\nelse: raise AssertionError('lost exception')\nassert id(ledger)==identity and ledger=={'a':{'balance':7,'history':[-3]}}\nerror=RuntimeError('abort')\ndef fail(data):\n    data['new']={'balance':1,'history':[1]}\n    del data['a']\n    raise error\ntry: transact(ledger,fail)\nexcept RuntimeError as actual: assert actual is error\nelse: raise AssertionError('lost exception identity')\nassert ledger=={'a':{'balance':7,'history':[-3]}}\n",
+    "reference_patch": {
+      "transactions.py": "from copy import deepcopy\nfrom ledger import withdraw\n\ndef transact(ledger,operation):\n    snapshot=deepcopy(ledger)\n    try:\n        return operation(ledger)\n    except Exception:\n        ledger.clear()\n        ledger.update(snapshot)\n        raise\n"
+    }
+  }
+]

@@ -2,6 +2,8 @@
 
 This recipe builds the pruned Qwen3.6 derivatives.
 The launcher default uses upstream Qwen3.8-27B.
+See the [RLM experiment](rlm.md) for recursive coding and the finite search over agent settings.
+See the [adapter recipe](adapter-training.md) for the prepared local training path.
 
 Run PowerShell from the project folder on the PC.
 Use Python 3.14, Git, and a CUDA GPU for research.

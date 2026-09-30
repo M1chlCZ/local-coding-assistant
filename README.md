@@ -48,6 +48,13 @@ Chat: `http://127.0.0.1:8080`.
 The external agent harness supplies tools and file access.
 The API listens on loopback.
 
+## Recursive coding experiment
+
+The [RLM experiment](research/rlm.md) adds a bounded Python REPL and optional model subcalls.
+A finite search compares instructions and recursion depth on separate development and holdout tasks.
+The [adapter recipe](research/adapter-training.md) prepares local QLoRA from successful training traces.
+Adapter training and its GPU memory use remain unverified.
+
 ## Measured results
 
 RTX 5070 Ti, Ryzen 9 9900X, 32 GB RAM, 8K context:
