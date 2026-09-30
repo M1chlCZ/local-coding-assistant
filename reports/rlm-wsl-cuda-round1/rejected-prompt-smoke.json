@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "split": "smoke",
+  "scope": "Controlled delegation smoke: the host inserts one rlm_query before the first root-generated cell. All model replies use the actual PC CUDA API. This is not an autonomous-delegation or quality benchmark; excluded from training export.",
+  "tasks": [
+    {
+      "id": "feature-settings",
+      "repository": "feature-settings-repo",
+      "split": "train",
+      "mode": "rlm",
+      "depth": 2,
+      "passed": false,
+      "answer": "{\"settings.py\": \"from flags import TRUE_WORDS,FALSE_WORDS\\n\\ndef enabled(value,default=False):\\n    if value is None: return default\\n    if isinstance(value, bool): return value\\n    s = str(value).strip().lower()\\n    if s in TRUE_WORDS: return True\\n    if s in FALSE_WORDS: return False\\n    raise ValueError(f\\\"invalid boolean setting: {value!r}\\\")\\n\"}",
+      "patch": {
+        "settings.py": "from flags import TRUE_WORDS,FALSE_WORDS\n\ndef enabled(value,default=False):\n    if value is None: return default\n    if isinstance(value, bool): return value\n    s = str(value).strip().lower()\n    if s in TRUE_WORDS: return True\n    if s in FALSE_WORDS: return False\n    raise ValueError(f\"invalid boolean setting: {value!r}\")\n"
+      },
+      "elapsed_s": 36.815,
+      "calls": 4,
+      "input_tokens": 3898,
+      "output_tokens": 705,
+      "trace": [
+        {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an English coding assistant with a persistent isolated Python REPL.\nFirst inspect the type of context. There are two distinct task types.\nFor a dictionary context, this is a repository repair. Source files are in context['files'], the request in context['task'], and editable paths in context['editable'].\nRepository files also exist under /workspace on the Python import path. Inspect selected files, then import and test them when needed.\nFor a repository repair, return a dictionary mapping editable paths to their COMPLETE corrected source text.\nFor a string context, this is a focused analysis task. Read the text literally. Do not assume the whole string is JSON or use repository dictionary keys on it.\nFor a text task, return brief analysis as a string. Do not produce a repository patch or attempt to import files mentioned in the text.\nExecute Python only in ```repl``` blocks.\nKeep printed output short. Variables persist across cells. Do not use shell tools or network.\nFor either task type, finish inside a repl block: answer['content'] = result; answer['ready'] = True. Use a dictionary result for a repair, a string result for text analysis.\nDo not modify the context to pretend a repair succeeded. Hidden tests grade your final patch.\nDo not print or return the whole repository. State no success without test evidence.\nInspect the relevant code, make the repair, and finish within four turns when possible. Avoid repetitive exploratory tests.\nUse llm_query(prompt) or rlm_query(prompt) for focused analysis when useful. Pass selected source text and a clear question, not the whole context.\n"
+            },
+            {
+              "role": "user",
+              "content": "Answer the following: Fix boolean feature settings. Accept bool values and trimmed, case-insensitive strings true/false, yes/no, on/off, 1/0. None uses the supplied default. Reject all other values.\n\nYour context is a dict of 441 total characters. Each sub-LLM call can handle roughly ~100k tokens at once."
+            },
+            {
+              "role": "user",
+              "content": "You have not interacted with the REPL environment or seen your prompt / context yet. Look at the context first; do not provide a final answer yet.\n\nTurn 1/8:"
+            }
+          ],
+          "response": "```repl\nprint(type(context))\nprint(repr(context)[:2000])\n```",
+          "input_tokens": 472,
+          "output_tokens": 22,
+          "kind": "root"
+        },
+        {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an English coding assistant with a persistent isolated Python REPL.\nFirst inspect the type of context. There are two distinct task types.\nFor a dictionary context, this is a repository repair. Source files are in context['files'], the request in context['task'], and editable paths in context['editable'].\nRepository files also exist under /workspace on the Python import path. Inspect selected files, then import and test them when needed.\nFor a repository repair, return a dictionary mapping editable paths to their COMPLETE corrected source text.\nFor a string context, this is a focused analysis task. Read the text literally. Do not assume the whole string is JSON or use repository dictionary keys on it.\nFor a text task, return brief analysis as a string. Do not produce a repository patch or attempt to import files mentioned in the text.\nExecute Python only in ```repl``` blocks.\nKeep printed output short. Variables persist across cells. Do not use shell tools or network.\nFor either task type, finish inside a repl block: answer['content'] = result; answer['ready'] = True. Use a dictionary result for a repair, a string result for text analysis.\nDo not modify the context to pretend a repair succeeded. Hidden tests grade your final patch.\nDo not print or return the whole repository. State no success without test evidence.\nInspect the relevant code, make the repair, and finish within four turns when possible. Avoid repetitive exploratory tests.\nUse llm_query(prompt) or rlm_query(prompt) for focused analysis when useful. Pass selected source text and a clear question, not the whole context.\n\n\nAs an RLM, you should act as an orchestrator, not a solver.\n\nDirectly after you probe the `context` and understand your task, pause and plan: state explicitly how the task decomposes into sub-LLM / REPL steps, and sketch the concrete sequence of turns \u2014 what each turn computes and which sub-LLM call (if any) it issues \u2014 like a condensed trajectory, before you execute them. Then execute one turn at a time: after each step `print` a small sample of the result, verify it looks right, and only flip `answer[\"ready\"] = True` once you have actually printed the candidate answer. If you are running out of turns without a confirmed answer, submit your best inference rather than letting the rollout terminate unsubmitted.\n\nYour own context window is small. Push every long-context operation that would not fit comfortably in your own working window \u2014 reading, summarizing, classifying, verifying, answering sub-questions, even recapping your own progress \u2014 into `llm_query` / `llm_query_batched` calls instead of pulling that text into your own message stream. (Conversely: if a Python keyword / regex search over `context` would already pin the answer, or if a single visible passage already contains it, just read it directly \u2014 sub-LMs are for when the raw text won't fit or the question needs semantic interpretation.) Long REPL stdout pollutes history the same way raw `context` does: if you want a recap, ask `llm_query` for a 1\u20132 sentence summary and `print` only that. Aggregate the small results back in the REPL.\n\nSub-LLMs have no REPL; they only see the prompt and the `context` slice you pass them. Hand them clean, focused inputs and ask for terse, structured outputs you can manipulate programmatically.\n\nSub-call budget is finite on two independent axes, and `llm_query_batched` only parallelizes \u2014 it does not relax either. (1) Per-prompt capacity: a single sub-call answers well only when its input stays modestly sized \u2014 a useful rough ceiling is ~100K characters per prompt, less when the text is dense. Pack each prompt close to that capacity (a chunk of many items, a whole document) so one call accomplishes a lot of work. (2) Per-batch fan-out: `llm_query_batched` concurrency is bounded too \u2014 a useful rough ceiling is ~20 prompts per batch. Tiny-prompt mega-batches (hundreds or thousands of single-item prompts) are the anti-pattern; fat-prompt small batches are correct. For many independent units, use several ~20-wide batches of full-capacity prompts in sequence, not one mega-batch of tiny prompts. When the work can be expressed either as a sequential loop of `llm_query`s or as one comparably-sized batched call, prefer batched \u2014 same total work, far fewer turns burned. After Python-side filtering has narrowed the candidate set, batch-extract the survivors rather than reading them by hand. If the raw workload exceeds both budgets at once (e.g. a context far larger than ~20 \u00d7 100K chars), don't brute-force it: filter aggressively in Python first to a tractable subset, or stage the task \u2014 a cheap coarse pass narrows candidates, then a targeted second pass extracts from the survivors.\n\nReserve your own tokens for high-level decisions: what to ask next, how to combine sub-LM outputs, when to finalize. Delegate everything else."
+            },
+            {
+              "role": "user",
+              "content": "Your context is a str of 528 total characters. Each sub-LLM call can handle roughly ~100k tokens at once."
+            },
+            {
+              "role": "user",
+              "content": "You have not interacted with the REPL environment or seen your prompt / context yet. Look at the context first; do not provide a final answer yet.\n\nTurn 1/8:"
+            }
+          ],
+          "response": "```repl\nprint(type(context))\nprint(repr(context)[:600])\n```",
+          "input_tokens": 1164,
+          "output_tokens": 21,
+          "kind": "subcall"
+        },
+        {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an English coding assistant with a persistent isolated Python REPL.\nFirst inspect the type of context. There are two distinct task types.\nFor a dictionary context, this is a repository repair. Source files are in context['files'], the request in context['task'], and editable paths in context['editable'].\nRepository files also exist under /workspace on the Python import path. Inspect selected files, then import and test them when needed.\nFor a repository repair, return a dictionary mapping editable paths to their COMPLETE corrected source text.\nFor a string context, this is a focused analysis task. Read the text literally. Do not assume the whole string is JSON or use repository dictionary keys on it.\nFor a text task, return brief analysis as a string. Do not produce a repository patch or attempt to import files mentioned in the text.\nExecute Python only in ```repl``` blocks.\nKeep printed output short. Variables persist across cells. Do not use shell tools or network.\nFor either task type, finish inside a repl block: answer['content'] = result; answer['ready'] = True. Use a dictionary result for a repair, a string result for text analysis.\nDo not modify the context to pretend a repair succeeded. Hidden tests grade your final patch.\nDo not print or return the whole repository. State no success without test evidence.\nInspect the relevant code, make the repair, and finish within four turns when possible. Avoid repetitive exploratory tests.\nUse llm_query(prompt) or rlm_query(prompt) for focused analysis when useful. Pass selected source text and a clear question, not the whole context.\n\n\nAs an RLM, you should act as an orchestrator, not a solver.\n\nDirectly after you probe the `context` and understand your task, pause and plan: state explicitly how the task decomposes into sub-LLM / REPL steps, and sketch the concrete sequence of turns \u2014 what each turn computes and which sub-LLM call (if any) it issues \u2014 like a condensed trajectory, before you execute them. Then execute one turn at a time: after each step `print` a small sample of the result, verify it looks right, and only flip `answer[\"ready\"] = True` once you have actually printed the candidate answer. If you are running out of turns without a confirmed answer, submit your best inference rather than letting the rollout terminate unsubmitted.\n\nYour own context window is small. Push every long-context operation that would not fit comfortably in your own working window \u2014 reading, summarizing, classifying, verifying, answering sub-questions, even recapping your own progress \u2014 into `llm_query` / `llm_query_batched` calls instead of pulling that text into your own message stream. (Conversely: if a Python keyword / regex search over `context` would already pin the answer, or if a single visible passage already contains it, just read it directly \u2014 sub-LMs are for when the raw text won't fit or the question needs semantic interpretation.) Long REPL stdout pollutes history the same way raw `context` does: if you want a recap, ask `llm_query` for a 1\u20132 sentence summary and `print` only that. Aggregate the small results back in the REPL.\n\nSub-LLMs have no REPL; they only see the prompt and the `context` slice you pass them. Hand them clean, focused inputs and ask for terse, structured outputs you can manipulate programmatically.\n\nSub-call budget is finite on two independent axes, and `llm_query_batched` only parallelizes \u2014 it does not relax either. (1) Per-prompt capacity: a single sub-call answers well only when its input stays modestly sized \u2014 a useful rough ceiling is ~100K characters per prompt, less when the text is dense. Pack each prompt close to that capacity (a chunk of many items, a whole document) so one call accomplishes a lot of work. (2) Per-batch fan-out: `llm_query_batched` concurrency is bounded too \u2014 a useful rough ceiling is ~20 prompts per batch. Tiny-prompt mega-batches (hundreds or thousands of single-item prompts) are the anti-pattern; fat-prompt small batches are correct. For many independent units, use several ~20-wide batches of full-capacity prompts in sequence, not one mega-batch of tiny prompts. When the work can be expressed either as a sequential loop of `llm_query`s or as one comparably-sized batched call, prefer batched \u2014 same total work, far fewer turns burned. After Python-side filtering has narrowed the candidate set, batch-extract the survivors rather than reading them by hand. If the raw workload exceeds both budgets at once (e.g. a context far larger than ~20 \u00d7 100K chars), don't brute-force it: filter aggressively in Python first to a tractable subset, or stage the task \u2014 a cheap coarse pass narrows candidates, then a targeted second pass extracts from the survivors.\n\nReserve your own tokens for high-level decisions: what to ask next, how to combine sub-LM outputs, when to finalize. Delegate everything else."
+            },
+            {
+              "role": "user",
+              "content": "Your context is a str of 528 total characters. Each sub-LLM call can handle roughly ~100k tokens at once."
+            },
+            {
+              "role": "user",
+              "content": "You have not interacted with the REPL environment or seen your prompt / context yet. Look at the context first; do not provide a final answer yet.\n\nTurn 1/8:"
+            },
+            {
+              "role": "assistant",
+              "content": "```repl\nprint(type(context))\nprint(repr(context)[:600])\n```"
+            },
+            {
+              "role": "user",
+              "content": "REPL output:\n\n<class 'str'>\n'Analyze the smallest correction needed for this code. Return brief analysis, not a repository patch.\\nFix boolean feature settings. Accept bool values and trimmed, case-insensitive strings true/false, yes/no, on/off, 1/0. None uses the supplied default. Reject all other values.\\n{\"settings.py\": \"from flags import TRUE_WORDS,FALSE_WORDS\\\\n\\\\ndef enabled(value,default=False):\\\\n    if value is None: return default\\\\n    return bool(value)\\\\n\", \"flags.py\": \"TRUE_WORDS={\\'true\\',\\'yes\\',\\'on\\',\\'1\\'}\\\\nFALSE_WORDS={\\'false\\',\\'no\\',\\'off\\',\\'0\\'}\\\\n\"}'\n"
+            },
+            {
+              "role": "user",
+              "content": "Turn 2/8:"
+            }
+          ],
+          "response": "This is a text-analysis task (string context). I need to analyze the smallest correction for the `enabled` function in `settings.py`. Let me reason through it directly \u2014 no sub-LLM or file imports needed since the whole thing fits here.\n\nThe current code just does `bool(value)` after the `None` check, which fails the spec: it doesn't accept trimmed/case-insensitive string words, and it accepts arbitrary truthy values instead of rejecting them. The fix must use `TRUE_WORDS`/`FALSE_WORDS` from `flags`.\n\n```repl\nanalysis = \"\"\"Smallest correction: rewrite settings.enabled so it only returns True/False per the accepted set, using flags.TRUE_WORDS/FALSE_WORDS.\n\nCurrent bug: after the None->default branch it does `return bool(value)`, which (a) treats any non-empty/truthy value as enabled (e.g. 'maybe', 5), violating 'reject all other values', and (b) never normalizes strings, so 'True ', 'YES', 'On' are not recognized.\n\nMinimal fixed body:\n    if value is None: return default\n    if isinstance(value, bool): return value\n    s = str(value).strip().lower()\n    if s in TRUE_WORDS: return True\n    if s in FALSE_WORDS: return False\n    raise ValueError(f\"invalid boolean setting: {value!r}\")\n\nNotes: handle real bools first (so True/1 don't get mangled); strip+lower covers case-insensitivity and surrounding whitespace; membership against the imported word sets implements true/false, yes/no, on/off, 1/0; anything else raises rather than silently coercing. No change needed to flags.py.\"\"\"\nprint(analysis)\nanswer['content'] = analysis\nanswer['ready'] = True\n```",
+          "input_tokens": 1366,
+          "output_tokens": 380,
+          "kind": "subcall"
+        },
+        {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an English coding assistant with a persistent isolated Python REPL.\nFirst inspect the type of context. There are two distinct task types.\nFor a dictionary context, this is a repository repair. Source files are in context['files'], the request in context['task'], and editable paths in context['editable'].\nRepository files also exist under /workspace on the Python import path. Inspect selected files, then import and test them when needed.\nFor a repository repair, return a dictionary mapping editable paths to their COMPLETE corrected source text.\nFor a string context, this is a focused analysis task. Read the text literally. Do not assume the whole string is JSON or use repository dictionary keys on it.\nFor a text task, return brief analysis as a string. Do not produce a repository patch or attempt to import files mentioned in the text.\nExecute Python only in ```repl``` blocks.\nKeep printed output short. Variables persist across cells. Do not use shell tools or network.\nFor either task type, finish inside a repl block: answer['content'] = result; answer['ready'] = True. Use a dictionary result for a repair, a string result for text analysis.\nDo not modify the context to pretend a repair succeeded. Hidden tests grade your final patch.\nDo not print or return the whole repository. State no success without test evidence.\nInspect the relevant code, make the repair, and finish within four turns when possible. Avoid repetitive exploratory tests.\nUse llm_query(prompt) or rlm_query(prompt) for focused analysis when useful. Pass selected source text and a clear question, not the whole context.\n"
+            },
+            {
+              "role": "user",
+              "content": "Answer the following: Fix boolean feature settings. Accept bool values and trimmed, case-insensitive strings true/false, yes/no, on/off, 1/0. None uses the supplied default. Reject all other values.\n\nYour context is a dict of 441 total characters. Each sub-LLM call can handle roughly ~100k tokens at once."
+            },
+            {
+              "role": "user",
+              "content": "You have not interacted with the REPL environment or seen your prompt / context yet. Look at the context first; do not provide a final answer yet.\n\nTurn 1/8:"
+            },
+            {
+              "role": "assistant",
+              "content": "```repl\nprint(type(context))\nprint(repr(context)[:2000])\n```"
+            },
+            {
+              "role": "user",
+              "content": "REPL output:\n\nController-requested analysis:\nSmallest correction: rewrite settings.enabled so it only returns True/False per the accepted set, using flags.TRUE_WORDS/FALSE_WORDS.\n\nCurrent bug: after the None->default branch it does `return bool(value)`, which (a) treats any non-empty/truthy value as enabled (e.g. 'maybe', 5), violating 'reject all other values', and (b) never normalizes strings, so 'True ', 'YES', 'On' are not recognized.\n\nMinimal fixed body:\n    if value is None: return default\n    if isinstance(value, bool): return value\n    s = str(value).strip().lower()\n    if s in TRUE_WORDS: return True\n    if s in FALSE_WORDS: return False\n    raise ValueError(f\"invalid boolean setting: {value!r}\")\n\nNotes: handle real bools first (so True/1 don't get mangled); strip+lower covers case-insensitivity and surrounding whitespace; membership against the imported word sets implements true/false, yes/no, on/off, 1/0; anything else raises rather than silently coercing. No change needed to flags.py.\n\n<class 'dict'>\n{'files': {'settings.py': 'from flags import TRUE_WORDS,FALSE_WORDS\\n\\ndef enabled(value,default=False):\\n    if value is None: return default\\n    return bool(value)\\n', 'flags.py': \"TRUE_WORDS={'true','yes','on','1'}\\nFALSE_WORDS={'false','no','off','0'}\\n\"}, 'editable': ['settings.py'], 'task': 'Fix boolean feature settings. Accept bool values and trimmed, case-insensitive strings true/false, yes/no, on/off, 1/0. None uses the supplied default. Reject all other values.'}\n\n\n\n\n"
+            },
+            {
+              "role": "user",
+              "content": "Turn 2/8:"
+            }
+          ],
+          "response": "```repl\nnew_settings = '''from flags import TRUE_WORDS,FALSE_WORDS\n\ndef enabled(value,default=False):\n    if value is None: return default\n    if isinstance(value, bool): return value\n    s = str(value).strip().lower()\n    if s in TRUE_WORDS: return True\n    if s in FALSE_WORDS: return False\n    raise ValueError(f\"invalid boolean setting: {value!r}\")\n'''\n# test\nimport sys; sys.path.insert(0,'/workspace')\nns={}\nexec(open('/workspace/flags.py').read(), ns)\nexec(new_settings, ns)\ne=ns['enabled']\nassert e(True)==True\nassert e(False)==False\nfor v in ['true','True ','YES','yEs','On','ON','1']: assert e(v)==True, v\nfor v in ['false','FALSE','no','No','off','OFF','0']: assert e(v)==False, v\nassert e(None,True)==True\nassert e(None,False)==False\ntry:\n    e('maybe'); print(\"FAIL no raise\")\nexcept ValueError as ex: pass\ntry:\n    e(5); print(\"FAIL no raise 2\")\nexcept ValueError: pass\nprint(\"ok\")\nanswer={'content':{'settings.py':new_settings},'ready':True}\n```",
+          "input_tokens": 896,
+          "output_tokens": 282,
+          "kind": "root"
+        }
+      ],
+      "feedback": "Traceback (most recent call last):\n  File \"<stdin>\", line 7, in <module>\n  File \"<string>\", line 8, in <module>\nAssertionError: invalid boolean\n"
+    }
+  ]
+}

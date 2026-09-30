@@ -5,9 +5,9 @@ The model inspects repository files through a persistent Python REPL.
 It can request focused model analysis or start a nested REPL.
 Recursion changes inference. It does not update model weights.
 
-The current setup runs the model through CUDA on the Windows PC.
-The Mac runs the experiment controller and Docker sandbox through an SSH relay.
-A complete PC setup also requires Docker. WSL installation can require a Windows restart.
+The [WSL setup](wsl.md) now runs the model, controller, and Docker sandbox on the PC.
+The earlier measurements used a controller and Docker sandbox on the Mac through an SSH relay.
+WSL installation can require a Windows restart.
 The Windows launcher works without WSL.
 
 ## Prepare
@@ -61,7 +61,21 @@ Its partial holdout run is excluded from evaluation evidence.
 All submitted patches received another grading run after the sandbox review.
 The [reports](../reports/rlm-qwen38-round1/summary.json) preserve the measured results and limits.
 Docker checks also exercise ordinary subcalls and a nested child with controlled model responses.
-Actual recursive model performance still needs a separate measurement.
+
+## PC measurements after WSL setup
+
+The complete experiment ran inside the dedicated WSL environment with the same model and CUDA settings.
+Three training tasks produced one successful repair. The model made no subcalls, despite an instruction to delegate.
+A controlled smoke test inserted one delegation before the first root-generated cell.
+It passed with eight actual model calls, including four child calls, in 48.267 seconds.
+This smoke test verifies the recursive execution path. It does not establish autonomous delegation or a quality improvement.
+A shorter prompt candidate failed the repair checks. The original prompt remains in use.
+
+Peak sampled GPU use reached 15,269 MiB, including the Windows desktop.
+The training exporter retained four root rows from the successful task and excluded both failed tasks.
+The dataset check passed without loading a training model. No adapter was trained.
+Four rows provide a pipeline check, not enough data for a useful adapter.
+The [PC report](../reports/rlm-wsl-cuda-round1/summary.json) records these results and their limits.
 
 ## Propose a repository repair
 

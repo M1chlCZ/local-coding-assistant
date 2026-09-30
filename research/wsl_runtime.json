@@ -1,0 +1,18 @@
+{
+  "tag": "b11146",
+  "commit": "7fe450e19305b828c199d602c23a8337aaa1f03b",
+  "artifacts": [
+    {
+      "name": "llama-b11146-bin-ubuntu-cuda-13.4-x64.tar.gz",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/llama-b11146-bin-ubuntu-cuda-13.4-x64.tar.gz",
+      "size": 149265156,
+      "sha256": "1603d9c00a4b6eac8298c5c7868cdb080a3ac31948ab1e457441d71ce274dd7e"
+    },
+    {
+      "name": "cudart-llama-b11146-bin-ubuntu-cuda-13.4-x64.tar.gz",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11146/cudart-llama-b11146-bin-ubuntu-cuda-13.4-x64.tar.gz",
+      "size": 440231388,
+      "sha256": "7c2af505f8b26ecd3707ab7723fa985fee1df233b7c1d60e5e17724b536d15bb"
+    }
+  ]
+}

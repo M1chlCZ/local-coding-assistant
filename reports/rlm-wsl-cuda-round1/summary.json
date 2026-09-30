@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "source_revision": "b4d75393f76a2d9f2d1c5d1d585d0b77df3462ee",
+  "hardware": {
+    "gpu": "NVIDIA RTX 5070 Ti",
+    "gpu_total_mib": 16303,
+    "cpu": "AMD Ryzen 9 9900X",
+    "host_ram_gb": 32,
+    "windows_driver": "617.14"
+  },
+  "runtime": {
+    "location": "Dedicated LocalCodingAssistant WSL 2 environment on the PC",
+    "distribution": "Ubuntu 24.04.5",
+    "llama_cpp": "b11146",
+    "cuda": "13.4",
+    "docker": "29.8.1",
+    "model": "Qwen3.8-27B-UD-Q4_K_M",
+    "context": 8192,
+    "cpu_ffn_layers": 8,
+    "cpu_moe_layers": 0,
+    "temperature": 0,
+    "max_tokens_per_call": 1024,
+    "api": "127.0.0.1:8080"
+  },
+  "autonomous_train": {
+    "scope": "Three authored two-file training fixtures. No autonomous subcalls occurred. This is not a broad coding benchmark.",
+    "passed": 1,
+    "total": 3,
+    "tasks": [
+      {
+        "id": "stock-reservations",
+        "passed": false,
+        "elapsed_s": 33.774,
+        "calls": 4,
+        "child_calls": 0,
+        "output_tokens": 709
+      },
+      {
+        "id": "request-retries",
+        "passed": false,
+        "elapsed_s": 15.729,
+        "calls": 2,
+        "child_calls": 0,
+        "output_tokens": 281
+      },
+      {
+        "id": "feature-settings",
+        "passed": true,
+        "elapsed_s": 26.217,
+        "calls": 4,
+        "child_calls": 0,
+        "output_tokens": 516
+      }
+    ]
+  },
+  "controlled_nested_smoke": {
+    "scope": "The host inserts one rlm_query before the first root-generated cell. All model replies use the actual PC CUDA API. Excluded from training export.",
+    "tasks": [
+      {
+        "id": "feature-settings",
+        "passed": true,
+        "elapsed_s": 48.267,
+        "calls": 8,
+        "child_calls": 4,
+        "output_tokens": 915
+      }
+    ]
+  },
+  "rejected_prompt_smoke": {
+    "scope": "A revised context-type prompt failed repair checks despite fewer model calls. The prompt was rejected; the original prompt remains in source. Excluded from training export.",
+    "tasks": [
+      {
+        "id": "feature-settings",
+        "passed": false,
+        "elapsed_s": 36.815,
+        "calls": 4,
+        "child_calls": 2,
+        "output_tokens": 705
+      }
+    ]
+  },
+  "memory": {
+    "scope": "600 samples across idle time and multiple trials; GPU use includes the Windows desktop. This is not model-only VRAM.",
+    "samples": 600,
+    "duration_s": 622.524,
+    "peak_gpu_used_mib": 15269,
+    "minimum_linux_available_kib": 14017476,
+    "linux_total_kib": 24608436,
+    "wsl_memory_cap_gb": 24
+  },
+  "learning_data": {
+    "status": "Four exported root rows passed the dataset check. No model was loaded for training; no adapter was trained. Four rows only verify the pipeline.",
+    "manifest": {
+      "schema_version": 1,
+      "split": "train",
+      "tasks_sha256": "b57c5a195bccb5851996ffdc2477cfbb79fce8c07d8e789d4c0ce51f780d7cc0",
+      "dataset_sha256": "0434bda8b05449a5fa22d9561dc68ee94f18b4207c02d75d3b1deb8ea2b3687e",
+      "rows": 4,
+      "sources": [
+        {
+          "name": "train.json",
+          "sha256": "7d2398fdeef842b5b462567ba36f84fb1537bba2d4c0f1ef001c46e905da0b1e"
+        }
+      ],
+      "excluded": {
+        "failed_or_baseline": 2
+      },
+      "trust": "Local evaluator reports are inputs, not cryptographic proof of correct grading."
+    }
+  },
+  "limitations": [
+    "The model ignored the autonomous delegation instruction.",
+    "The controlled nested test proves execution, not autonomous recursion or quality improvement.",
+    "The public authored fixtures do not establish general repository repair performance.",
+    "GPU adapter training remains unverified."
+  ],
+  "startup_verification": {
+    "windows_batch": "start-rlm.cmd refused an existing healthy server with exit 2; then started the WSL CUDA server after the previous process was stopped.",
+    "model_path": "Windows path converted through wslpath by wsl_server.py.",
+    "windows_chat_health": "ok",
+    "coding_api_smoke": "Returned Python add(a, b) with return a + b.",
+    "active_model_processes": 1,
+    "checks": "Launcher, CUDA wrapper, exporter, and autoresearch self-checks passed. Docker sandbox checks passed on the PC."
+  }
+}
