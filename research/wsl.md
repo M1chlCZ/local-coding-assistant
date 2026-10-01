@@ -139,6 +139,7 @@ From the Mac, open a terminal and run this command:
 ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -L 127.0.0.1:18080:127.0.0.1:8080 coding-pc
 ```
 
+Replace `coding-pc` with your own SSH alias.
 Keep the terminal open. On the Mac, open `http://127.0.0.1:18080`.
 Ctrl+C closes the connection.
 Both endpoints remain on loopback. The model API requires no public port.

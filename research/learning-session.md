@@ -83,7 +83,7 @@ No datasets or weights upload automatically.
 
 ## Files
 
-The Linux session folder is `.cache/learning/current`.
+The Linux session folder is `.cache/learning/current` within the project folder.
 Open it from Windows at `\\wsl.localhost\LocalCodingAssistant\home\coder\local-coding-assistant\.cache\learning\current`.
 Each `round-NNN` folder contains teacher traces, a fixed dataset, checkpoints, training logs, and development reports.
 `status.json` records the current phase, active time, and accepted candidates.

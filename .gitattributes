@@ -1,2 +1,3 @@
 *.json -text
 *.txt -text
+.githooks/* text eol=lf

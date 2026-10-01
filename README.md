@@ -86,6 +86,11 @@ py -3 test_evaluation.py
 See the [recipe](research/recipe.md) for compression and evaluation commands.
 Docker isolates generated code during evaluation.
 
+Before publishing, run `python3 check_public_data.py --history`.
+The check detects personal home paths and SSH tunnel hosts outside the documented example.
+To run it before each push, use `git config core.hooksPath .githooks`.
+Review credentials and screenshots separately.
+
 Original code uses the [MIT license](LICENSE).
 Upstream model licenses remain separate.
 See [NOTICE.md](NOTICE.md) and [ATTRIBUTION.md](ATTRIBUTION.md) for sources and redistribution terms.
