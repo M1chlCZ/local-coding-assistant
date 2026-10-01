@@ -55,6 +55,23 @@ function Invoke-Control([string]$Command) {
     return ($Result -join "`n")
 }
 
+function Grant-TaskControl([string]$TaskName) {
+    # SSH can create the task with an elevated token; the desktop panel uses a normal token.
+    $Service = New-Object -ComObject 'Schedule.Service'
+    $Service.Connect()
+    $Task = $Service.GetFolder('\').GetTask($TaskName)
+    $Sid = [Security.Principal.WindowsIdentity]::GetCurrent().User
+    $Descriptor = New-Object Security.AccessControl.RawSecurityDescriptor($Task.GetSecurityDescriptor(7))
+    foreach ($ExistingAce in $Descriptor.DiscretionaryAcl) {
+        if ($ExistingAce.SecurityIdentifier -eq $Sid -and $ExistingAce.AceQualifier -eq 'AccessAllowed' -and
+            ($ExistingAce.AccessMask -band 0x1f01ff) -eq 0x1f01ff) { return }
+    }
+    $Ace = New-Object Security.AccessControl.CommonAce([Security.AccessControl.AceFlags]::None,
+        [Security.AccessControl.AceQualifier]::AccessAllowed,0x1f01ff,$Sid,$false,$null)
+    $Descriptor.DiscretionaryAcl.InsertAce(0,$Ace)
+    $Task.SetSecurityDescriptor($Descriptor.GetSddlForm('All'),0)
+}
+
 function Start-Worker {
     if ($Hours -lt 0.01 -or $Hours -gt 24) { throw 'Use 0.01 to 24 hours.' }
     Invoke-Control 'resume' | Out-Null
@@ -77,6 +94,7 @@ function Start-Worker {
     $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) `
         -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew
     Register-ScheduledTask -TaskName $TaskName -Action $TaskAction -Principal $Principal -Settings $Settings -Force | Out-Null
+    Grant-TaskControl $TaskName
     Start-ScheduledTask -TaskName $TaskName
     Start-Sleep -Seconds 2
     if ((Get-ScheduledTask -TaskName $TaskName).State -ne 'Running') {

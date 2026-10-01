@@ -35,6 +35,7 @@ Training checkpoints include the adapter, optimizer, scheduler, random state, an
 Resume checks the data, settings, and checkpoint hashes before it restores training.
 
 The task uses your current Windows login, with no password or administrator setting.
+The launcher gives that account control of its learning task, including tasks created through an elevated SSH connection.
 It has no time trigger and does not start at login.
 Windows logout or restart stops the worker.
 After login, select **Resume** to restore the last complete checkpoint and saved task progress.
@@ -109,6 +110,9 @@ The adapter completed each attempt in two calls, but no repair passed.
 The session rejected that candidate. These results establish recovery, not a coding improvement.
 
 ## Check checkpoint recovery
+
+To check task access, run `powershell.exe -NoProfile -File .\test_learning_permissions.ps1` from a normal Windows terminal.
+This check requires an existing learning task. It updates the same task settings without starting the worker.
 
 For the CPU checks, run `python3 test_training_session.py`.
 For the CUDA check, stop all model processes first.
