@@ -1,7 +1,7 @@
 param(
     [ValidateSet('panel','start','pause','resume','stop','status','worker')][string]$Action = 'panel',
     [double]$Hours = 12,
-    [string]$Session = '.cache/learning/current'
+    [string]$Session = '.cache/learning/tuned'
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path

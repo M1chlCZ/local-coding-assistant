@@ -1,0 +1,62 @@
+{
+  "scope": "15 authored development repairs, shared RLM prompt and budgets. This comparison leaves the original holdout untouched. Small pilot, not general coding reliability.",
+  "sources": {
+    "research/rlm_tasks.json": "b57c5a195bccb5851996ffdc2477cfbb79fce8c07d8e789d4c0ce51f780d7cc0",
+    "research/repair_tasks.json": "3cc467078b8edbbed6351d2006d0875cf8c03f079080108570e2e227bd2d928e",
+    "recursive_agent.py": "e2634ae747678903b00eabfded39a980cfae101c800d74a7b54274cb683c8bb5"
+  },
+  "limits": {
+    "calls": 8,
+    "output_tokens": 4096,
+    "seconds": 120
+  },
+  "settings": {
+    "mode": "rlm",
+    "depth": 2,
+    "instruction": ""
+  },
+  "models": {
+    "base": {
+      "passed": 0,
+      "total": 15,
+      "seconds": 613.53,
+      "calls": 114,
+      "output_tokens": 18616,
+      "subcalls": 0
+    },
+    "old-adapter": {
+      "passed": 8,
+      "total": 15,
+      "seconds": 187.57,
+      "calls": 32,
+      "output_tokens": 2971,
+      "subcalls": 0
+    },
+    "mimo-9b": {
+      "passed": 0,
+      "total": 15,
+      "seconds": 114.31,
+      "calls": 120,
+      "output_tokens": 7258,
+      "subcalls": 0
+    }
+  },
+  "schema_version": 1,
+  "date": "2026-10-01",
+  "stage": "Pre-tuning baseline comparison",
+  "student": "Qwen/Qwen3-4B",
+  "student_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "old_adapter_sha256": "a1e5722137765a0f3c49b6b9d2b91975f83338a68ecf3c58a30826edbe72cd77",
+  "gguf_manifest": "research/manifest-mimo26-9b.json",
+  "compatibility_failure": "MiMo emitted <tool_call> tags instead of executable repl blocks. Its 0/15 measures harness incompatibility, not standalone coding ability.",
+  "checks": {
+    "training_fixtures": 30,
+    "new_development_fixtures": 10,
+    "executed_trajectory_rows": 120,
+    "longest_checked_example_tokens": 1225,
+    "oracle_targets_used_for_training": false,
+    "cuda_pause_step": 1,
+    "cuda_resumed_step": 2,
+    "completed_checkpoint_recovery_without_extra_step": true
+  }
+}

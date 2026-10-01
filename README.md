@@ -59,7 +59,9 @@ The [WSL recipe](research/wsl.md) runs the complete experiment on the PC through
 After WSL setup, `start-rlm.cmd` starts its model server.
 The [learning session](research/learning-session.md) collects checked repairs and trains local adapters.
 Double-click `learning.cmd` for Windows Start, Pause, Resume, and Stop controls.
-Checkpoints retain the optimizer and current step. Candidates receive development checks before acceptance.
+Checkpoints retain the optimizer and current step.
+The tuned session uses 30 repair tasks, visible tests, and short training candidates.
+Candidates receive 15 development checks before acceptance. Three rounds without improvement stop the session.
 
 ## Measured results
 
@@ -74,6 +76,8 @@ RTX 5070 Ti, Ryzen 9 9900X, 32 GB RAM, 8K context:
 These small samples do not establish broad agent reliability.
 Different quantization methods prevent an isolated comparison of model architectures.
 The [comparison notes](research/candidates.md) record recent releases, memory use, and failures.
+On 15 authored REPL repairs, the previous 4B adapter passed 8/15 against its base at 0/15.
+The [tuning notes](research/learning-session.md#expanded-baseline-result) separate those baseline results from the revised training run.
 The [model card](MODEL_CARD.md) describes our derivative and its limits.
 
 ## Reproduce

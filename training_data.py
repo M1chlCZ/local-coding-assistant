@@ -57,8 +57,8 @@ def manifest_path(path):
 
 
 def repair_calls(task, trace, patch):
-    """Derive two short supervised turns from a freshly checked teacher repair."""
-    from recursive_agent import grade, parse_patch
+    """Execute an inspect/fail/repair/retest trajectory for a regraded teacher patch."""
+    from recursive_agent import Sandbox, grade, parse_patch
     patch = parse_patch(json.dumps(patch), task)
     if not grade(task, patch)['passed']:
         raise ValueError('Repair no longer passes the registered functional checks')
@@ -68,13 +68,44 @@ def repair_calls(task, trace, patch):
     messages_valid(first['messages'])
     if first['messages'][-1]['role'] != 'user':
         raise ValueError('Root prompt must end with a user message')
-    inspection = '```repl\nprint(context)\n```'
+    if 'test_visible.py' not in task['files'] or 'test_visible.py' in task['editable']:
+        raise ValueError('Tested repairs require an immutable visible test file')
     context = {'files': task['files'], 'editable': task['editable'], 'task': task['prompt']}
-    inspected = first['messages'] + [{'role': 'assistant', 'content': inspection},
-        {'role': 'user', 'content': 'REPL output:\n\n' + repr(context) + '\n'},
-        {'role': 'user', 'content': 'Turn 2/8:'}]
-    answer = "```repl\nanswer['content'] = " + repr(patch) + "\nanswer['ready'] = True\n```"
-    return [(first['messages'], inspection), (inspected, answer)]
+    test = ("import subprocess,sys\n"
+            "tested = subprocess.run([sys.executable, '-B', '-I', '-c', "
+            + repr("import sys;sys.path.insert(0,'/workspace');exec(open('/workspace/test_visible.py').read())")
+            + "], capture_output=True, text=True, timeout=10)\n"
+            "print('Test exit:', tested.returncode)\nprint(tested.stdout+tested.stderr)\n")
+    repair = ("from pathlib import Path\npatch = " + repr(patch)
+              + "\nfor name,source in patch.items():\n    Path('/workspace', name).write_text(source)\n"
+              + test + "assert tested.returncode == 0\n")
+    codes = ['print(context)', test, repair,
+             "answer['content'] = patch\nanswer['ready'] = True"]
+    environment = Sandbox(context, allow_queries=False)
+    calls = []
+    messages = list(first['messages'])
+    try:
+        for index, code in enumerate(codes):
+            compile(code, '<verified-repair>', 'exec')
+            response = '```repl\n'+code+'\n```'
+            calls.append((list(messages), response))
+            result = environment.execute_code(code)
+            if index == 1 and environment_test_passed(result):
+                raise ValueError('Visible tests do not reproduce the defect')
+            if index == 2 and not environment_test_passed(result):
+                raise ValueError('Teacher patch failed the visible retest')
+            if index in (0, 3) and result.stderr:
+                raise ValueError('Derived repair trajectory failed to execute')
+            messages += [{'role':'assistant','content':response},
+                         {'role':'user','content':'REPL output:\n\n'+result.stdout+result.stderr},
+                         {'role':'user','content':f'Turn {index+2}/8:'}]
+    finally:
+        environment.cleanup()
+    return calls
+
+
+def environment_test_passed(result):
+    return not result.stderr and 'Test exit: 0' in result.stdout and 'VISIBLE_CHECKS_PASSED' in result.stdout
 
 
 def export(reports, tasks_path, output, repairs=False):
@@ -136,7 +167,7 @@ def export(reports, tasks_path, output, repairs=False):
                 seen.add(identity)
                 rows.append({'messages': messages, 'task_id': original['id'],
                              'repository': original['repository'], 'tasks_sha256': digest,
-                             'example_kind': 'derived_verified_repair' if repairs else 'root_trace'})
+                             'example_kind': 'executed_verified_repair' if repairs else 'root_trace'})
     if not rows:
         raise ValueError('No successful train-split RLM traces to export')
     content = ''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in rows)
@@ -148,7 +179,7 @@ def export(reports, tasks_path, output, repairs=False):
     manifest = {'schema_version': 1, 'split': 'train', 'tasks_sha256': digest,
                 'dataset_sha256': sha256(output), 'rows': len(rows), 'sources': sources,
                 'excluded': dict(excluded),
-                'example_kind': 'derived_verified_repair' if repairs else 'root_trace',
+                'example_kind': 'executed_verified_repair' if repairs else 'root_trace',
                 'trust': 'Local evaluator reports are inputs, not cryptographic proof of correct grading.'}
     with companion.open('x', encoding='utf-8', newline='\n') as stream:
         stream.write(json.dumps(manifest, indent=2) + '\n')

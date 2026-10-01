@@ -4,8 +4,6 @@ import copy
 import fcntl
 import json
 import os
-import random
-import re
 import signal
 import subprocess
 import time
@@ -19,71 +17,48 @@ MODEL = 'Qwen/Qwen3-4B'
 REVISION = '1cfa9a7208912126459214e8b04321603b3df60c'
 LIMITS = {'calls': 8, 'output_tokens': 4096, 'seconds': 120}
 SETTINGS = {'mode': 'rlm', 'depth': 2, 'instruction': ''}
-DEFAULT = ROOT/'.cache/learning/current'
+DEFAULT = ROOT/'.cache/learning/tuned'
 SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
                 'recursive_agent.py', 'rlm_worker.py', 'research/adapter_eval_server.py',
-                'launcher.py', 'wsl_server.py')
+                'launcher.py', 'wsl_server.py', 'research/repair_tasks.json')
+
+
+def development_tasks():
+    originals = json.loads((ROOT/'research/rlm_tasks.json').read_text())
+    added = json.loads((ROOT/'research/repair_tasks.json').read_text())
+    return [t for t in originals+added if t['split']=='dev']
 
 
 def round_tasks(index):
-    """Training-only module variants plus parameterized tasks with authored tests."""
+    """Thirty distinct training repairs with visible tests; no evaluation repositories."""
     originals = json.loads((ROOT/'research/rlm_tasks.json').read_text())
+    added = json.loads((ROOT/'research/repair_tasks.json').read_text())
     tasks = []
-    for source in originals:
+    for source in originals+added:
         if source['split'] != 'train':
             continue
         task = copy.deepcopy(source)
-        mapping = {Path(name).stem: Path(name).stem + f'_r{index}' for name in task['files']}
-        def rename(code):
-            # Rename module imports only: names like urllib's .query must remain unchanged.
-            for old, new in mapping.items():
-                code = re.sub(r'(?m)^(\s*from\s+)'+re.escape(old)+r'(\s+import\s+)',
-                              lambda m: m[1]+new+m[2], code)
-                code = re.sub(r'(?m)^(\s*import\s+)'+re.escape(old)+r'(\s*(?:\n|$))',
-                              lambda m: m[1]+new+' as '+old+m[2], code)
-            return code
-        task.update(id=task['id']+f'-r{index}', repository=task['repository']+f'-r{index}',
-                    files={mapping[Path(p).stem]+'.py': rename(c) for p, c in task['files'].items()},
-                    editable=[mapping[Path(p).stem]+'.py' for p in task['editable']],
-                    checks=rename(task['checks']),
-                    reference_patch={mapping[Path(p).stem]+'.py': rename(c) for p, c in task['reference_patch'].items()})
+        task['id'] += f'-r{index}'
+        task['repository'] += f'-r{index}'
+        if 'test_visible.py' not in task['files']:
+            # Existing authored training checks are visible; dev and holdout checks remain excluded.
+            task['files']['test_visible.py'] = task['checks']+"\nprint('VISIBLE_CHECKS_PASSED')\n"
+            task['prompt'] += ' Run test_visible.py before and after the repair. Keep the test file unchanged.'
         tasks.append(task)
-    rng = random.Random(42000+index)
-    low, high = rng.randint(-100, -1), rng.randint(2, 100)
-    width = rng.randint(2, 12)
-    key = f'code_{index}'
-    cases = [
-        ('clamp', f'Clamp each integer to [{low}, {high}]. Reject booleans and non-integers. Preserve input order without mutation.',
-         'def repair(values):\n    return sorted(values)\n',
-         f'def repair(values):\n    if any(type(x) is not int for x in values):\n        raise ValueError("invalid")\n    return [max({low}, min({high}, x)) for x in values]\n',
-         f'assert repair([{low-2}, {low}, 0, {high}, {high+2}]) == [{low}, {low}, 0, {high}, {high}]\nassert repair([])==[]\nfor bad in [True, 1.5, "2", None]:\n    try: repair([bad])\n    except ValueError: pass\n    else: raise AssertionError("invalid input")\nx=[{high+1}, {low-1}]; before=x.copy(); repair(x); assert x==before\n'),
-        ('chunks', f'Split a list into chunks of at most {width} elements. Keep the last partial chunk. Preserve order and input.',
-         f'def repair(values):\n    return [values[i:i+{width}] for i in range(0, len(values)-{width}+1, {width})]\n',
-         f'def repair(values):\n    return [values[i:i+{width}] for i in range(0,len(values),{width})]\n',
-         f'for n in range({3*width+2}):\n    x=list(range(n)); before=x.copy(); out=repair(x)\n    assert out==[x[i:i+{width}] for i in range(0,n,{width})]\n    assert x==before\n    if out: out[0].append(-1); assert x==before\n'),
-        ('records', f'Keep the first record for each {key!r} key. Keep records without that key. Preserve order without changing the input.',
-         f'def repair(records):\n    return list({{r.get({key!r}):r for r in records}}.values())\n',
-         f'def repair(records):\n    seen=set(); result=[]\n    for row in records:\n        if {key!r} not in row:\n            result.append(row)\n        elif row[{key!r}] not in seen:\n            seen.add(row[{key!r}]); result.append(row)\n    return result\n',
-         f'a={{{key!r}:"a","v":1}}; b={{{key!r}:"a","v":2}}; c={{"v":3}}; d={{"v":4}}\nx=[a,b,c,d,{{{key!r}:None}},{{{key!r}:None}}]; before=[r.copy() for r in x]\nassert repair(x)==[a,c,d,x[4]]\nassert repair([])==[]\nassert x==before\n'),
-        ('runs', 'Run-length encode consecutive equal values as (value, count) tuples. Separate nonconsecutive runs. Preserve the input.',
-         'def repair(values):\n    return [(x,values.count(x)) for x in dict.fromkeys(values)]\n',
-         'def repair(values):\n    out=[]\n    for value in values:\n        if out and out[-1][0]==value:\n            out[-1]=(value,out[-1][1]+1)\n        else:\n            out.append((value,1))\n    return out\n',
-         f'assert repair([{low},{low},{high},{low}])==[({low},2),({high},1),({low},1)]\nassert repair([])==[]\nassert repair([[1],[1],[2]])==[([1],2),([2],1)]\nx=["a","a","b"]; before=x.copy(); assert repair(x)==[("a",2),("b",1)]; assert x==before\n')]
-    for name, prompt, broken, fixed, checks in cases:
-        path=f'{name}_r{index}.py'
-        tasks.append({'id': f'generated-{name}-r{index}', 'repository': f'generated-{name}-r{index}',
-            'split': 'train', 'prompt': prompt, 'files': {path: broken}, 'editable': [path],
-            'checks': f'from {Path(path).stem} import repair\n'+checks, 'reference_patch': {path: fixed}})
     return tasks
 
 
-def accepted(candidate, baseline, previous=None):
-    """All five dev tasks must complete; require more passes and no per-task regression."""
+def should_stop_for_quality(results):
+    return len(results)>=3 and not any(r['accepted'] for r in results[-3:])
+
+
+def accepted(candidate, baseline, previous=None, expected=5):
+    """All development tasks must complete; require more passes and no per-task regression."""
     def passes(report):
         return {r['id']: r.get('passed') is True for r in report['tasks']}
     new, base = passes(candidate), passes(baseline)
     prior = passes(previous) if previous else base
-    return (len(new) == 5 and new.keys() == base.keys() == prior.keys()
+    return (len(new) == expected and new.keys() == base.keys() == prior.keys()
             and sum(new.values()) > max(sum(base.values()), sum(prior.values()))
             and all(new[k] for k in new if base[k] or prior[k]))
 
@@ -189,11 +164,30 @@ class Session:
         command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'train_adapter.py'),
             '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
             '--model', MODEL, '--revision', REVISION, '--output', str(round_path/'adapter'),
-            '--max-steps', '80', '--max-length', '1536', '--save-steps', '10',
+            '--max-steps', '80', '--max-epochs', '1', '--learning-rate', '0.00005',
+            '--max-length', '4096', '--save-steps', '5',
             '--pause-file', str(self.path/'pause-training')]
         if self.state['best_adapter']:
             command += ['--warm-start', self.state['best_adapter']]
         return command
+
+    def teacher_baseline(self, folder):
+        """Measure the larger compatible model once before the first student update."""
+        from recursive_agent import grade, solve
+        path = folder/'teacher-dev.json'
+        report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
+            'sources': self.state['sources'], 'settings': SETTINGS, 'limits': LIMITS}
+        for task in development_tasks()[len(report['tasks']):]:
+            self.save(detail='Larger model development check: '+task['id'])
+            if self.interrupted():
+                return False
+            row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
+            if row.get('patch'):
+                row.update(grade(task, row['patch']))
+            report['tasks'].append(row)
+            atomic_json(path, report)
+        self.save(teacher_dev_passed=sum(r['passed'] for r in report['tasks']), teacher_dev_total=len(report['tasks']))
+        return True
 
     def collect(self, folder):
         from recursive_agent import grade, solve
@@ -214,6 +208,8 @@ class Session:
         command = [str(ROOT/'.cache/rlm-env/bin/python'), str(ROOT/'wsl_server.py'),
                    '--model', self.state['teacher_model']]
         if not self.server(command, 8080, folder/'teacher.log'):
+            return
+        if self.state['round']==1 and not self.teacher_baseline(folder):
             return
         for task in current[len(report['tasks']):]:
             self.save(detail='Teacher task '+task['id'])
@@ -307,7 +303,7 @@ class Session:
                    '--adapter', str(folder/'adapter')]
         if not self.server(command, 8090, folder/'evaluation-server.log'):
             return
-        tasks = [t for t in json.loads((ROOT/'research/rlm_tasks.json').read_text()) if t['split']=='dev']
+        tasks = development_tasks()
         reports = {}
         for mode in ('base', 'adapter'):
             path = folder/f'dev-{mode}.json'
@@ -326,9 +322,9 @@ class Session:
                 self.save()
             reports[mode] = report
         previous = self.state.get('best_dev')
-        keep = accepted(reports['adapter'], reports['base'], previous)
+        keep = accepted(reports['adapter'], reports['base'], previous, expected=len(tasks))
         result = {'round': self.state['round'], 'base_passed': sum(r['passed'] for r in reports['base']['tasks']),
-                  'adapter_passed': sum(r['passed'] for r in reports['adapter']['tasks']), 'total': 5,
+                  'adapter_passed': sum(r['passed'] for r in reports['adapter']['tasks']), 'total': len(tasks),
                   'accepted': keep, 'warning': 'Small repeated development set; no general quality claim. Holdout unused.'}
         atomic_json(folder/'result.json', result)
         self.state['completed_rounds'].append(result)
@@ -337,7 +333,10 @@ class Session:
             self.state['best_dev'] = {'tasks': [{'id': r['id'], 'passed': r['passed']}
                                                for r in reports['adapter']['tasks']]}
             self.state['accepted_rounds'].append(self.state['round'])
-        self.save(round=self.state['round']+1, phase='collect', detail='Starting a new data collection round')
+        self.save(round=self.state['round']+1, phase='collect',
+                  status='completed' if should_stop_for_quality(self.state['completed_rounds']) else 'running',
+                  detail='Stopped after three rounds without development improvement'
+                  if should_stop_for_quality(self.state['completed_rounds']) else 'Starting a new data collection round')
 
     def run(self):
         if self.state['status'] in ('completed', 'stopped'):

@@ -44,11 +44,11 @@ import learning_session as session
 import training_data as data
 
 variants = session.round_tasks(3)
-assert len(variants) == 14 and all(t['split'] == 'train' for t in variants)
+assert len(variants) == 30 and all(t['split'] == 'train' for t in variants)
 assert variants == session.round_tasks(3)
 query=next(t for t in variants if t['id'].startswith('query-updates'))
-assert 'parts.query,' in query['reference_patch']['links_r3.py']
-assert 'from query_r3 import' in query['files']['links_r3.py']
+assert 'parts.query,' in query['reference_patch']['links.py']
+assert 'from query import' in query['files']['links.py']
 for task in variants:
     for source in task['files'].values(): compile(source, '<source>', 'exec')
     for source in task['reference_patch'].values(): compile(source, '<reference>', 'exec')
@@ -61,18 +61,6 @@ assert not session.accepted(report({1}), report({0}))
 assert not session.accepted(report({0}), report(set()), report({0}))
 assert not session.accepted({'tasks': report({0})['tasks'][:4]}, report(set()))
 assert session.accepted(report({0,1}), report({0}), report({0}))
-task=variants[0]
-trace=[{'kind':'root','messages':[{'role':'system','content':'Use the REPL'},
-    {'role':'user','content':'Inspect the repository first'}]}]
-with patch('recursive_agent.grade', return_value={'passed':True}):
-    calls=data.repair_calls(task,trace,task['reference_patch'])
-    assert len(calls)==2 and "answer['ready'] = True" in calls[1][1]
-    assert 'reference_patch' not in str(calls)
-with patch('recursive_agent.grade', return_value={'passed':False}):
-    try: data.repair_calls(task,trace,task['reference_patch'])
-    except ValueError: pass
-    else: raise AssertionError('Unverified repair accepted')
-
 # CPU session checks use a temporary repository, never the live GPU lock.
 def isolated_repository(root):
     repository=root/'test-repository'
@@ -132,7 +120,7 @@ if len(sys.argv)>1:
         output=root/'adapter'
         command=[sys.executable,str(session.ROOT/'train_adapter.py'),'--dataset',sys.argv[1],
             '--tasks',sys.argv[2],'--model',session.MODEL,'--revision',session.REVISION,
-            '--output',str(output),'--max-steps','2','--max-length','1536','--save-steps','1',
+            '--output',str(output),'--max-steps','2','--max-epochs','3','--max-length','4096','--save-steps','1',
             '--pause-file',str(pause)]
         if len(sys.argv)==4: command+=['--warm-start',sys.argv[3]]
         environment={**os.environ,'HF_HUB_OFFLINE':'1'}

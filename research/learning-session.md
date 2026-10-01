@@ -54,37 +54,63 @@ For another session, select a new folder:
 
 ## What the session learns
 
-Each round collects repairs from the CUDA Qwen3.8-27B teacher through the recursive harness.
-The tasks contain ten training-only module variants and four parameterized repair families.
-The module variants reuse existing bugs. They do not create new repair semantics.
-The authored tests must reject the broken source and accept the reference repair before collection.
+The first round measures the larger Qwen3.8-27B teacher on all 15 development repairs before student training.
+Each round then collects training repairs through the recursive harness.
+The curriculum contains 30 distinct training repairs, including 20 new repair families.
+The [task file](repair_tasks.json) contains the new training and development repositories.
+Visible tests accompany each training repository.
+The authored grading tests reject the broken source and accept the reference repair before collection.
 Reference repairs check the fixtures. They never supply teacher answers or training targets.
 
-Only teacher repairs that pass the functional checks enter training.
-The exporter checks each repair again and derives two short supervised REPL turns: inspect, then repair.
-These derived examples replace failed intermediate attempts and copied repository responses.
+Only teacher repairs that pass the grading tests enter training.
+The exporter checks each repair again in an isolated container.
+It runs four supervised REPL turns: inspect, reproduce the failure, apply the repair and retest, then submit the patch.
+Test output comes from execution. The exporter rejects repairs that fail the visible retest.
+These examples teach test use and repair. They do not demonstrate recursive delegation.
 Replay uses up to four recent rounds. Each round fixes its dataset before training.
 Development and holdout tasks never enter the training dataset.
 
-The student uses pinned Qwen3-4B weights, NF4, rank-8 QLoRA, 1,536-token examples, and 80 optimizer steps per round.
-The trainer saves a full checkpoint every ten steps and on pause or completion.
+The student uses pinned Qwen3-4B weights, NF4, rank-8 QLoRA, and complete examples of at most 4,096 tokens.
+Each candidate trains for approximately one dataset pass, with an 80-step ceiling and a learning rate of `5e-5`.
+The trainer saves a full checkpoint every five steps and on pause or completion.
 It retains three periodic checkpoints per round.
-A new round uses the last accepted adapter, when one exists, with a new optimizer.
+A new round uses the last accepted adapter, with a new optimizer.
 Resume within a round restores the existing optimizer.
 The teacher, trainer, and evaluator use the GPU in separate phases.
 
-Every candidate receives the same five development repairs as its unchanged base.
-Acceptance requires more successful repairs than the base and the previous accepted candidate, with no per-task regression.
-The small repeated development set can overfit. It does not prove general coding quality.
-The holdout stays unused. The chat model receives no automatic replacement.
-The worker stops after 64 rounds or three rounds without a successful new repair.
-It also stops at 20 GiB of session files or below 10 GiB of free disk space.
-No datasets or weights upload automatically.
+Every candidate receives the same 15 development repairs as its unchanged base.
+The set contains the original five tasks and ten new repositories.
+Acceptance requires more successful repairs than the base and the previous accepted candidate, with no regression on individual tasks.
+The worker stops after three consecutive rounds without development improvement.
+The repeated development set can overfit. It does not prove general coding quality.
+This experiment leaves the original holdout untouched. The chat model receives no automatic replacement.
+The worker also stops after 64 rounds or three rounds without a successful new repair.
+It stops at 20 GiB of session files or less than 10 GiB of free disk space.
+No generated datasets or weights upload automatically.
+
+The previous stopped session stays in `.cache/learning/current`.
+Its checkpoints require the original source files for resume.
+The new Windows panel controls `.cache/learning/tuned` by default.
+
+## Compare a coding model
+
+Stop all learning and chat processes first.
+Run the pinned student, its previous adapter, and a local MiMo GGUF through the same development harness:
+
+```bash
+.cache/rlm-env/bin/python research/tuning_compare.py --adapter .cache/learning/current/round-002/adapter --gguf .cache/models/MiMo-V2.6-Distill-Qwen-9B.Q4_K_M.gguf --output .cache/tuning-comparison
+```
+
+Use the actual local GGUF path.
+The command requires a new output folder and cached student weights.
+It owns the GPU lock and stops its model servers on exit.
+Each task receives eight model calls, 4,096 output tokens, and 120 seconds.
+The result measures this harness. Different model sizes and quantization methods prevent an isolated architecture comparison.
 
 ## Files
 
-The Linux session folder is `.cache/learning/current` within the project folder.
-Open it from Windows at `\\wsl.localhost\LocalCodingAssistant\home\coder\local-coding-assistant\.cache\learning\current`.
+The Linux session folder is `.cache/learning/tuned` within the project folder.
+Open it from Windows at `\\wsl.localhost\LocalCodingAssistant\home\coder\local-coding-assistant\.cache\learning\tuned`.
 Each `round-NNN` folder contains teacher traces, a fixed dataset, checkpoints, training logs, and development reports.
 `status.json` records the current phase, active time, and accepted candidates.
 Windows worker logs stay in `.cache\learning-windows` in the Windows project folder.
@@ -103,8 +129,8 @@ Sources: [Transformers checkpoints](https://huggingface.co/docs/transformers/mai
 ## Control test
 
 The [PC control test](../reports/learning-session-smoke/summary.json) paused at step 20 and resumed after a worker restart.
-It completed all 80 steps and released the GPU while paused.
-All ten derived examples fit the token limit.
+That earlier run completed all 80 steps and released the GPU while paused.
+All ten derived examples in that earlier run fit its token limit.
 The base and adapter both scored 0/5 development repairs.
 The adapter completed each attempt in two calls, but no repair passed.
 The session rejected that candidate. These results establish recovery, not a coding improvement.
@@ -119,9 +145,27 @@ For the CUDA check, stop all model processes first.
 Use an existing verified dataset and its task registry:
 
 ```bash
-.cache/train-env/bin/python test_training_session.py .cache/learning/current/round-001/training.jsonl .cache/learning/current/round-001/tasks.json
+.cache/train-env/bin/python test_training_session.py .cache/learning/tuned/round-001/training.jsonl .cache/learning/tuned/round-001/tasks.json
 ```
 
 The CUDA check requires the pinned environment and cached Qwen3-4B weights.
 It pauses at step one, resumes to step two, and restores a completed checkpoint without another step.
 The test uses a temporary output folder and removes its own files afterward.
+
+## Expanded baseline result
+
+The [baseline report](../reports/tuning-2026-10-01/baseline-summary.json) compares 15 development repairs before the revised training run.
+The unchanged 4B model passed 0/15. Its previous adapter passed 8/15.
+That adapter passed seven new tasks and one original task.
+These tasks are authored mini-repositories. This result does not establish general coding reliability.
+
+MiMo 9B passed 0/15 through this REPL interface.
+It returned tool-call tags instead of executable REPL blocks.
+This result measures interface incompatibility. It does not rank its standalone coding ability.
+The teacher comparison in the tuned session supplies a larger model with a compatible interface.
+
+All 120 checked trajectory examples fit the token limit. The longest checked example used 1,225 tokens.
+These fixture checks used authored reference patches only for execution and token checks.
+The training exporter still requires successful teacher repairs.
+CUDA checkpoint checks paused at step one and resumed to step two.
+Recovery from the completed checkpoint took no additional optimizer step.

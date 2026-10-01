@@ -12,7 +12,7 @@ The adapter produced five parseable recursive patches, but all failed functional
 Neither setting made recursive child calls.
 The adapter remains a local experiment and does not replace chat.
 
-Peak PyTorch allocation reached 7.99 GiB; peak reservation reached 15.94 GiB.
+Peak PyTorch allocation reached 7.99 GiB. Peak reservation reached 15.94 GiB.
 These allocator values do not measure total physical GPU use.
 The run left little GPU memory headroom on the measured PC.
 
@@ -83,7 +83,9 @@ Verify the dataset, then run the bounded training trial:
 .cache/train-env/bin/python train_adapter.py --dataset .cache/training/local-round1.jsonl --model Qwen/Qwen3-4B --revision 1cfa9a7208912126459214e8b04321603b3df60c --output .cache/adapters/local-round1
 ```
 
-The run uses NF4, rank 8, one example per batch, gradient checkpointing, and 50 steps.
+The run uses NF4, rank 8, one example per batch, gradient checkpointing, and at most 50 steps.
+The current trainer limits each candidate to approximately one dataset pass.
+Its default learning rate is `5e-5`.
 Only final assistant tokens receive loss. Overlong examples are excluded.
 Prompt and continuation tokenization preserve the generation boundary.
 The output contains the adapter, tokenizer, and training metadata. Nothing uploads automatically.

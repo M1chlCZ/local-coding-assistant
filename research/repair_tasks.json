@@ -1,0 +1,512 @@
+[
+  {
+    "id": "tuning-strict-pairs",
+    "repository": "tuning-strict-pairs",
+    "split": "train",
+    "prompt": "Pair two lists by index. Reject unequal lengths with ValueError. Preserve both inputs. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(a,b):\n    return list(zip(a,b))\n",
+      "test_visible.py": "from solver import repair\ntry: repair([1,2],[3])\nexcept ValueError: pass\nelse: raise AssertionError(\"unequal lengths\")\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([],[])==[]\nassert repair([1,2],[3,4])==[(1,3),(2,4)]\nfor a,b in [([],[1]),([1],[]),([1,2],[3])]:\n try: repair(a,b)\n except ValueError: pass\n else: raise AssertionError(\"length\")\nx=[1]; y=[2]; repair(x,y); assert x==[1] and y==[2]\n",
+    "reference_patch": {
+      "solver.py": "def repair(a,b):\n    if len(a)!=len(b): raise ValueError(\"length\")\n    return list(zip(a,b))\n"
+    }
+  },
+  {
+    "id": "tuning-stable-partition",
+    "repository": "tuning-stable-partition",
+    "split": "train",
+    "prompt": "Return (matching, other) lists using predicate(value). Preserve order and input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values,predicate):\n    return (sorted(x for x in values if predicate(x)),sorted(x for x in values if not predicate(x)))\n",
+      "test_visible.py": "from solver import repair\nassert repair([3,2,1,4],lambda x:x%2)==([3,1],[2,4])\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([],lambda x:True)==([],[])\nx=[5,4,3,2,1]; assert repair(x,lambda v:v>2)==([5,4,3],[2,1]); assert x==[5,4,3,2,1]\nassert repair([None,0,\"\"],bool)==([],[None,0,\"\"])\n",
+    "reference_patch": {
+      "solver.py": "def repair(values,predicate):\n    yes=[]; no=[]\n    for value in values:\n        (yes if predicate(value) else no).append(value)\n    return yes,no\n"
+    }
+  },
+  {
+    "id": "tuning-list-flatten",
+    "repository": "tuning-list-flatten",
+    "split": "train",
+    "prompt": "Flatten recursively nested lists. Treat tuples and strings as scalar values. Preserve the input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values):\n    return [y for x in values for y in x]\n",
+      "test_visible.py": "from solver import repair\nassert repair([1,[2,[3]],[]])==[1,2,3]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([])==[]\nassert repair([\"ab\",(1,2),[None,[True]]])==[\"ab\",(1,2),None,True]\nx=[1,[2,[3]]]; assert repair(x)==[1,2,3] and x==[1,[2,[3]]]\n",
+    "reference_patch": {
+      "solver.py": "def repair(values):\n    result=[]\n    for value in values:\n        if isinstance(value,list): result.extend(repair(value))\n        else: result.append(value)\n    return result\n"
+    }
+  },
+  {
+    "id": "tuning-nested-lookup",
+    "repository": "tuning-nested-lookup",
+    "split": "train",
+    "prompt": "Look up a list of keys in nested dictionaries. Return default if a key is missing or an intermediate value is not a dictionary. Empty keys returns the original value. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(value,keys,default=None):\n    for key in keys: value=value[key]\n    return value\n",
+      "test_visible.py": "from solver import repair\nassert repair({\"a\":2},[\"a\",\"b\"],9)==9\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nx={\"a\":{\"b\":None}}; assert repair(x,[\"a\",\"b\"],9) is None\nassert repair(x,[\"x\"],9)==9\nassert repair(x,[]) is x\nassert repair(4,[\"a\"],7)==7\nassert x=={\"a\":{\"b\":None}}\n",
+    "reference_patch": {
+      "solver.py": "def repair(value,keys,default=None):\n    for key in keys:\n        if not isinstance(value,dict) or key not in value: return default\n        value=value[key]\n    return value\n"
+    }
+  },
+  {
+    "id": "tuning-multiset-subtract",
+    "repository": "tuning-multiset-subtract",
+    "split": "train",
+    "prompt": "Remove one occurrence from values for each occurrence in removed. Keep the order of surviving values. Values are hashable; do not mutate inputs. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values,removed):\n    return [x for x in values if x not in removed]\n",
+      "test_visible.py": "from solver import repair\nassert repair([\"a\",\"b\",\"a\"],[\"a\"])==[\"b\",\"a\"]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([], [1])==[]\nassert repair([1,1,2,1],[1,1,3])==[2,1]\nx=[None,None,\"x\"]; y=[None]; assert repair(x,y)==[None,\"x\"]; assert x==[None,None,\"x\"] and y==[None]\n",
+    "reference_patch": {
+      "solver.py": "from collections import Counter\ndef repair(values,removed):\n    counts=Counter(removed); result=[]\n    for x in values:\n        if counts[x]: counts[x]-=1\n        else: result.append(x)\n    return result\n"
+    }
+  },
+  {
+    "id": "tuning-rotate-list",
+    "repository": "tuning-rotate-list",
+    "split": "train",
+    "prompt": "Rotate a list right by an integer count; negative counts rotate left. Empty input stays empty. Return a new list without mutation. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values,count):\n    return values[-count:]+values[:-count]\n",
+      "test_visible.py": "from solver import repair\nassert repair([1,2,3],4)==[3,1,2]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([1,2,3],4)==[3,1,2]\nassert repair([],99)==[]\nx=[1,2,3,4]; assert repair(x,-1)==[2,3,4,1]\nassert repair(x,0)==x and repair(x,8)==x\nassert repair(x,1)==[4,1,2,3] and x==[1,2,3,4]\nassert repair(x,0) is not x\n",
+    "reference_patch": {
+      "solver.py": "def repair(values,count):\n    if not values: return []\n    n=count%len(values)\n    return values[-n:]+values[:-n] if n else values.copy()\n"
+    }
+  },
+  {
+    "id": "tuning-numeric-median",
+    "repository": "tuning-numeric-median",
+    "split": "train",
+    "prompt": "Return the median of numeric values. For even lengths average the middle two. Reject empty input with ValueError. Do not mutate input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values):\n    values.sort()\n    return values[len(values)//2]\n",
+      "test_visible.py": "from solver import repair\nassert repair([4,1,2,3])==2.5\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([3,1,2])==2\nassert repair([-4,-1])==-2.5\nx=[7,2,9]; repair(x); assert x==[7,2,9]\ntry: repair([])\nexcept ValueError: pass\nelse: raise AssertionError(\"empty\")\n",
+    "reference_patch": {
+      "solver.py": "def repair(values):\n    if not values: raise ValueError(\"empty\")\n    ordered=sorted(values); n=len(ordered)\n    return ordered[n//2] if n%2 else (ordered[n//2-1]+ordered[n//2])/2\n"
+    }
+  },
+  {
+    "id": "tuning-ceiling-division",
+    "repository": "tuning-ceiling-division",
+    "split": "train",
+    "prompt": "Return mathematical ceiling(a/b) for integers, including negative operands. Reject zero divisor with ValueError. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(a,b):\n    return (a+b-1)//b\n",
+      "test_visible.py": "from solver import repair\nassert repair(5,-2)==-2\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nfrom fractions import Fraction\nimport math\nfor a in range(-7,8):\n for b in range(-4,5):\n  if b: assert repair(a,b)==math.ceil(Fraction(a,b))\ntry: repair(1,0)\nexcept ValueError: pass\nelse: raise AssertionError(\"zero\")\n",
+    "reference_patch": {
+      "solver.py": "def repair(a,b):\n    if b==0: raise ValueError(\"zero divisor\")\n    return -(-a//b)\n"
+    }
+  },
+  {
+    "id": "tuning-decimal-id",
+    "repository": "tuning-decimal-id",
+    "split": "train",
+    "prompt": "Parse a nonempty ASCII digit string to an integer. Reject signs, whitespace, Unicode digits and other types with ValueError. Leading zeros are valid. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(value):\n    return int(value)\n",
+      "test_visible.py": "from solver import repair\ntry: repair(\"+12\")\nexcept ValueError: pass\nelse: raise AssertionError(\"sign\")\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(\"0012\")==12 and repair(\"0\")==0\nfor value in [\"\", \" 1\", \"1 \", \"+1\", \"-1\", \"١\", \"12x\", None, 12, True]:\n try: repair(value)\n except ValueError: pass\n else: raise AssertionError(repr(value))\n",
+    "reference_patch": {
+      "solver.py": "def repair(value):\n    if not isinstance(value,str) or not value or any(c not in \"0123456789\" for c in value): raise ValueError(\"id\")\n    return int(value)\n"
+    }
+  },
+  {
+    "id": "tuning-bracket-balance",
+    "repository": "tuning-bracket-balance",
+    "split": "train",
+    "prompt": "Check if parentheses, brackets and braces are balanced and correctly nested. Ignore all other characters. Return a bool. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(text):\n    return all(text.count(a)==text.count(b) for a,b in [(\"(\",\")\"),(\"[\",\"]\"),(\"{\",\"}\")])\n",
+      "test_visible.py": "from solver import repair\nassert repair(\"([)]\") is False\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nfor t in [\"\", \"abc\", \"a{b[c(d)]}\"]: assert repair(t) is True\nfor t in [\")(\", \"[\", \"}\", \"([]))\", \"{[}]\"]: assert repair(t) is False\n",
+    "reference_patch": {
+      "solver.py": "def repair(text):\n    stack=[]; pairs={\")\":\"(\",\"]\":\"[\",\"}\":\"{\"}\n    for c in text:\n        if c in \"([{\": stack.append(c)\n        elif c in pairs:\n            if not stack or stack.pop()!=pairs[c]: return False\n    return not stack\n"
+    }
+  },
+  {
+    "id": "tuning-env-expansion",
+    "repository": "tuning-env-expansion",
+    "split": "train",
+    "prompt": "Replace ${NAME} tokens using the mapping. NAME contains letters, digits or underscores and starts with a letter or underscore. Missing valid names raise ValueError. Keep malformed tokens unchanged. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(text,env):\n    for k,v in env.items(): text=text.replace(\"${\"+k+\"}\",str(v))\n    return text\n",
+      "test_visible.py": "from solver import repair\ntry: repair(\"${MISSING}\",{})\nexcept ValueError: pass\nelse: raise AssertionError(\"missing\")\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(\"${A}/${A}\",{\"A\":4})==\"4/4\"\nassert repair(\"${1A}/${}/${A-B}\",{})==\"${1A}/${}/${A-B}\"\nassert repair(\"${A}\",{\"A\":\"${B}\",\"B\":2})==\"${B}\"\nx={\"_x\":0}; assert repair(\"${_x}\",x)==\"0\" and x=={\"_x\":0}\n",
+    "reference_patch": {
+      "solver.py": "import re\ndef repair(text,env):\n    def replace(m):\n        key=m.group(1)\n        if key not in env: raise ValueError(\"missing variable\")\n        return str(env[key])\n    return re.sub(r\"\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\}\",replace,text)\n"
+    }
+  },
+  {
+    "id": "tuning-function-pipeline",
+    "repository": "tuning-function-pipeline",
+    "split": "train",
+    "prompt": "Apply each supplied function to the value from left to right. Empty functions returns value. Do not alter the function list. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(value,functions):\n    for fn in reversed(functions): value=fn(value)\n    return value\n",
+      "test_visible.py": "from solver import repair\nassert repair(3,[lambda x:x+1,lambda x:x*2])==8\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(None,[]) is None\nassert repair(\"x\",[str.upper,lambda x:x+\"!\"])==\"X!\"\nf=[lambda x:x-2,lambda x:x*x]; assert repair(5,f)==9 and len(f)==2\n",
+    "reference_patch": {
+      "solver.py": "def repair(value,functions):\n    for fn in functions: value=fn(value)\n    return value\n"
+    }
+  },
+  {
+    "id": "tuning-lower-bound",
+    "repository": "tuning-lower-bound",
+    "split": "train",
+    "prompt": "Return the first index where sorted_values[index] >= target, or len(sorted_values). Use binary search; do not mutate the input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values,target):\n    low=0; high=len(values)\n    while low<high:\n        mid=(low+high)//2\n        if values[mid]<=target: low=mid+1\n        else: high=mid\n    return low\n",
+      "test_visible.py": "from solver import repair\nassert repair([1,2,2,4],2)==1\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nfrom bisect import bisect_left\nx=[-3,0,0,5,8]; before=x.copy()\nfor v in range(-5,11): assert repair(x,v)==bisect_left(x,v)\nassert repair([],0)==0 and x==before\n",
+    "reference_patch": {
+      "solver.py": "def repair(values,target):\n    low=0; high=len(values)\n    while low<high:\n        mid=(low+high)//2\n        if values[mid]<target: low=mid+1\n        else: high=mid\n    return low\n"
+    }
+  },
+  {
+    "id": "tuning-group-order",
+    "repository": "tuning-group-order",
+    "split": "train",
+    "prompt": "Group values by key(value). Return a dict in first-key encounter order and keep each group in input order. Keys are hashable; do not mutate inputs. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values,key):\n    return {key(x):[x] for x in values}\n",
+      "test_visible.py": "from solver import repair\nassert repair([1,3,2],lambda x:x%2)=={1:[1,3],0:[2]}\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([],str)=={}\nx=[\"bb\",\"a\",\"cc\",\"d\"]; out=repair(x,len); assert list(out)==[2,1] and out=={2:[\"bb\",\"cc\"],1:[\"a\",\"d\"]}\nassert x==[\"bb\",\"a\",\"cc\",\"d\"]\n",
+    "reference_patch": {
+      "solver.py": "def repair(values,key):\n    groups={}\n    for value in values: groups.setdefault(key(value),[]).append(value)\n    return groups\n"
+    }
+  },
+  {
+    "id": "tuning-json-lines",
+    "repository": "tuning-json-lines",
+    "split": "train",
+    "prompt": "Parse each nonblank line as a JSON object. Skip whitespace-only lines. Reject non-object JSON or malformed lines with ValueError. Preserve order. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "import json\ndef repair(text):\n    return [json.loads(line) for line in text.splitlines()]\n",
+      "test_visible.py": "from solver import repair\nassert repair('{\"a\":1}\\n\\n')==[{\"a\":1}]\nprint(\"VISIBLE_CHECKS_PASSED\")\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(' \\n\\t')==[]\nassert repair('{}\\n{\"x\":null}')==[{}, {\"x\":None}]\nfor t in [\"[]\", \"null\", \"1\", '{}\\nnope']:\n try: repair(t)\n except ValueError: pass\n else: raise AssertionError(t)\n",
+    "reference_patch": {
+      "solver.py": "import json\ndef repair(text):\n    result=[]\n    for line in text.splitlines():\n        if not line.strip(): continue\n        value=json.loads(line)\n        if not isinstance(value,dict): raise ValueError(\"object required\")\n        result.append(value)\n    return result\n"
+    }
+  },
+  {
+    "id": "tuning-integer-gcd",
+    "repository": "tuning-integer-gcd",
+    "split": "train",
+    "prompt": "Return nonnegative greatest common divisor of two integers, including zeros and negatives. Use Euclid's algorithm. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(a,b):\n    while b: a,b=b,a%b\n    return a\n",
+      "test_visible.py": "from solver import repair\nassert repair(-12,-8)==4\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nimport math\nfor a in range(-10,11):\n for b in range(-10,11): assert repair(a,b)==math.gcd(a,b)\n",
+    "reference_patch": {
+      "solver.py": "def repair(a,b):\n    a=abs(a); b=abs(b)\n    while b: a,b=b,a%b\n    return a\n"
+    }
+  },
+  {
+    "id": "tuning-list-window",
+    "repository": "tuning-list-window",
+    "split": "train",
+    "prompt": "Return every consecutive full window of positive integer width as new lists. Reject bool, non-integer and nonpositive widths. Preserve input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values,width):\n    return [values[i:i+width] for i in range(len(values)-width)]\n",
+      "test_visible.py": "from solver import repair\nassert repair([1,2,3],2)==[[1,2],[2,3]]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([],1)==[] and repair([1],2)==[]\nx=[1,2]; out=repair(x,1); out[0].append(9); assert x==[1,2]\nfor n in [0,-1,True,1.5]:\n try: repair([1],n)\n except ValueError: pass\n else: raise AssertionError(n)\n",
+    "reference_patch": {
+      "solver.py": "def repair(values,width):\n    if type(width) is not int or width<=0: raise ValueError(\"width\")\n    return [values[i:i+width] for i in range(max(0,len(values)-width+1))]\n"
+    }
+  },
+  {
+    "id": "tuning-dict-overlay",
+    "repository": "tuning-dict-overlay",
+    "split": "train",
+    "prompt": "Return a shallow copy of base updated with overlay. Preserve falsy overlay values and do not mutate either input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(base,overlay):\n    base.update({k:v for k,v in overlay.items() if v})\n    return base\n",
+      "test_visible.py": "from solver import repair\nassert repair({\"x\":1},{\"x\":0})=={\"x\":0}\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\na={\"x\":1,\"y\":2}; b={\"x\":None,\"z\":False}; out=repair(a,b)\nassert out=={\"x\":None,\"y\":2,\"z\":False} and a=={\"x\":1,\"y\":2} and b=={\"x\":None,\"z\":False}\nassert repair({}, {})=={} and out is not a\n",
+    "reference_patch": {
+      "solver.py": "def repair(base,overlay):\n    return {**base,**overlay}\n"
+    }
+  },
+  {
+    "id": "tuning-escaped-delimiter",
+    "repository": "tuning-escaped-delimiter",
+    "split": "train",
+    "prompt": "Split a string on commas except escaped commas. Backslash escapes any next character. A trailing backslash is literal. Preserve empty fields. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(text):\n    return text.split(\",\")\n",
+      "test_visible.py": "from solver import repair\nassert repair(r\"a\\,b,c\")==[\"a,b\",\"c\"]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(\"\")==[\"\"] and repair(\",,\")==[\"\",\"\",\"\"]\nslash=chr(92)\nassert repair(\"a\"+slash)==[\"a\"+slash]\nassert repair(\"a\"+slash+slash+\",b\")==[\"a\"+slash,\"b\"]\nassert repair(slash+\"x,\"+slash+\",\")==[\"x\",\",\"]\n",
+    "reference_patch": {
+      "solver.py": "def repair(text):\n    result=[]; field=[]; escaped=False\n    for c in text:\n        if escaped: field.append(c); escaped=False\n        elif c==\"\\\\\": escaped=True\n        elif c==\",\": result.append(\"\".join(field)); field=[]\n        else: field.append(c)\n    if escaped: field.append(\"\\\\\")\n    result.append(\"\".join(field))\n    return result\n"
+    }
+  },
+  {
+    "id": "tuning-common-prefix",
+    "repository": "tuning-common-prefix",
+    "split": "train",
+    "prompt": "Return the longest shared character prefix of all strings. Empty input returns an empty string. Do not mutate input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values):\n    return min(values)\n",
+      "test_visible.py": "from solver import repair\nassert repair([\"flower\",\"flow\",\"flight\"])==\"fl\"\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([])==\"\" and repair([\"abc\"])==\"abc\"\nassert repair([\"x\", \"\"])==\"\" and repair([\"😀a\",\"😀b\"])==\"😀\"\nx=[\"ab\",\"abc\"]; assert repair(x)==\"ab\" and x==[\"ab\",\"abc\"]\n",
+    "reference_patch": {
+      "solver.py": "def repair(values):\n    if not values: return \"\"\n    prefix=values[0]\n    for text in values[1:]:\n        while not text.startswith(prefix): prefix=prefix[:-1]\n    return prefix\n"
+    }
+  },
+  {
+    "id": "tuning-matrix-transpose",
+    "repository": "tuning-matrix-transpose",
+    "split": "dev",
+    "prompt": "Transpose a rectangular list of rows. Empty input returns []. Reject ragged rows with ValueError. Return independent lists without changing input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(rows):\n    return list(zip(*rows))\n",
+      "test_visible.py": "from solver import repair\nassert repair([[1,2],[3,4]])==[[1,3],[2,4]]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([])==[] and repair([[],[]])==[]\nx=[[1,2],[3,4]]; out=repair(x); out[0].append(9); assert x==[[1,2],[3,4]]\ntry: repair([[1],[2,3]])\nexcept ValueError: pass\nelse: raise AssertionError(\"ragged\")\n",
+    "reference_patch": {
+      "solver.py": "def repair(rows):\n    if not rows: return []\n    width=len(rows[0])\n    if any(len(row)!=width for row in rows): raise ValueError(\"ragged\")\n    return [[row[i] for row in rows] for i in range(width)]\n"
+    }
+  },
+  {
+    "id": "tuning-date-span",
+    "repository": "tuning-date-span",
+    "split": "dev",
+    "prompt": "Return every date from start through end inclusive, as datetime.date objects. Reject start > end with ValueError. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "from datetime import timedelta\ndef repair(start,end):\n    return [start+timedelta(days=n) for n in range((end-start).days)]\n",
+      "test_visible.py": "from solver import repair\nfrom datetime import date\nassert repair(date(2024,2,28),date(2024,3,1))==[date(2024,2,28),date(2024,2,29),date(2024,3,1)]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nfrom datetime import date\nx=date(2025,1,1); assert repair(x,x)==[x]\nassert len(repair(date(2025,12,31),date(2026,1,2)))==3\ntry: repair(date(2025,2,1),date(2025,1,1))\nexcept ValueError: pass\nelse: raise AssertionError(\"reversed\")\n",
+    "reference_patch": {
+      "solver.py": "from datetime import timedelta\ndef repair(start,end):\n    if start>end: raise ValueError(\"reversed\")\n    return [start+timedelta(days=n) for n in range((end-start).days+1)]\n"
+    }
+  },
+  {
+    "id": "tuning-bounded-tail",
+    "repository": "tuning-bounded-tail",
+    "split": "dev",
+    "prompt": "Consume an iterable and return its last limit elements in encounter order. Reject negative or non-integer limits including bool. Zero returns []. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(values,limit):\n    return list(values)[-limit:]\n",
+      "test_visible.py": "from solver import repair\nassert repair([1,2,3],0)==[]\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(iter(range(10)),3)==[7,8,9]\nassert repair([],2)==[] and repair([1],5)==[1]\nfor n in [-1,True,1.5]:\n try: repair([1],n)\n except ValueError: pass\n else: raise AssertionError(n)\n",
+    "reference_patch": {
+      "solver.py": "from collections import deque\ndef repair(values,limit):\n    if type(limit) is not int or limit<0: raise ValueError(\"limit\")\n    return list(deque(values,maxlen=limit))\n"
+    }
+  },
+  {
+    "id": "tuning-nested-update",
+    "repository": "tuning-nested-update",
+    "split": "dev",
+    "prompt": "Return a deep-copied dictionary with the nonempty key path assigned value. Create missing intermediate dicts. Reject empty paths or existing non-dict intermediates with ValueError. Never mutate input. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(mapping,keys,value):\n    current=mapping\n    for key in keys[:-1]: current=current.setdefault(key,{})\n    current[keys[-1]]=value\n    return mapping\n",
+      "test_visible.py": "from solver import repair\nx={\"a\":{}}; assert repair(x,[\"a\",\"b\"],3)=={\"a\":{\"b\":3}}; assert x=={\"a\":{}}\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nx={\"a\":{\"old\":[1]}}; out=repair(x,[\"a\",\"b\"],0); out[\"a\"][\"old\"].append(2); assert x=={\"a\":{\"old\":[1]}}\nassert repair({},[\"x\",\"y\"],None)=={\"x\":{\"y\":None}}\nfor x,keys in [({},[]),({\"a\":1},[\"a\",\"b\"])]:\n before=repr(x)\n try: repair(x,keys,4)\n except ValueError: pass\n else: raise AssertionError(\"invalid\")\n assert repr(x)==before\n",
+    "reference_patch": {
+      "solver.py": "import copy\ndef repair(mapping,keys,value):\n    if not keys: raise ValueError(\"path\")\n    out=copy.deepcopy(mapping); current=out\n    for key in keys[:-1]:\n        if key not in current: current[key]={}\n        if not isinstance(current[key],dict): raise ValueError(\"intermediate\")\n        current=current[key]\n    current[keys[-1]]=value\n    return out\n"
+    }
+  },
+  {
+    "id": "tuning-isbn-check",
+    "repository": "tuning-isbn-check",
+    "split": "dev",
+    "prompt": "Validate a ten-character ISBN-10 string using checksum weights 10 through 1. First nine characters must be ASCII digits. Final character may be X meaning 10. Return False for all other strings or types. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(text):\n    return len(text)==10 and text.isdigit()\n",
+      "test_visible.py": "from solver import repair\nassert repair(\"0306406153\") is False\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(\"0306406152\") is True and repair(\"080442957X\") is True\nfor x in [\"\",None,1234567890,\"080442957x\",\"X804429570\",\"０306406152\"]: assert repair(x) is False\n",
+    "reference_patch": {
+      "solver.py": "def repair(text):\n    if not isinstance(text,str) or len(text)!=10: return False\n    if any(c not in \"0123456789\" for c in text[:9]) or text[-1] not in \"0123456789X\": return False\n    digits=[int(c) for c in text[:9]]+[10 if text[-1]==\"X\" else int(text[-1])]\n    return sum((10-i)*x for i,x in enumerate(digits))%11==0\n"
+    }
+  },
+  {
+    "id": "tuning-roman-numerals",
+    "repository": "tuning-roman-numerals",
+    "split": "dev",
+    "prompt": "Convert an integer from 1 to 3999 to standard uppercase Roman numerals with subtractive notation. Reject bool, non-integer or out-of-range input with ValueError. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(n):\n    return \"I\"*n\n",
+      "test_visible.py": "from solver import repair\nassert repair(14)==\"XIV\"\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nfor n,s in [(1,\"I\"),(4,\"IV\"),(9,\"IX\"),(49,\"XLIX\"),(944,\"CMXLIV\"),(3999,\"MMMCMXCIX\")]: assert repair(n)==s\nfor n in [0,-1,4000,True,1.5,\"4\"]:\n try: repair(n)\n except ValueError: pass\n else: raise AssertionError(n)\n",
+    "reference_patch": {
+      "solver.py": "def repair(n):\n    if type(n) is not int or not 1<=n<=3999: raise ValueError(\"range\")\n    result=[]\n    for value,symbol in [(1000,\"M\"),(900,\"CM\"),(500,\"D\"),(400,\"CD\"),(100,\"C\"),(90,\"XC\"),(50,\"L\"),(40,\"XL\"),(10,\"X\"),(9,\"IX\"),(5,\"V\"),(4,\"IV\"),(1,\"I\")]:\n        count,n=divmod(n,value); result.append(symbol*count)\n    return \"\".join(result)\n"
+    }
+  },
+  {
+    "id": "tuning-edit-distance",
+    "repository": "tuning-edit-distance",
+    "split": "dev",
+    "prompt": "Return Levenshtein edit distance between two strings. Insertion, deletion and substitution each cost one. Compare characters exactly. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(a,b):\n    return abs(len(a)-len(b))+sum(x!=y for x,y in zip(a,b))\n",
+      "test_visible.py": "from solver import repair\nassert repair(\"abc\",\"bc\")==1\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(\"kitten\",\"sitting\")==3\nassert repair(\"\", \"abc\")==3 and repair(\"abc\", \"\")==3\nassert repair(\"same\",\"same\")==0\nassert repair(\"😀a\",\"😀b\")==1 and repair(\"ab\",\"ba\")==2\nassert repair(\"abcd\",\"bcd\")==1\n",
+    "reference_patch": {
+      "solver.py": "def repair(a,b):\n    previous=list(range(len(b)+1))\n    for i,x in enumerate(a,1):\n        current=[i]\n        for j,y in enumerate(b,1): current.append(min(current[-1]+1,previous[j]+1,previous[j-1]+(x!=y)))\n        previous=current\n    return previous[-1]\n"
+    }
+  },
+  {
+    "id": "tuning-header-multimap",
+    "repository": "tuning-header-multimap",
+    "split": "dev",
+    "prompt": "Group (name,value) HTTP header pairs by lowercase name. Strip surrounding whitespace from names and values. Keep all duplicate values in order. Reject empty stripped names with ValueError. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(pairs):\n    return {name.lower():value for name,value in pairs}\n",
+      "test_visible.py": "from solver import repair\nassert repair([(\"X-A\",\"1\"),(\"x-a\",\"2\")])=={\"x-a\":[\"1\",\"2\"]}\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair([])=={}\nx=[(\" X-A \",\" 1 \"),(\"B\",\"\"),(\"x-A\",\"3\")]; assert repair(x)=={\"x-a\":[\"1\",\"3\"],\"b\":[\"\"]}; assert len(x)==3\ntry: repair([(\"  \",\"x\")])\nexcept ValueError: pass\nelse: raise AssertionError(\"empty\")\n",
+    "reference_patch": {
+      "solver.py": "def repair(pairs):\n    result={}\n    for name,value in pairs:\n        key=name.strip().lower()\n        if not key: raise ValueError(\"name\")\n        result.setdefault(key,[]).append(value.strip())\n    return result\n"
+    }
+  },
+  {
+    "id": "tuning-idle-expiry",
+    "repository": "tuning-idle-expiry",
+    "split": "dev",
+    "prompt": "Return whether now-last_activity >= timeout. Inputs are numeric. Reject a negative timeout or now < last_activity with ValueError. Zero timeout expires immediately. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(last_activity,now,timeout):\n    return now-last_activity>timeout\n",
+      "test_visible.py": "from solver import repair\nassert repair(10,15,5) is True\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair(10,10,0) is True\nassert repair(10,14.9,5) is False and repair(10,15.1,5) is True\nfor args in [(10,9,5),(10,10,-1)]:\n try: repair(*args)\n except ValueError: pass\n else: raise AssertionError(args)\n",
+    "reference_patch": {
+      "solver.py": "def repair(last_activity,now,timeout):\n    if timeout<0 or now<last_activity: raise ValueError(\"time\")\n    return now-last_activity>=timeout\n"
+    }
+  },
+  {
+    "id": "tuning-booking-overlap",
+    "repository": "tuning-booking-overlap",
+    "split": "dev",
+    "prompt": "Return whether two valid half-open intervals [start,end) overlap. Touching endpoints do not overlap. Reject start >= end for either interval with ValueError. Run test_visible.py before and after the repair. Keep the test file unchanged.",
+    "files": {
+      "solver.py": "def repair(a,b):\n    return a[0]<=b[1] and b[0]<=a[1]\n",
+      "test_visible.py": "from solver import repair\nassert repair((1,3),(3,5)) is False\nprint('VISIBLE_CHECKS_PASSED')\n"
+    },
+    "editable": [
+      "solver.py"
+    ],
+    "checks": "from solver import repair\nassert repair((1,5),(2,3)) is True and repair((1,3),(2,5)) is True\nassert repair((4,6),(1,3)) is False\nfor a,b in [((1,1),(2,3)),((1,3),(4,2))]:\n try: repair(a,b)\n except ValueError: pass\n else: raise AssertionError(\"invalid\")\n",
+    "reference_patch": {
+      "solver.py": "def repair(a,b):\n    if a[0]>=a[1] or b[0]>=b[1]: raise ValueError(\"interval\")\n    return a[0]<b[1] and b[0]<a[1]\n"
+    }
+  }
+]

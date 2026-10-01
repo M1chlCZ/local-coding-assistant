@@ -2,6 +2,7 @@
 import argparse
 import importlib.metadata
 import json
+import math
 import os
 import re
 import tempfile
@@ -53,7 +54,8 @@ def latest_checkpoint(output, binding):
 def checkpoint_binding(args):
     return {'model': args.model, 'revision': args.revision, 'dataset_sha256': sha256(args.dataset),
             'manifest_sha256': sha256(manifest_path(args.dataset)), 'tasks_sha256': sha256(args.tasks),
-            'max_steps': args.max_steps, 'max_length': args.max_length, 'rank': args.rank,
+            'max_steps': args.max_steps, 'max_epochs': args.max_epochs, 'learning_rate': args.learning_rate,
+            'max_length': args.max_length, 'rank': args.rank,
             'seed': args.seed, 'versions': VERSIONS,
             'trainer_sha256': sha256(Path(__file__)),
             'warm_start_config_sha256': sha256(args.warm_start/'adapter_config.json') if args.warm_start else None,
@@ -68,6 +70,8 @@ def parser():
     result.add_argument('--revision', required=True, help='Full 40-character HF commit SHA, never main')
     result.add_argument('--output', required=True, type=Path)
     result.add_argument('--max-steps', type=int, default=50)
+    result.add_argument('--max-epochs', type=float, default=1, help='Maximum data passes; step cap also applies')
+    result.add_argument('--learning-rate', type=float, default=5e-5)
     result.add_argument('--max-length', type=int, default=2048)
     result.add_argument('--rank', type=int, choices=(8, 16), default=8)
     result.add_argument('--seed', type=int, default=42)
@@ -84,12 +88,18 @@ def validate_args(args):
         raise ValueError('Use a pinned 40-character model revision')
     if not 1 <= args.max_steps <= 500 or not 128 <= args.max_length <= 4096:
         raise ValueError('Use 1-500 steps and 128-4096 tokens')
+    if not 0 < args.max_epochs <= 3 or not 1e-6 <= args.learning_rate <= 2e-4:
+        raise ValueError('Use at most three data passes and a learning rate between 1e-6 and 2e-4')
     if not 1 <= args.save_steps <= 500:
         raise ValueError('Checkpoint interval must be 1-500 steps')
     if args.resume and not args.output.is_dir():
         raise ValueError('Resume requires an existing output folder')
     if args.output.exists() and (not args.output.is_dir() or (any(args.output.iterdir()) and not args.resume)):
         raise ValueError('Adapter output must be absent or empty')
+
+
+def training_steps(rows, maximum, epochs):
+    return min(maximum, max(1, math.ceil(math.ceil(rows/4)*epochs)))
 
 
 def encode_row(tokenizer, row, max_length):
@@ -160,6 +170,7 @@ def main():
             config = json.loads((args.warm_start/'adapter_config.json').read_text())
             if config.get('base_model_name_or_path') != args.model or config.get('r') != args.rank:
                 raise ValueError('Warm start requires the same base model and adapter rank')
+        effective_steps = training_steps(len(encoded), args.max_steps, args.max_epochs)
         args.output.mkdir(parents=True, exist_ok=True)
         atomic_json(args.output/'run.json', binding)
         set_seed(args.seed)
@@ -184,8 +195,8 @@ def main():
             length = max(len(row['input_ids']) for row in batch)
             return {key: torch.tensor([row[key] + [padding] * (length - len(row[key])) for row in batch])
                     for key, padding in [('input_ids', tokenizer.pad_token_id), ('attention_mask', 0), ('labels', -100)]}
-        settings = TrainingArguments(output_dir=str(args.output), max_steps=args.max_steps,
-            per_device_train_batch_size=1, gradient_accumulation_steps=4, learning_rate=2e-4,
+        settings = TrainingArguments(output_dir=str(args.output), max_steps=effective_steps,
+            per_device_train_batch_size=1, gradient_accumulation_steps=4, learning_rate=args.learning_rate,
             gradient_checkpointing=True, bf16=dtype == torch.bfloat16, fp16=dtype == torch.float16,
             optim='adamw_torch', logging_steps=1, save_strategy='steps', save_steps=args.save_steps,
             save_total_limit=3, report_to='none',
@@ -193,12 +204,12 @@ def main():
         class Checkpoints(TrainerCallback):
             def on_step_end(self, training_args, state, control, **kwargs):
                 paused = bool(args.pause_file and args.pause_file.exists())
-                if paused or state.global_step >= args.max_steps:
+                if paused or state.global_step >= effective_steps:
                     control.should_save = True
                 if paused:
                     control.should_training_stop = True
                 atomic_json(args.output/'progress.json', {'step': state.global_step,
-                            'max_steps': args.max_steps, 'pause_requested': paused})
+                            'max_steps': effective_steps, 'pause_requested': paused})
                 return control
 
             def on_save(self, training_args, state, control, **kwargs):
@@ -208,7 +219,7 @@ def main():
         trainer = Trainer(model=model, args=settings, train_dataset=encoded, data_collator=collate,
                           callbacks=[Checkpoints()])
         saved_state = TrainerState.load_from_json(str(checkpoint/'trainer_state.json')) if checkpoint else None
-        recovered_complete = bool(saved_state and saved_state.global_step >= args.max_steps)
+        recovered_complete = bool(saved_state and saved_state.global_step >= effective_steps)
         if recovered_complete:
             # The last step can persist before final metadata; restore it without taking an extra step.
             model.load_adapter(str(checkpoint), adapter_name='default', is_trainable=True)
@@ -220,13 +231,14 @@ def main():
         metadata = {'schema_version': 1, 'model': args.model, 'revision': args.revision,
                     'dataset_sha256': sha256(args.dataset), 'manifest_sha256': sha256(manifest_path(args.dataset)),
                     'tasks_sha256': sha256(args.tasks), 'rows': len(encoded), 'skipped_overlength': len(rows) - len(encoded),
-                    'versions': versions, 'max_steps': args.max_steps, 'max_length': args.max_length,
+                    'versions': versions, 'max_steps': effective_steps, 'step_ceiling': args.max_steps,
+                    'max_epochs': args.max_epochs, 'learning_rate': args.learning_rate, 'max_length': args.max_length,
                     'rank': args.rank, 'seed': args.seed, 'gpu': torch.cuda.get_device_name(0),
                     'gpu_total_bytes': total, 'peak_allocated_bytes': torch.cuda.max_memory_allocated(0),
                     'peak_reserved_bytes': torch.cuda.max_memory_reserved(0),
                     'metrics': trainer.state.log_history, 'evaluated': False,
                     'global_step': trainer.state.global_step,
-                    'status': 'completed' if trainer.state.global_step >= args.max_steps else 'paused',
+                    'status': 'completed' if trainer.state.global_step >= effective_steps else 'paused',
                     'recovered_completed_checkpoint': recovered_complete,
                     'resumed_from': str(checkpoint) if checkpoint else None}
         atomic_json(args.output/'training.json', metadata)

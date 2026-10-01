@@ -1,4 +1,4 @@
-param([string]$TaskName = 'LocalCodingAssistantLearning-F5E39223')
+param([string]$TaskName = 'LocalCodingAssistantLearning-8D2767D7')
 $ErrorActionPreference = 'Stop'
 $Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $Principal = New-Object Security.Principal.WindowsPrincipal($Identity)
