@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-01",
+  "model": "Qwen3.8-27B UD-Q4_K_M",
+  "model_manifest": "manifest.json",
+  "context": 8192,
+  "cpu_ffn_layers": 8,
+  "scope": "Larger compatible model before revised student training. Same 15 authored development repairs, RLM prompt, and resource ceilings. This experiment leaves the original holdout untouched.",
+  "sources": {
+    "learning_session.py": "50c7392363cc18f562f6eedaa96abbf7c51e93a6dd30edc137fa152a9ce940bf",
+    "train_adapter.py": "ae4f26502eb2d82c3b1a3e59c53a1ba1fda71a9ff13a8312aaf94d8230824947",
+    "training_data.py": "243787428f24fab0ad358301010881463dadc65a95df5bbb88a9bdd69efd4215",
+    "recursive_agent.py": "e2634ae747678903b00eabfded39a980cfae101c800d74a7b54274cb683c8bb5",
+    "rlm_worker.py": "749ec9efd3898d3a600ef254992accd9ca87ba1d67e49867a31a8c368dc514b8",
+    "research/adapter_eval_server.py": "722f24ed31dc8429954904fc31da83c59c56b04e895e642968be89af0d581535",
+    "launcher.py": "001daf783290a2f1151b1c6c2ed29e13f149deb3ae39d6c2570fcd0e00b173fd",
+    "wsl_server.py": "cac728cbf61e76ad40d4f42a2b6afbdb8b39b1a1d7d0e6cde1155d0e1ea39426",
+    "research/repair_tasks.json": "3cc467078b8edbbed6351d2006d0875cf8c03f079080108570e2e227bd2d928e"
+  },
+  "settings": {
+    "mode": "rlm",
+    "depth": 2,
+    "instruction": ""
+  },
+  "limits": {
+    "calls": 8,
+    "output_tokens": 4096,
+    "seconds": 120
+  },
+  "passed": 11,
+  "total": 15,
+  "seconds": 720.38,
+  "calls": 67,
+  "output_tokens": 12236,
+  "subcalls": 0,
+  "tasks": [
+    {
+      "id": "package-manifest",
+      "passed": false,
+      "elapsed_s": 38.804,
+      "calls": 4,
+      "error": null
+    },
+    {
+      "id": "source-positions",
+      "passed": false,
+      "elapsed_s": 120.42,
+      "calls": 5,
+      "error": "APITimeoutError: Request timed out."
+    },
+    {
+      "id": "unique-slugs",
+      "passed": true,
+      "elapsed_s": 57.84,
+      "calls": 4,
+      "error": null
+    },
+    {
+      "id": "checkout-transitions",
+      "passed": false,
+      "elapsed_s": 21.717,
+      "calls": 2,
+      "error": null
+    },
+    {
+      "id": "http-byte-ranges",
+      "passed": true,
+      "elapsed_s": 71.761,
+      "calls": 4,
+      "error": null
+    },
+    {
+      "id": "tuning-matrix-transpose",
+      "passed": true,
+      "elapsed_s": 37.242,
+      "calls": 6,
+      "error": null
+    },
+    {
+      "id": "tuning-date-span",
+      "passed": true,
+      "elapsed_s": 36.255,
+      "calls": 5,
+      "error": null
+    },
+    {
+      "id": "tuning-bounded-tail",
+      "passed": false,
+      "elapsed_s": 39.812,
+      "calls": 6,
+      "error": null
+    },
+    {
+      "id": "tuning-nested-update",
+      "passed": true,
+      "elapsed_s": 70.294,
+      "calls": 3,
+      "error": null
+    },
+    {
+      "id": "tuning-isbn-check",
+      "passed": true,
+      "elapsed_s": 48.772,
+      "calls": 6,
+      "error": null
+    },
+    {
+      "id": "tuning-roman-numerals",
+      "passed": true,
+      "elapsed_s": 52.839,
+      "calls": 6,
+      "error": null
+    },
+    {
+      "id": "tuning-edit-distance",
+      "passed": true,
+      "elapsed_s": 34.296,
+      "calls": 4,
+      "error": null
+    },
+    {
+      "id": "tuning-header-multimap",
+      "passed": true,
+      "elapsed_s": 20.734,
+      "calls": 2,
+      "error": null
+    },
+    {
+      "id": "tuning-idle-expiry",
+      "passed": true,
+      "elapsed_s": 35.309,
+      "calls": 5,
+      "error": null
+    },
+    {
+      "id": "tuning-booking-overlap",
+      "passed": true,
+      "elapsed_s": 34.286,
+      "calls": 5,
+      "error": null
+    }
+  ],
+  "limitations": "Small authored repositories, one attempt per setting. Larger model uses a different quantization method and CPU offload. One task timed out. This is not a general coding benchmark."
+}

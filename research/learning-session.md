@@ -162,7 +162,9 @@ These tasks are authored mini-repositories. This result does not establish gener
 MiMo 9B passed 0/15 through this REPL interface.
 It returned tool-call tags instead of executable REPL blocks.
 This result measures interface incompatibility. It does not rank its standalone coding ability.
-The teacher comparison in the tuned session supplies a larger model with a compatible interface.
+The [larger Qwen model](../reports/tuning-2026-10-01/teacher-summary.json) passed 11/15 through the compatible interface.
+It used eight CPU FFN layers and took 720.38 seconds, against 187.57 seconds for the small adapter.
+One larger-model task exceeded its time limit. Neither model made recursive child calls.
 
 All 120 checked trajectory examples fit the token limit. The longest checked example used 1,225 tokens.
 These fixture checks used authored reference patches only for execution and token checks.
