@@ -94,3 +94,21 @@ with tempfile.TemporaryDirectory() as temporary:
     assert observed==[t['id'] for t in dev[1:]]
     assert len(json.loads((folder/'teacher-dev.json').read_text())['tasks'])==15
 print('PASS: teacher comparison resumes without repeating completed tasks')
+
+# Preserve the teacher's actual successful actions instead of replacing them with a script.
+with tempfile.TemporaryDirectory() as temporary:
+    root=Path(temporary); folder=root/'round-001'; folder.mkdir()
+    task=next(t for t in tasks if t['id']=='tuning-escaped-delimiter')
+    trainer.atomic_json(folder/'tasks.json',[task])
+    response='```repl\npatch = '+repr(task['reference_patch'])+"\nanswer['content'] = patch\nanswer['ready'] = True\n```"
+    trace={'kind':'root','messages':[{'role':'system','content':'Use REPL'},
+           {'role':'user','content':'Turn 1/8:'}],'response':response,'input_tokens':10,'output_tokens':10}
+    trainer.atomic_json(folder/'teacher.json',{'schema_version':1,'split':'train',
+        'tasks_sha256':data.sha256(folder/'tasks.json'),'tasks':[dict(task,passed=True,mode='rlm',trace=[trace],patch=task['reference_patch'])]})
+    worker=object.__new__(session.Session); worker.state={'round':1}; worker.path=root
+    worker.save=lambda **kwargs:None
+    with patch('recursive_agent.grade',local_grade),patch('recursive_agent.Sandbox',Workspace):
+        worker.dataset(folder)
+    rows=data.load_verified(folder/'training.jsonl',folder/'tasks.json')
+    assert [r['messages'][-1]['content'] for r in rows]==[response], 'Actual successful teacher actions were replaced'
+print('PASS: learning data preserves the actual verified teacher trajectory')

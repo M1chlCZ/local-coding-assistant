@@ -256,7 +256,8 @@ class Session:
                 path = folder/f'source-{number:03d}.json'
                 atomic_json(path, value)
                 reports.append(path)
-            export(reports, folder/'tasks.json', dataset, repairs=True)
+            # Preserve the successful teacher's actions and their exact REPL feedback.
+            export(reports, folder/'tasks.json', dataset, repairs=False)
         load_verified(dataset, folder/'tasks.json')
         self.save(phase='train', detail='Dataset fixed for checkpoint resume')
 

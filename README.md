@@ -63,6 +63,9 @@ Checkpoints retain the optimizer and current step.
 The tuned session uses 30 repair tasks, visible tests, and short training candidates.
 Candidates receive 15 development checks before acceptance. Three rounds without improvement stop the session.
 The [training evidence](research/rlm-training-evidence.md) compares published RLM methods, available weights, and history-derived data.
+The [public-data pilot](research/public-data.md) prepares checked Python repairs from NVIDIA OpenCodeInstruct.
+Its latest 4B candidate passed 7/10 new development tasks, against 5/10 for the previous adapter, and preserved its older passes.
+The [Strata pilot](research/strata.md) measures a larger MoE teacher on the same GPU.
 The [private history tool](research/private-history.md) exports local Codex messages and requests task ideas from the PC's model.
 Exports, reviews, and private adapters stay in the ignored `private-data/` directory.
 History-derived ideas need executable tests before training.

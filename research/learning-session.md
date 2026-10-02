@@ -63,10 +63,12 @@ The authored grading tests reject the broken source and accept the reference rep
 Reference repairs check the fixtures. They never supply teacher answers or training targets.
 
 Only teacher repairs that pass the grading tests enter training.
-The exporter checks each repair again in an isolated container.
-It runs four supervised REPL turns: inspect, reproduce the failure, apply the repair and retest, then submit the patch.
-Test output comes from execution. The exporter rejects repairs that fail the visible retest.
-These examples teach test use and repair. They do not demonstrate recursive delegation.
+The collector grades each proposed repair in an isolated container.
+The exporter checks registry hashes and trusts the recorded result in the local collection report.
+It preserves the teacher's actual REPL turns and their recorded execution feedback.
+It excludes failed repairs, child calls, and repeated examples.
+The previous exporter substituted four scripted turns for each repair. That setting is no longer used by the session.
+These examples teach the recorded repair process. They do not establish recursive delegation.
 Replay uses up to four recent rounds. Each round fixes its dataset before training.
 Development and holdout tasks never enter the training dataset.
 
@@ -91,6 +93,7 @@ No generated datasets or weights upload automatically.
 The previous stopped session stays in `.cache/learning/current`.
 Its checkpoints require the original source files for resume.
 The new Windows panel controls `.cache/learning/tuned` by default.
+After an exporter update, use a new session folder. An existing session keeps its original source binding.
 
 ## Compare a coding model
 
@@ -171,3 +174,9 @@ These fixture checks used authored reference patches only for execution and toke
 The training exporter still requires successful teacher repairs.
 CUDA checkpoint checks paused at step one and resumed to step two.
 Recovery from the completed checkpoint took no additional optimizer step.
+
+The tuned run then stopped after three rejected rounds. Every new candidate scored 0/15.
+The previous 8/15 adapter remains selected. Training completion did not establish improvement.
+Two later trials used actual teacher traces at learning rates of `5e-5` and `5e-6`.
+Both failed the first repair that the previous adapter passed. The early regression check rejected them.
+The [public-data pilot](public-data.md) prepares a separate, checked coding curriculum.

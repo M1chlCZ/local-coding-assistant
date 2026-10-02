@@ -381,6 +381,7 @@ def main():
     parser.add_argument('--output-tokens',type=int,default=8192)
     parser.add_argument('--seconds',type=int,default=300)
     parser.add_argument('--split',choices=['train','dev','holdout'],default='dev')
+    parser.add_argument('--tasks',type=Path,default=TASKS,help='Local repair task registry')
     parser.add_argument('--task', help='Run one fixture ID')
     parser.add_argument('--repo',type=Path,help='Read a repository snapshot; output a proposed patch without applying it')
     parser.add_argument('--prompt',help='Repair request for --repo')
@@ -396,14 +397,14 @@ def main():
                 'files':files,'editable':[f for f in files if f.endswith('.py')]}]
         digest=None
     else:
-        tasks=json.loads(TASKS.read_text())
+        tasks=json.loads(args.tasks.read_text())
         tasks=[t for t in tasks if t['split']==args.split and (not args.task or t['id']==args.task)]
-        digest=hashlib.sha256(TASKS.read_bytes()).hexdigest()
+        digest=hashlib.sha256(args.tasks.read_bytes()).hexdigest()
         if not tasks:
             parser.error('No tasks match this split and ID')
     report={'schema_version':1,'split':'custom' if args.repo else args.split,'tasks_sha256':digest,
             'upstream_revision':UPSTREAM,'limits':{'calls':args.calls,'output_tokens':args.output_tokens,
-            'seconds':args.seconds},'scope':'Authored synthetic mini-repositories. Fixed hidden assertions, one patch attempt. No general agent reliability claim.',
+            'seconds':args.seconds},'scope':'Local repair tasks from the bound registry, one graded patch attempt. No general agent reliability claim.',
             'tasks':[]}
     args.output.parent.mkdir(parents=True,exist_ok=True)
     for task in tasks:

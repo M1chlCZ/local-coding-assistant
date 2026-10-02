@@ -1,0 +1,130 @@
+{
+  "scope": "32 public training repairs and 10 public development repairs. Original holdout unused. No private history. Repeated small development sets, not general coding reliability.",
+  "hardware": {
+    "gpu": "RTX 5070 Ti",
+    "vram_mib": 16303,
+    "ram_gb": 32
+  },
+  "public_data": {
+    "source": {
+      "dataset": "nvidia/OpenCodeInstruct",
+      "license": "CC-BY-4.0",
+      "attribution": "NVIDIA, OpenCodeInstruct",
+      "url": "https://huggingface.co/datasets/nvidia/OpenCodeInstruct",
+      "revision": "8f3ba5bafe4d6e8db46082cf7ae6741bc370604d",
+      "file": "data/train-00000-of-00050.parquet",
+      "file_sha256": "342757e0c6b706c8f68cf0a867ead5c417d0273726453dbcfc934f5c3c6ca891"
+    },
+    "snapshot_sha256": "14ebdff78835ffac4fdddef04180b7d4574cefd796cdadd02a29881e7f002f40",
+    "tasks_sha256": "ecb6b80d43e6995988630fefe8888bbf90d79f77e27bf020f8876b5a496a1a84",
+    "rows": 208,
+    "splits": {
+      "train": 163,
+      "dev": 45
+    },
+    "excluded": {
+      "metadata_or_syntax": 790,
+      "isolated_test_failure": 2
+    },
+    "scope": "Provided public tests rerun in isolated containers. Not a proof of general correctness. Original project holdout unused."
+  },
+  "selected_tasks": {
+    "train": 32,
+    "dev": 10,
+    "registry_sha256": "da0f4809d67f8f8b7b0d5dd4d4dc81df8907457aebaa72933bde345b9657d988"
+  },
+  "teacher": {
+    "model": "Qwen3.8-27B-UD-Q4_K_M, 8 CPU FFN layers",
+    "results": {
+      "train": {
+        "passed": 30,
+        "total": 32,
+        "seconds": 776.35,
+        "subcalls": 0
+      },
+      "dev": {
+        "passed": 10,
+        "total": 10,
+        "seconds": 219.23,
+        "subcalls": 0
+      }
+    }
+  },
+  "student": {
+    "model": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "quantization": "NF4",
+    "rank": 8,
+    "warm_start_sha256": "a1e5722137765a0f3c49b6b9d2b91975f83338a68ecf3c58a30826edbe72cd77",
+    "candidate_sha256": "1c290a311766f3d47679696fd8bd6be66e15c461d8541da4a88a62f1d98abd07"
+  },
+  "training": {
+    "rows": 123,
+    "skipped_overlength": 0,
+    "global_step": 20,
+    "step_ceiling": 20,
+    "max_epochs": 1.0,
+    "learning_rate": 5e-06,
+    "max_length": 4096,
+    "seed": 42,
+    "versions": {
+      "torch": "2.14.0+cu130",
+      "transformers": "5.18.0",
+      "peft": "0.21.1",
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2"
+    },
+    "peak_allocated_bytes": 12591139328,
+    "peak_reserved_bytes": 16900947968,
+    "status": "completed"
+  },
+  "dataset": {
+    "rows": 123,
+    "dataset_sha256": "2b5b860e90550e4bdd21aa9b016ab3d99840b9c04b4d2d06b65b7b9639f5a4f9",
+    "tasks_sha256": "da0f4809d67f8f8b7b0d5dd4d4dc81df8907457aebaa72933bde345b9657d988"
+  },
+  "limits": {
+    "calls": 8,
+    "output_tokens": 4096,
+    "seconds": 120
+  },
+  "settings": {
+    "mode": "rlm",
+    "depth": 2,
+    "instruction": ""
+  },
+  "public_development": {
+    "public-base": {
+      "passed": 0,
+      "total": 10
+    },
+    "public-seed": {
+      "passed": 5,
+      "total": 10
+    },
+    "public-candidate": {
+      "passed": 7,
+      "total": 10
+    },
+    "original-sentinels": {
+      "passed": 3,
+      "total": 3
+    }
+  },
+  "authored_development": {
+    "passed": 9,
+    "total": 15,
+    "previous_passed": 8,
+    "regressed": [],
+    "improved": [
+      "checkout-transitions"
+    ],
+    "scope": "Repeated authored development set only. Original holdout and remaining public development tasks unused."
+  },
+  "accepted": true,
+  "previous_authored_baseline": "8/15 from the previous matched report. This run rechecked three prior passing sentinels at 3/3 before training.",
+  "holdout_used": false,
+  "remaining_public_dev_used": false,
+  "private_history_used": false,
+  "harness_source_commit": "325da401edbf22424c693237b6e279c2f84c0a35"
+}

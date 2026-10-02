@@ -24,8 +24,10 @@ The reported multi-paper run used eight H200 GPUs. Its task extracted evidence f
 
 ## Local training and history
 
-The current exporter runs inspect, failing-test, repair-and-retest, and submission steps for each accepted teacher patch.
-These steps teach tested repairs. They contain no recursive calls.
+The session now preserves actual successful teacher turns and their recorded REPL feedback.
+The previous session used scripted inspect, failing-test, repair-and-retest, and submission turns.
+Three rounds with those scripted targets regressed and were rejected.
+Two short trials with actual traces also failed a known passing repair. Neither replaced the previous adapter.
 The current collector also produced no child calls in its first revised round.
 Training loss alone does not establish coding improvement or recursion.
 
@@ -39,3 +41,4 @@ History-derived data requires a separate private dataset and review of its conte
 Repository-level separation prevents one project's repairs from entering both training and evaluation.
 Personal datasets and adapters receive no automatic upload.
 No chat history entered the current training session.
+The [public-data pilot](public-data.md) supplies independently executable Python tasks with source attribution.

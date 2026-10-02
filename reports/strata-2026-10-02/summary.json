@@ -1,0 +1,68 @@
+{
+  "scope": "15 authored development repairs, shared REPL prompt and limits. Different weights and quantization. Original holdout unused. No private history.",
+  "hardware": {
+    "gpu": "RTX 5070 Ti",
+    "vram_mib": 16303,
+    "cpu": "Ryzen 9 9900X",
+    "ram_gb": 32
+  },
+  "strata_source": "d9ab8435f654c368c586340d490915f6addf56a3",
+  "strata_engine": "0.1.35",
+  "harness_source_commit": "325da401edbf22424c693237b6e279c2f84c0a35",
+  "strata_model": "Coder IQ1_M, resident low-RAM mode",
+  "context": 8192,
+  "thinking": false,
+  "limits": {
+    "calls": 8,
+    "output_tokens": 4096,
+    "seconds": 120
+  },
+  "settings": {
+    "mode": "rlm",
+    "depth": 2,
+    "instruction": ""
+  },
+  "models": {
+    "qwen27b_previous_teacher": {
+      "passed": 11,
+      "total": 15,
+      "seconds": 720.38,
+      "calls": 67,
+      "output_tokens": 12236
+    },
+    "strata": {
+      "passed": 3,
+      "total": 15,
+      "seconds": 164.77,
+      "calls": 114,
+      "output_tokens": 9614,
+      "subcalls": 0,
+      "budget_failures": 12
+    }
+  },
+  "resources": {
+    "peak_vram_mib": 15868,
+    "peak_host_ram_used_gib": 30.72,
+    "minimum_host_ram_available_gib": 0.19,
+    "peak_temperature_c": 63
+  },
+  "decode_log": {
+    "samples": 115,
+    "median_tokens_s": 99.5,
+    "scope": "Includes short and repeated failed responses. Not successful-repair throughput."
+  },
+  "sources": {
+    "recursive_agent.py": "e2634ae747678903b00eabfded39a980cfae101c800d74a7b54274cb683c8bb5",
+    "rlm_worker.py": "749ec9efd3898d3a600ef254992accd9ca87ba1d67e49867a31a8c368dc514b8",
+    "research/rlm_tasks.json": "b57c5a195bccb5851996ffdc2477cfbb79fce8c07d8e789d4c0ce51f780d7cc0",
+    "research/repair_tasks.json": "3cc467078b8edbbed6351d2006d0875cf8c03f079080108570e2e227bd2d928e"
+  },
+  "selected_teacher": "Qwen3.8-27B-UD-Q4_K_M, eight CPU FFN layers",
+  "native_format_probe": {
+    "http_status": 200,
+    "finish_reason": "tool_calls",
+    "tool_name": "repl",
+    "client_reads": "message.content",
+    "conversion_benchmark_run": false
+  }
+}

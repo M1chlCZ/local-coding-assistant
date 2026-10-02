@@ -102,7 +102,7 @@ with tempfile.TemporaryDirectory() as directory:
         adapter.atomic_json(folder/'tasks.json', [])
         (folder/'training.jsonl').write_text('partial')
         def fake_export(reports,tasks,output,repairs):
-            assert repairs and not output.exists()
+            assert not repairs and not output.exists()
             output.write_text('complete')
         with patch('learning_session.export',side_effect=fake_export), patch('learning_session.load_verified'):
             worker.dataset(folder)

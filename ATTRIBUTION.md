@@ -8,6 +8,9 @@
 
 This project's MIT license covers its original launcher and evaluation code. It does not replace any model, dataset, runtime or upstream research license. Preserve the corresponding licenses when distributing those artifacts.
 
+- [NVIDIA OpenCodeInstruct](https://huggingface.co/datasets/nvidia/OpenCodeInstruct): public coding tasks, CC BY 4.0. The importer changes selected examples into repair tasks. The pinned revision and shard digest are in `public_data.py`. Raw examples and generated training traces remain excluded from Git.
+- [Strata](https://github.com/Niko1221/Strata): optional local teacher runtime, MIT code with separate model licenses. The measured source and engine versions are in `research/strata.md`. This project redistributes no Strata weights.
+
 - [Recursive Language Models](https://github.com/alexzhang13/rlm): MIT library, pinned to `d04208afbad29ca675ab13478c40ee8bebc84bfe`. Installed as a dependency, with an original bounded sandbox adapter in this repository.
 - [Karpathy autoresearch](https://github.com/karpathy/autoresearch): inspiration for the finite propose, measure, and retain loop. This project searches agent instructions and depth rather than editing its training program.
 
