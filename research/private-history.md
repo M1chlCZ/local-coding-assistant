@@ -26,7 +26,7 @@ python3 history_data.py review --output private-data/history/latest --limit 8
 ```
 
 The review connects only to the loopback model server.
-It selects recent coding excerpts from up to eight projects.
+It selects up to eight excerpts, with source code and repair descriptions first.
 It saves English task ideas in `reviews.jsonl`.
 It treats quoted conversations as untrusted data and does not execute model output.
 The learning session and this server must not use the GPU at the same time.

@@ -2,12 +2,20 @@
 import json
 import tempfile
 from pathlib import Path
+import history_data
 
 from check_public_data import findings, private_findings
 from history_data import candidates, export_codex, inspect_export, sanitize
 
 
 def main():
+    assert hasattr(history_data, 'select_reviews'), 'Review needs a source-code sample selector'
+    selected = history_data.select_reviews([
+        {'excerpt':'Fix the parser bug.\n```python\ndef parse(text):\n    return text\n```'},
+        {'excerpt':'The repository release passed.\n```sh\npackage publish\n```'},
+    ], 1)
+    assert 'def parse' in selected[0]['excerpt'], 'Release commands displaced the repair source'
+    assert len(history_data.select_reviews(selected+selected, 8)) == 1, 'Repeated excerpt spent the review budget twice'
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         source = root/'sessions'
