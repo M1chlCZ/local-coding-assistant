@@ -70,18 +70,27 @@ It excludes failed repairs, child calls, and repeated examples.
 The previous exporter substituted four scripted turns for each repair. That setting is no longer used by the session.
 These examples teach the recorded repair process. They do not establish recursive delegation.
 Replay uses up to four recent rounds. Each round fixes its dataset before training.
+If a round adds no new examples, the worker stops before another update.
+Changing task labels alone does not count as new examples.
 Development and holdout tasks never enter the training dataset.
 
 The student uses pinned Qwen3-4B weights, NF4, rank-8 QLoRA, and complete examples of at most 4,096 tokens.
-Each candidate trains for approximately one dataset pass, with an 80-step ceiling and a learning rate of `5e-5`.
+Each candidate has a ceiling of one dataset pass.
+Fresh adapters use at most 80 steps at `5e-5`.
+Updates from an accepted adapter use at most 20 steps at `5e-6`.
 The trainer saves a full checkpoint every five steps and on pause or completion.
 It retains three periodic checkpoints per round.
+The evaluator checks complete checkpoints from the earliest retained step to the latest.
+It keeps the first checkpoint that passes the full improvement rule. The final training step does not receive preference.
 A new round uses the last accepted adapter, with a new optimizer.
 Resume within a round restores the existing optimizer.
 The teacher, trainer, and evaluator use the GPU in separate phases.
 
-Every candidate receives the same 15 development repairs as its unchanged base.
+By default, every candidate receives the same 15 development repairs as its unchanged base.
 The set contains the original five tasks and ten new repositories.
+For extra checks, put a development registry in the new session's `development-tasks.json` before its first start.
+The session checks and records its hash. Resume rejects changes to that file.
+The registry accepts only development tasks with unique IDs. It never supplies training examples.
 Acceptance requires more successful repairs than the base and the previous accepted candidate, with no regression on individual tasks.
 The worker stops after three consecutive rounds without development improvement.
 The repeated development set can overfit. It does not prove general coding quality.

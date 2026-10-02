@@ -1,0 +1,159 @@
+{
+  "scope": "Fixed-data ablations and public-data continuation. Same small repeated development sets. Not a general coding benchmark.",
+  "holdout_used": false,
+  "remaining_public_development_used": false,
+  "private_history_used": false,
+  "student": {
+    "model": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "quantization": "NF4",
+    "rank": 8,
+    "seed_adapter_sha256": "1c290a311766f3d47679696fd8bd6be66e15c461d8541da4a88a62f1d98abd07",
+    "candidate_adapter_sha256": "615df889a57f140fb241030357ed1ce8b9353a8a9b0a981aad5389a03e9a8592"
+  },
+  "previous_session": {
+    "active_seconds": 7782.837339068,
+    "completed_rounds": [
+      {
+        "round": 1,
+        "base_passed": 0,
+        "adapter_passed": 4,
+        "total": 15,
+        "accepted": false,
+        "warning": "Small repeated development set; no general quality claim. Holdout unused."
+      },
+      {
+        "round": 2,
+        "base_passed": 0,
+        "adapter_passed": 4,
+        "total": 15,
+        "accepted": false,
+        "warning": "Small repeated development set; no general quality claim. Holdout unused."
+      },
+      {
+        "round": 3,
+        "base_passed": 0,
+        "adapter_passed": 5,
+        "total": 15,
+        "accepted": false,
+        "warning": "Small repeated development set; no general quality claim. Holdout unused."
+      }
+    ],
+    "retained_authored_passed": 9,
+    "detail": "Stopped after three rounds without development improvement"
+  },
+  "fixed_data_ablation": {
+    "dataset_sha256": "f2510abb90fa3740a0beb827dbc9c206a2acb3f28e02b1ce944ea0a794afc8ac",
+    "rows": 150,
+    "scope": "Stop evaluation at the first lost prior pass. Partial scores are not full development scores.",
+    "results": {
+      "low-rate-full": {
+        "learning_rate": 5e-06,
+        "steps": 38,
+        "authored_passed": 0,
+        "authored_evaluated": 1,
+        "regressions": [
+          "unique-slugs"
+        ],
+        "accepted": false
+      },
+      "low-rate-five-steps": {
+        "learning_rate": 5e-06,
+        "steps": 5,
+        "authored_passed": 2,
+        "authored_evaluated": 3,
+        "regressions": [
+          "tuning-edit-distance"
+        ],
+        "accepted": false
+      }
+    }
+  },
+  "public_continuation": {
+    "tasks_sha256": "a2848c5acf274f46eceb12aaf29a2e84f1981be983bee157cede4dcb656cb954",
+    "teacher": "Qwen3.8-27B-UD-Q4_K_M, 8 CPU FFN layers",
+    "previous_training_tasks": 32,
+    "fresh_training_tasks": 32,
+    "fresh_teacher_passed": 31,
+    "fresh_teacher_total": 32,
+    "total_teacher_passed": 61,
+    "total_teacher_tasks": 64,
+    "recursive_child_calls": 0,
+    "training": {
+      "rows": 256,
+      "skipped_overlength": 0,
+      "global_step": 20,
+      "step_ceiling": 20,
+      "learning_rate": 5e-06,
+      "max_epochs": 1.0,
+      "max_length": 4096,
+      "dataset_sha256": "4d3fd33ee0c68f60de2c44a7631bc1e293398f5f7590d6602e418e0a1c87f060",
+      "manifest_sha256": "f40ba191318ff985044376011dcf08f2a40ecf28c12caa2cf76a6390934d30e3",
+      "tasks_sha256": "a2848c5acf274f46eceb12aaf29a2e84f1981be983bee157cede4dcb656cb954",
+      "versions": {
+        "torch": "2.14.0+cu130",
+        "transformers": "5.18.0",
+        "peft": "0.21.1",
+        "accelerate": "1.15.0",
+        "bitsandbytes": "0.50.2"
+      },
+      "seed": 42,
+      "peak_allocated_bytes": 10297494016,
+      "peak_reserved_bytes": 16257122304
+    },
+    "authored_seed": {
+      "passed": 9,
+      "total": 15
+    },
+    "public_seed": {
+      "passed": 7,
+      "total": 10
+    },
+    "results": {
+      "public-base": {
+        "passed": 0,
+        "total": 10
+      },
+      "public-seed": {
+        "passed": 7,
+        "total": 10
+      },
+      "public-candidate": {
+        "passed": 8,
+        "total": 10
+      },
+      "original-candidate": {
+        "passed": 8,
+        "total": 15
+      }
+    },
+    "accepted": false,
+    "selection_rule": "Strict total improvement across both development sets and no lost individual passing task."
+  },
+  "harness_sha256": "e9eeda6958fcf41b25f8243c5f864936d4d97f7801c05ce832fc4c7ec66073a5",
+  "trainer_sha256": "ae4f26502eb2d82c3b1a3e59c53a1ba1fda71a9ff13a8312aaf94d8230824947",
+  "checkpoint_selection": {
+    "scope": "Stop at the first lost previous pass. Partial scores are not full development scores.",
+    "results": {
+      "checkpoint-10": {
+        "authored_passed": 9,
+        "authored_evaluated": 15,
+        "authored_regressions": [],
+        "accepted": false,
+        "public_passed": 7,
+        "public_evaluated": 10,
+        "public_regressions": []
+      },
+      "checkpoint-15": {
+        "authored_passed": 3,
+        "authored_evaluated": 4,
+        "authored_regressions": [
+          "checkout-transitions"
+        ],
+        "accepted": false
+      }
+    },
+    "selected": null
+  },
+  "retained_adapter_sha256": "1c290a311766f3d47679696fd8bd6be66e15c461d8541da4a88a62f1d98abd07"
+}

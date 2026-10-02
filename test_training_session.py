@@ -112,6 +112,21 @@ with tempfile.TemporaryDirectory() as directory:
         worker.lock.close();worker.gpu_lock.close()
 print('PASS: checkpoint integrity, split separation, verified repair targets, acceptance, exclusive worker, and recovery')
 
+with tempfile.TemporaryDirectory() as directory:
+    root=Path(directory)
+    extra={**session.development_tasks()[0],'id':'public-extra-dev'}
+    adapter.atomic_json(root/'development-tasks.json',[extra])
+    with isolated_repository(root):
+        worker=session.Session(root,12,Path('/teacher.gguf'))
+        assert worker.state.get('development_tasks_sha256')==data.sha256(root/'development-tasks.json'), 'Extra checks are not bound to the session'
+        worker.save()
+        worker.lock.close();worker.gpu_lock.close()
+        (root/'development-tasks.json').write_text('[]')
+        try: session.Session(root,12,Path('/teacher.gguf'))
+        except ValueError: pass
+        else: raise AssertionError('Changed quality checks accepted on resume')
+print('PASS: extra development tasks are immutable across resume')
+
 if len(sys.argv)>1:
     if len(sys.argv) not in (3,4):
         raise SystemExit('Use DATA TASKS [WARM_ADAPTER], with the cached model and pinned training environment')

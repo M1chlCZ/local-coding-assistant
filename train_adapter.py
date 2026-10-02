@@ -34,20 +34,25 @@ def complete_checkpoint(path, binding):
     atomic_json(path/'complete.json', {'binding': binding, 'files': hashes})
 
 
+def verified_checkpoint(path, binding):
+    path = Path(path)
+    marker = json.loads((path/'complete.json').read_text())
+    if marker.get('binding') != binding:
+        raise ValueError('Checkpoint belongs to different data or training settings')
+    if set(marker.get('files', {})) != set(CHECKPOINT_FILES) or any(
+            not (path/name).is_file() or sha256(path/name) != marker['files'][name]
+            for name in CHECKPOINT_FILES):
+        raise ValueError('Checkpoint files failed integrity verification')
+    return path
+
+
 def latest_checkpoint(output, binding):
     paths = sorted((p for p in Path(output).glob('checkpoint-*')
                     if p.name[11:].isdigit()), key=lambda p: int(p.name[11:]), reverse=True)
     for path in paths:
         if not (path/'complete.json').is_file():
             continue
-        marker = json.loads((path/'complete.json').read_text())
-        if marker.get('binding') != binding:
-            raise ValueError('Checkpoint belongs to different data or training settings')
-        if set(marker.get('files', {})) != set(CHECKPOINT_FILES) or any(
-                not (path/name).is_file() or sha256(path/name) != marker['files'][name]
-                for name in CHECKPOINT_FILES):
-            raise ValueError('Checkpoint files failed integrity verification')
-        return path
+        return verified_checkpoint(path, binding)
     raise ValueError('No complete checkpoint exists; start a new output folder')
 
 

@@ -9,8 +9,8 @@ import subprocess
 import time
 from pathlib import Path, PureWindowsPath
 
-from train_adapter import atomic_json, checkpoint_binding, latest_checkpoint, parser as training_parser
-from training_data import export, load_verified, manifest_path, sha256
+from train_adapter import atomic_json, checkpoint_binding, latest_checkpoint, verified_checkpoint, parser as training_parser
+from training_data import export, load_verified, manifest_path, sha256, registry
 
 ROOT = Path(__file__).resolve().parent
 MODEL = 'Qwen/Qwen3-4B'
@@ -23,10 +23,18 @@ SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
                 'launcher.py', 'wsl_server.py', 'research/repair_tasks.json')
 
 
-def development_tasks():
+def development_tasks(extra=None):
     originals = json.loads((ROOT/'research/rlm_tasks.json').read_text())
     added = json.loads((ROOT/'research/repair_tasks.json').read_text())
-    return [t for t in originals+added if t['split']=='dev']
+    tasks = [t for t in originals+added if t['split']=='dev']
+    if extra is not None:
+        added = list(registry(extra).values())
+        if len(added)>50 or any(t['split']!='dev' for t in added):
+            raise ValueError('Extra quality checks require at most 50 development tasks')
+        tasks += added
+    if len({t['id'] for t in tasks}) != len(tasks):
+        raise ValueError('Development task IDs must be unique')
+    return tasks
 
 
 def round_tasks(index):
@@ -78,11 +86,18 @@ class Session:
             'schema_version': 1, 'status': 'running', 'phase': 'collect', 'round': 1,
             'active_seconds': 0, 'limit_seconds': hours*3600, 'teacher_model': str(model.resolve()),
             'best_adapter': None, 'accepted_rounds': [], 'completed_rounds': [],
-            'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'sources': sources}
+            'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'sources': sources,
+            'development_tasks_sha256': sha256(self.path/'development-tasks.json')
+                if (self.path/'development-tasks.json').exists() else None}
         if self.state['tasks_sha256'] != sha256(ROOT/'research/rlm_tasks.json'):
             raise ValueError('Original task registry changed; use a new session')
         if self.state.get('sources') != sources:
             raise ValueError('Session source changed; restore the original source or use a new session')
+        extra = self.path/'development-tasks.json'
+        if self.state.get('development_tasks_sha256') != (sha256(extra) if extra.exists() else None):
+            raise ValueError('Development checks changed; use a new session')
+        if extra.exists():
+            development_tasks(extra)
         self.child = None
         self.clock = time.monotonic()
         self.recover_child()
@@ -164,7 +179,8 @@ class Session:
         command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'train_adapter.py'),
             '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
             '--model', MODEL, '--revision', REVISION, '--output', str(round_path/'adapter'),
-            '--max-steps', '80', '--max-epochs', '1', '--learning-rate', '0.00005',
+            '--max-steps', '20' if self.state['best_adapter'] else '80', '--max-epochs', '1', '--learning-rate',
+            '0.000005' if self.state['best_adapter'] else '0.00005',
             '--max-length', '4096', '--save-steps', '5',
             '--pause-file', str(self.path/'pause-training')]
         if self.state['best_adapter']:
@@ -177,7 +193,8 @@ class Session:
         path = folder/'teacher-dev.json'
         report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
             'sources': self.state['sources'], 'settings': SETTINGS, 'limits': LIMITS}
-        for task in development_tasks()[len(report['tasks']):]:
+        tasks = development_tasks(self.path/'development-tasks.json') if self.state.get('development_tasks_sha256') else development_tasks()
+        for task in tasks[len(report['tasks']):]:
             self.save(detail='Larger model development check: '+task['id'])
             if self.interrupted():
                 return False
@@ -258,7 +275,15 @@ class Session:
                 reports.append(path)
             # Preserve the successful teacher's actions and their exact REPL feedback.
             export(reports, folder/'tasks.json', dataset, repairs=False)
-        load_verified(dataset, folder/'tasks.json')
+        rows = load_verified(dataset, folder/'tasks.json')
+        previous = self.path/f"round-{self.state['round']-1:03d}"
+        if self.state['round'] > 1 and (previous/'training.jsonl').exists():
+            old = load_verified(previous/'training.jsonl', previous/'tasks.json')
+            current_messages = {json.dumps(row['messages'], sort_keys=True) for row in rows}
+            old_messages = {json.dumps(row['messages'], sort_keys=True) for row in old}
+            if current_messages <= old_messages:
+                self.save(status='completed', detail='No new verified examples; stopped before duplicate training')
+                return
         self.save(phase='train', detail='Dataset fixed for checkpoint resume')
 
     def train(self, folder):
@@ -300,37 +325,52 @@ class Session:
     def evaluate(self, folder):
         from evaluation import request
         from recursive_agent import solve, grade
-        command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'research/adapter_eval_server.py'),
-                   '--adapter', str(folder/'adapter')]
-        if not self.server(command, 8090, folder/'evaluation-server.log'):
-            return
-        tasks = development_tasks()
-        reports = {}
-        for mode in ('base', 'adapter'):
-            path = folder/f'dev-{mode}.json'
-            report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
-                'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': SETTINGS, 'limits': LIMITS}
-            request('http://127.0.0.1:8090', '/mode', {'mode': mode})
-            for task in tasks[len(report['tasks']):]:
-                self.save(detail=f'Development check {mode}: '+task['id'])
-                if self.interrupted():
-                    return
-                row = solve(task, 'http://127.0.0.1:8090', **SETTINGS, **LIMITS)
-                if row.get('patch'):
-                    row.update(grade(task, row['patch']))
-                report['tasks'].append(row)
-                atomic_json(path, report)
-                self.save()
-            reports[mode] = report
+        output = folder/'adapter'
+        binding = json.loads((output/'run.json').read_text())
+        checkpoints = sorted((p.parent for p in output.glob('checkpoint-*/complete.json')
+                              if p.parent.name[11:].isdigit()), key=lambda p:int(p.name[11:]))
+        if not checkpoints:
+            raise ValueError('No complete candidate checkpoint exists')
+        tasks = development_tasks(self.path/'development-tasks.json') if self.state.get('development_tasks_sha256') else development_tasks()
         previous = self.state.get('best_dev')
-        keep = accepted(reports['adapter'], reports['base'], previous, expected=len(tasks))
+        for checkpoint in checkpoints:
+            verified_checkpoint(checkpoint, binding)
+            command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'research/adapter_eval_server.py'),
+                       '--adapter', str(checkpoint)]
+            if not self.server(command, 8090, folder/f'evaluation-{checkpoint.name}.log'):
+                return
+            reports = {}
+            for mode in ('base', 'adapter'):
+                suffix = '-'+checkpoint.name if mode=='adapter' else ''
+                path = folder/f'dev-{mode}{suffix}.json'
+                report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
+                    'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': SETTINGS, 'limits': LIMITS,
+                    'development_tasks_sha256': self.state.get('development_tasks_sha256'),
+                    'adapter_sha256': sha256(checkpoint/'adapter_model.safetensors') if mode=='adapter' else None}
+                request('http://127.0.0.1:8090', '/mode', {'mode': mode})
+                for task in tasks[len(report['tasks']):]:
+                    self.save(detail=f'Development check {checkpoint.name} {mode}: '+task['id'])
+                    if self.interrupted():
+                        return
+                    row = solve(task, 'http://127.0.0.1:8090', **SETTINGS, **LIMITS)
+                    if row.get('patch'):
+                        row.update(grade(task, row['patch']))
+                    report['tasks'].append(row)
+                    atomic_json(path, report)
+                    self.save()
+                reports[mode] = report
+            keep = accepted(reports['adapter'], reports['base'], previous, expected=len(tasks))
+            self.stop_child()
+            if keep:
+                break
         result = {'round': self.state['round'], 'base_passed': sum(r['passed'] for r in reports['base']['tasks']),
                   'adapter_passed': sum(r['passed'] for r in reports['adapter']['tasks']), 'total': len(tasks),
-                  'accepted': keep, 'warning': 'Small repeated development set; no general quality claim. Holdout unused.'}
+                  'accepted': keep, 'checkpoint': checkpoint.name,
+                  'warning': 'Small repeated development set; no general quality claim. Holdout unused.'}
         atomic_json(folder/'result.json', result)
         self.state['completed_rounds'].append(result)
         if keep:
-            self.state['best_adapter'] = str(folder/'adapter')
+            self.state['best_adapter'] = str(checkpoint)
             self.state['best_dev'] = {'tasks': [{'id': r['id'], 'passed': r['passed']}
                                                for r in reports['adapter']['tasks']]}
             self.state['accepted_rounds'].append(self.state['round'])
