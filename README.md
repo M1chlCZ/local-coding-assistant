@@ -62,6 +62,7 @@ Double-click `learning.cmd` for Windows Start, Pause, Resume, and Stop controls.
 Checkpoints retain the optimizer and current step.
 The tuned session uses 30 repair tasks, visible tests, and short training candidates.
 Candidates receive 15 development checks before acceptance. Three rounds without improvement stop the session.
+The [training evidence](research/rlm-training-evidence.md) compares published RLM methods, available weights, and history-derived data.
 
 ## Measured results
 
