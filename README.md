@@ -63,6 +63,9 @@ Checkpoints retain the optimizer and current step.
 The tuned session uses 30 repair tasks, visible tests, and short training candidates.
 Candidates receive 15 development checks before acceptance. Three rounds without improvement stop the session.
 The [training evidence](research/rlm-training-evidence.md) compares published RLM methods, available weights, and history-derived data.
+The [private history tool](research/private-history.md) exports local Codex messages and requests task ideas from the PC's model.
+Exports, reviews, and private adapters stay in the ignored `private-data/` directory.
+History-derived ideas need executable tests before training.
 
 ## Measured results
 
@@ -92,7 +95,7 @@ See the [recipe](research/recipe.md) for compression and evaluation commands.
 Docker isolates generated code during evaluation.
 
 Before publishing, run `python3 check_public_data.py --history`.
-The check detects personal home paths and SSH tunnel hosts outside the documented example.
+The check detects personal home paths, private history records, and SSH tunnel hosts outside the documented example.
 To run it before each push, use `git config core.hooksPath .githooks`.
 Review credentials and screenshots separately.
 

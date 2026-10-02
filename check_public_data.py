@@ -1,4 +1,4 @@
-"""Reject personal home paths and non-example SSH tunnel hosts before publication."""
+"""Reject personal paths, private history and non-example SSH hosts before publication."""
 import argparse
 from pathlib import Path
 import re
@@ -7,6 +7,7 @@ import subprocess
 
 HOME = re.compile(rb'''(?i)(?:[a-z]:[\\/]+Users[\\/]+[a-z0-9_][^\\/\s"']*|/mnt/[a-z]/Users/[a-z0-9_][^/\s"']*|/Users/[a-z0-9_][^/\s"']*|/home/(?!coder(?:/|\b))[a-z0-9_.-]+/)''')
 TUNNEL = re.compile(rb'(?m)^ssh[ \t]+-N[^\r\n]*')
+PRIVATE = re.compile(rb'"data_classification"\s*:\s*"private_codex_history"')
 
 
 def findings(content):
@@ -14,6 +15,13 @@ def findings(content):
     matches += [(match.start(), 'non-example SSH tunnel host') for match in TUNNEL.finditer(content)
                 if not match.group().rstrip().endswith(b' coding-pc')]
     return [(content.count(b'\n', 0, offset) + 1, kind) for offset, kind in matches]
+
+
+def private_findings(path, content):
+    matches = [(1, 'private data path')] if b'private-data' in path.replace(b'\\', b'/').split(b'/') else []
+    matches += [(content.count(b'\n', 0, match.start()) + 1, 'private history record')
+                for match in PRIVATE.finditer(content)]
+    return matches
 
 
 def check(history=False):
@@ -29,9 +37,10 @@ def check(history=False):
         if kind not in (b'blob', b'commit', b'tag'):
             continue
         content = subprocess.check_output(['git', 'cat-file', kind.decode(), oid])
-        if b'\0' in content:
-            continue
-        for line, reason in findings(content):
+        issues = private_findings(path, content)
+        if b'\0' not in content:
+            issues += findings(content)
+        for line, reason in issues:
             print(f'{path.decode(errors="replace") or oid.decode()}:{line}: {reason}')
             failed = True
     return failed
