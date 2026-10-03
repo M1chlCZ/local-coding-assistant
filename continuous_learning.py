@@ -1,0 +1,343 @@
+"""PC-local continuous supervisor around source-bound, bounded learning experiments."""
+import argparse
+import copy
+import fcntl
+import json
+import os
+import shutil
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from train_adapter import atomic_json, verified_checkpoint
+from training_data import registry, sha256
+
+ROOT = Path(__file__).resolve().parent
+DEFAULT = ROOT/'.cache/learning/continuous'
+
+
+def read(path, default=None):
+    return json.loads(Path(path).read_text()) if Path(path).exists() else default
+
+
+def child_busy(path):
+    with (Path(path)/'worker.lock').open('a') as lock:
+        try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:return True
+    return False
+
+
+class Controller:
+    def __init__(self,path):
+        self.path=Path(path).resolve();self.state=read(self.path/'state.json')
+        if not self.state:raise ValueError('Continuous learning is not configured; initialize with --adopt')
+
+    @classmethod
+    def create(cls,path,child):
+        path=Path(path).resolve();child=Path(child).resolve()
+        path.mkdir(parents=True,exist_ok=True)
+        if (path/'state.json').exists():raise ValueError('Continuous controller already exists')
+        if not (child/'status.json').exists():raise ValueError('Adoption requires a prepared learning session')
+        command=read(child/'command.json',{'action':'resume'})
+        atomic_json(path/'command.json',command)
+        atomic_json(path/'state.json',{'schema':1,'child':str(child),'adopted':str(child),
+            'status':'running','failures':0,'retry_at':0,'active_by_child':{},'batches':0,
+            'detail':'Adopted prepared research; no overall active-time cutoff',
+            'adopted_baseline':read(child/'status.json').get('best_dev'),
+            'last_command_time':command.get('requested_at',0)})
+        result=cls(path);result.snapshot(persist=True);return result
+
+    def save(self,**changes):
+        self.state.update(changes,updated_at=time.time())
+        atomic_json(self.path/'state.json',self.state)
+
+    def desired(self):
+        return read(self.path/'command.json',{'action':'pause'})['action']
+
+    def child_state(self):
+        return read(Path(self.state['child'])/'status.json',{})
+
+    def control(self,action):
+        if action not in ('pause','resume','stop'):raise ValueError('Invalid continuous command')
+        value={'action':action,'requested_at':time.time()}
+        atomic_json(self.path/'command.json',value)
+        child=self.child_state()
+        if child.get('status') not in ('completed','stopped'):
+            atomic_json(Path(self.state['child'])/'command.json',value)
+        if action=='resume':self.state.update(status='running',failures=0,retry_at=0,detail='Resume requested')
+        self.snapshot()
+
+    def sync_manual_control(self):
+        value=read(Path(self.state['child'])/'command.json',{})
+        if value.get('action') in ('pause','stop') and self.desired()=='resume':
+            atomic_json(self.path/'command.json',value)
+
+    def snapshot(self,persist=False):
+        child=self.child_state();key=self.state['child']
+        clocks=self.state['active_by_child']
+        clocks[key]=max(clocks.get(key,0),child.get('active_seconds',0))
+        desired=self.desired();status=self.state['status']
+        if desired=='pause':status='paused' if not self.state.get('auxiliary_active') and child.get('status') in ('paused','completed','stopped','failed') else 'pausing'
+        elif desired=='stop':status='stopped' if not self.state.get('auxiliary_active') and child.get('status') in ('stopped','completed','failed') else 'stopping'
+        if persist:self.save()
+        value={**child,'status':status,'continuous':True,'desired':desired,
+               'active_seconds':sum(clocks.values()),'limit_seconds':None,'child':key,
+               'child_status':child.get('status'),'child_active_seconds':child.get('active_seconds'),
+               'child_limit_seconds':child.get('limit_seconds'),'batches':self.state['batches'],
+               'supervisor_detail':self.state['detail'],'retry_at':self.state['retry_at']}
+        if persist:atomic_json(self.path/'status.json',value)
+        return value
+
+    def attach(self,child):
+        self.snapshot(persist=True);self.save(child=str(Path(child).resolve()),status='running',failures=0,retry_at=0)
+
+    def failure(self,detail,now=None):
+        now=time.time() if now is None else now
+        failures=self.state['failures']+1
+        fatal=any(word in detail.lower() for word in ('integrity','digest','source changed','registry changed',
+                  'checks changed','manifest changed','different data','different training','exhausted'))
+        self.save(failures=failures,status='blocked' if fatal or failures>=6 else 'waiting',
+                  retry_at=now+min(900,30*2**(failures-1)),detail=detail)
+
+    def should_launch(self,now=None):
+        now=time.time() if now is None else now
+        return (self.desired()=='resume' and self.state['status']!='blocked'
+                and now>=self.state['retry_at'] and self.child_state().get('status') not in ('completed','stopped'))
+
+    def validate(self):
+        import learning_session as learning
+        child=self.child_state()
+        if child.get('sources')!={name:sha256(ROOT/name) for name in learning.SOURCE_FILES}:
+            raise ValueError('Session source changed; restore the bound trainer before resuming')
+        binding=read(self.path/'binding.json')
+        if binding and any(sha256(ROOT/name)!=digest for name,digest in binding.items()):
+            raise ValueError('Continuous source manifest changed; review before continuing')
+
+    def stash_adapter(self,value):
+        path=Path(value);binding=read(path.parent/'run.json')
+        verified_checkpoint(path,binding)
+        digest=sha256(path/'adapter_model.safetensors')
+        target=self.path/'models'/digest/'checkpoint'
+        if not target.exists():
+            target.parent.mkdir(parents=True,exist_ok=True)
+            temporary=target.with_name('checkpoint.partial')
+            shutil.rmtree(temporary,ignore_errors=True)
+            shutil.copytree(path,temporary)
+            atomic_json(target.parent/'run.json',binding)
+            temporary.rename(target)
+        verified_checkpoint(target,binding)
+        return str(target)
+
+    def pending_tasks(self):
+        for folder in sorted((self.path/'pool').glob('batch-*')):
+            if int(folder.name[6:])>self.state.get('last_consumed_sequence',0) and (folder/'manifest.json').exists():
+                return folder/'tasks.json'
+        return None
+
+    def prepare_child(self,tasks_file):
+        import learning_session as learning
+        parent=Path(self.state['child']);old=self.child_state();self.validate()
+        if tasks_file.parent.name.startswith('batch-'):
+            from continuous_data import MANIFEST
+            manifest=read(tasks_file.parent/'manifest.json')
+            if manifest['source_manifest_sha256']!=sha256(MANIFEST) or manifest['tasks_sha256']!=sha256(tasks_file):
+                raise ValueError('Queued curriculum digest failed integrity verification')
+        all_tasks=list(registry(tasks_file).values()) if read(tasks_file) else []
+        train=[t for t in all_tasks if t['split']=='train'][:256]
+        confirm=[t for t in all_tasks if t['split']=='dev'][:20]
+        if len(train)<16 or len(confirm)<20:
+            self.save(last_consumed_sequence=int(tasks_file.parent.name[6:]) if tasks_file.parent.name.startswith('batch-') else self.state.get('last_consumed_sequence',0),detail='Validated window too small; advancing to another public window')
+            return None
+        number=self.state['batches']+1;child=self.path/'children'/f'batch-{number:06d}'
+        # Pending preparation is recoverable; it has never owned a worker or GPU.
+        if child.exists():shutil.rmtree(child)
+        child.mkdir(parents=True)
+        if (parent/'development-tasks.json').exists():
+            shutil.copy2(parent/'development-tasks.json',child/'development-tasks.json')
+        shutil.copy2(parent/'dev-base.json',child/'dev-base.json')
+        anchor=child/'round-001';anchor.mkdir()
+        for name in ('tasks.json','teacher.json','training.jsonl','training.jsonl.manifest.json'):
+            shutil.copy2(parent/'round-001'/name,anchor/name)
+        cumulative=list(registry(anchor/'tasks.json').values())
+        batches=[train[i:i+16] for i in range(0,len(train),16)]
+        for index,tasks in enumerate(batches+[[]],2):
+            for original in tasks:
+                task=copy.deepcopy(original);task['id']+=f'-r{index}';task['repository']+=f'-r{index}';cumulative.append(task)
+            atomic_json(child/f'round-{index:03d}'/'tasks.json',cumulative)
+        state=copy.deepcopy(old)
+        comparison=read(self.path/'confirmations'/parent.name/'summary.json',{})
+        if comparison.get('regressions'):
+            state['best_adapter']=old['confirmation']['baseline_adapter']
+            state['research_adapter']=state['best_adapter']
+            state['best_dev']=old['confirmation'].get('baseline_dev') or self.state['adopted_baseline']
+            state['research_score']=sum(r['passed'] for r in state['best_dev']['tasks'])
+            state['research_regressions']=0
+        for key in ('completion_reason','candidate_best','continuation','confirmation','consumed_confirmation','recovery'):
+            state.pop(key,None)
+        for field in ('best_adapter','research_adapter'):
+            if state.get(field):state[field]=self.stash_adapter(state[field])
+        state.update(status='paused',phase='collect',round=2,active_seconds=0,limit_seconds=43200,
+            completed_rounds=[],accepted_rounds=[],collected=0,passed=0,training=None,evaluation=None,
+            rounds_without_repairs=0,pid=None,detail='Fresh continuous curriculum; accepted model preserved')
+        atomic_json(child/'confirmation-tasks.json',confirm)
+        state['confirmation']={'consumed':False,'tasks':len(confirm),'reserved_before_training':True,
+            'registry_sha256':sha256(child/'confirmation-tasks.json'),
+            'baseline_dev':copy.deepcopy(state.get('best_dev')),
+            'baseline_adapter':state['best_adapter'],
+            'baseline_adapter_sha256':sha256(Path(state['best_adapter'])/'adapter_model.safetensors')}
+        atomic_json(child/'status.json',state)
+        atomic_json(child/'command.json',{'action':'resume','requested_at':time.time()})
+        atomic_json(child/'curriculum.json',{'source_tasks_sha256':sha256(tasks_file),'training_tasks':len(train),
+            'reserved_confirmation_tasks':len(confirm),'training_used_private_history':False})
+        self.attach(child);self.save(batches=number,last_consumed_sequence=int(tasks_file.parent.name[6:]) if tasks_file.parent.name.startswith('batch-') else self.state.get('last_consumed_sequence',0),detail='Fresh checked public curriculum ready')
+        self.prune()
+        return child
+
+    def prune(self):
+        # Delete only completed, controller-owned children. Adopted/pre-existing sessions stay intact.
+        children=sorted((self.path/'children').glob('batch-*'))
+        for path in children[:-2]:
+            if str(path)==self.state['child'] or read(path/'status.json',{}).get('status')!='completed':continue
+            if child_busy(path):continue
+            atomic_json(self.path/'history'/f'{path.name}.json',read(path/'status.json'))
+            shutil.rmtree(path)
+        protected=set()
+        for path in children[-2:]+[Path(self.state['child'])]:
+            s=read(path/'status.json',{})
+            protected.update(s.get(field) for field in ('best_adapter','research_adapter'))
+            protected.add(s.get('confirmation',{}).get('baseline_adapter'))
+        for folder in (self.path/'models').glob('*'):
+            if str(folder/'checkpoint') not in protected:shutil.rmtree(folder)
+        # Source batches are already copied into child registries; retain two newest windows.
+        for folder in sorted((self.path/'pool').glob('batch-*'))[:-2]:shutil.rmtree(folder)
+
+    def run_process(self,command,log,forward=True):
+        # Existing Session ownership records protect model children across a supervisor crash.
+        self.save(auxiliary_active=not forward)
+        try:
+            with Path(log).open('ab') as stream:
+                process=subprocess.Popen(command,cwd=ROOT,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True,
+                                         env={**os.environ,'LCA_CONTINUOUS_OWNER':str(self.path)})
+        except OSError:
+            self.save(auxiliary_active=False)
+            raise
+        start=Path(f'/proc/{process.pid}/stat').read_text().split(') ',1)[1].split()[19]
+        atomic_json(self.path/'process.json',{'pid':process.pid,'start':start,'forward':forward})
+        try:
+            while process.poll() is None:
+                self.sync_manual_control()
+                if self.desired()!='resume':
+                    if forward:
+                        atomic_json(Path(self.state['child'])/'command.json',read(self.path/'command.json'))
+                    else:
+                        os.killpg(process.pid,signal.SIGTERM);process.wait(timeout=30)
+                        return False
+                self.snapshot(persist=True);time.sleep(2)
+            if process.returncode:raise RuntimeError(f'Local worker exited {process.returncode}; inspect {log}')
+            return True
+        finally:
+            self.save(auxiliary_active=False)
+            (self.path/'process.json').unlink(missing_ok=True)
+            if process.poll() is None:
+                os.killpg(process.pid,signal.SIGTERM)
+                try:process.wait(timeout=30)
+                except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
+
+    def recover_process(self):
+        ownership=read(self.path/'process.json')
+        if not ownership:return
+        # A surviving source-bound trainer owns its own recovery and GPU lock.
+        if not ownership['forward']:
+            proc=Path('/proc')/str(ownership['pid'])
+            try:
+                start=proc.joinpath('stat').read_text().split(') ',1)[1].split()[19]
+                env=proc.joinpath('environ').read_bytes().split(b'\0')
+                if start==ownership['start'] and ('LCA_CONTINUOUS_OWNER='+str(self.path)).encode() in env:
+                    os.killpg(ownership['pid'],signal.SIGTERM)
+            except (FileNotFoundError,ProcessLookupError):pass
+        (self.path/'process.json').unlink(missing_ok=True)
+        self.save(auxiliary_active=False)
+
+    def run(self):
+        self.path.mkdir(exist_ok=True)
+        lock=(self.path/'worker.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        try:self.validate()
+        except (OSError,ValueError) as error:self.failure(str(error))
+        self.recover_process()
+        while True:
+            self.sync_manual_control()
+            command=read(self.path/'command.json')
+            if command.get('requested_at',0)>self.state.get('last_command_time',0):
+                changes={'last_command_time':command.get('requested_at',0)}
+                if command['action']=='resume':changes.update(status='running',failures=0,retry_at=0)
+                self.save(**changes)
+            value=self.snapshot(persist=True)
+            if self.desired()=='stop':
+                if not child_busy(self.state['child']):return
+            if self.desired()!='resume' or self.state['status']=='blocked' or time.time()<self.state['retry_at']:
+                time.sleep(2);continue
+            child=Path(self.state['child']);status=self.child_state()
+            if child_busy(child):time.sleep(2);continue  # Adopt the Windows-owned child; never duplicate it.
+            try:
+                self.validate()
+                if status['status']=='stopped':
+                    self.control('stop');continue
+                if status['status']=='completed':
+                    self.save(status='running',detail='Completing reserved matched confirmation checks')
+                    command=[sys.executable,str(ROOT/'continuous_confirmation.py'),'--controller',str(self.path)]
+                    if not self.run_process(command,self.path/'confirmation.log',forward=False):continue
+                    tasks=self.pending_tasks()
+                    if tasks is None:
+                        self.save(detail='Preparing fresh pinned public fixtures; no GPU needed')
+                        command=[str(ROOT/'.cache/data-env/bin/python'),str(ROOT/'continuous_data.py'),'--pool',str(self.path/'pool')]
+                        if not self.run_process(command,self.path/'curriculum.log',forward=False):continue
+                        tasks=self.pending_tasks()
+                    if tasks is None:raise ValueError('Prepared curriculum is missing')
+                    self.prepare_child(tasks)
+                elif self.should_launch():
+                    self.save(status='running',detail='Running source-bound CUDA research')
+                    if status['status']=='failed':
+                        # Source/checkpoint failures remain blocked; transient child failures can recover.
+                        detail=status.get('detail','')
+                        if any(word in detail.lower() for word in ('integrity','digest','changed','different')):
+                            raise ValueError(detail)
+                    self.run_process([sys.executable,str(ROOT/'learning_session.py'),'run','--session',str(child),
+                                      '--research','--fast-reject'],self.path/'worker.log')
+                    self.save(failures=0,retry_at=0)
+            except (OSError,ValueError,RuntimeError) as error:
+                detail=self.child_state().get('detail','') if self.child_state().get('status')=='failed' else ''
+                self.failure(detail or str(error))
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action',choices=('init','run','status','pause','resume','stop'))
+    parser.add_argument('--session',type=Path,default=DEFAULT)
+    parser.add_argument('--adopt',type=Path)
+    parser.add_argument('--start-row',type=int,default=0)
+    args=parser.parse_args()
+    try:
+        if args.action=='init':
+            if not args.adopt:raise ValueError('Pass --adopt for a prepared source-bound session')
+            from training_data import load_verified
+            seed=read(args.adopt/'status.json',{})
+            if not seed.get('best_adapter'):raise ValueError('Adoption requires an accepted adapter')
+            load_verified(args.adopt/'round-001/training.jsonl',args.adopt/'round-001/tasks.json')
+            adapter=Path(seed['best_adapter']);verified_checkpoint(adapter,read(adapter.parent/'run.json'))
+            if not (args.adopt/'dev-base.json').exists():raise ValueError('Adoption requires a completed base evaluation')
+            controller=Controller.create(args.session,args.adopt)
+            from continuous_data import initialize
+            initialize(controller.path/'pool',row=args.start_row)
+            names=('continuous_learning.py','continuous_data.py','continuous_confirmation.py','research/opencode-source.json')
+            atomic_json(controller.path/'binding.json',{n:sha256(ROOT/n) for n in names})
+            print(json.dumps(controller.snapshot()));return
+        controller=Controller(args.session)
+        if args.action=='run':controller.run()
+        elif args.action=='status':print(json.dumps(controller.snapshot()))
+        else:controller.control(args.action);print(json.dumps(controller.snapshot()))
+    except (ValueError,OSError,RuntimeError) as error:parser.exit(1,str(error)+'\n')
+
+
+if __name__=='__main__':main()

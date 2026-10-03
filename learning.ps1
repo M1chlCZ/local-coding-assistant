@@ -3,7 +3,8 @@ param(
     [double]$Hours = 12,
     [string]$Session = '.cache/learning/tuned',
     [switch]$Research,
-    [switch]$FastReject
+    [switch]$FastReject,
+    [switch]$Continuous
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -11,6 +12,8 @@ $LinuxRoot = '/home/coder/local-coding-assistant'
 $ModelPath = Join-Path $ProjectRoot '.cache\models\Qwen3.8-27B-UD-Q4_K_M.gguf'
 $Common = @('-d','LocalCodingAssistant','-u','coder','--cd',$LinuxRoot,'--exec')
 $env:WSL_UTF8 = '1'
+if ($Continuous -and -not $PSBoundParameters.ContainsKey('Session')) { $Session = '.cache/learning/continuous' }
+$WorkerScript = if ($Continuous) { 'continuous_learning.py' } else { 'learning_session.py' }
 
 function Join-NativeArguments($Items) {
     if ($Items | Where-Object { $_ -match '["\r\n]' }) { throw 'Invalid argument character.' }
@@ -20,8 +23,20 @@ function Join-NativeArguments($Items) {
 }
 
 function Get-SessionSwitches([switch]$Linux) {
+    if ($Continuous) { if (-not $Linux) { '-Continuous' }; return }
     if ($Research) { if ($Linux) { '--research' } else { '-Research' } }
     if ($FastReject) { if ($Linux) { '--fast-reject' } else { '-FastReject' } }
+}
+
+function Get-WorkerSettings {
+    $Options = @{ ExecutionTimeLimit=[TimeSpan]::Zero; AllowStartIfOnBatteries=$true;
+        DontStopIfGoingOnBatteries=$true; MultipleInstances='IgnoreNew' }
+    if ($Continuous) { $Options.RestartCount=3; $Options.RestartInterval=[TimeSpan]::FromMinutes(1) }
+    return New-ScheduledTaskSettingsSet @Options
+}
+
+function Get-WorkerTrigger([string]$Owner) {
+    if ($Continuous) { return New-ScheduledTaskTrigger -AtLogOn -User $Owner }
 }
 
 if ($Action -eq 'worker') {
@@ -34,8 +49,8 @@ public static class LearningPower {
     [DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags);
 }
 '@
-    $NativeArguments = $Common + @('.cache/rlm-env/bin/python','learning_session.py','run','--session',$Session,
-        '--hours',$Hours.ToString([Globalization.CultureInfo]::InvariantCulture),'--model',$ModelPath)
+    $NativeArguments = $Common + @('.cache/rlm-env/bin/python',$WorkerScript,'run','--session',$Session)
+    if (-not $Continuous) { $NativeArguments += @('--hours',$Hours.ToString([Globalization.CultureInfo]::InvariantCulture),'--model',$ModelPath) }
     $NativeArguments += @(Get-SessionSwitches -Linux)
     $WorkerProcess = Start-Process 'wsl.exe' -ArgumentList (Join-NativeArguments $NativeArguments) `
         -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $LogRoot "$Stamp.out.log") `
@@ -45,8 +60,8 @@ public static class LearningPower {
     try {
         while (-not $WorkerProcess.HasExited) {
             try {
-                $Snapshot = & wsl.exe @Common '.cache/rlm-env/bin/python' 'learning_session.py' 'status' '--session' $Session | ConvertFrom-Json
-                $Paused = $Snapshot.status -eq 'paused'
+                $Snapshot = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript 'status' '--session' $Session | ConvertFrom-Json
+                $Paused = $Snapshot.status -in @('paused','blocked','waiting','stopped')
             } catch { $Paused = $false }
             # Keep the PC awake during work; pause restores normal idle sleep. Display sleep stays allowed.
             $Flags = if ($Paused) { [uint32]2147483648 } else { [uint32]2147483649 }
@@ -60,7 +75,7 @@ public static class LearningPower {
 }
 
 function Invoke-Control([string]$Command) {
-    $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' 'learning_session.py' $Command '--session' $Session
+    $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript $Command '--session' $Session
     if ($LASTEXITCODE -ne 0) { throw "Session command failed: $Result" }
     return ($Result -join "`n")
 }
@@ -69,6 +84,11 @@ function Format-LearningProgress($Value) {
     $Used = [Math]::Round($Value.active_seconds/3600,2)
     $Limit = [Math]::Round($Value.limit_seconds/3600,2)
     $Lines = @("State: $($Value.status)  Round: $($Value.round)  Phase: $($Value.phase)", "Active hours: $Used / $Limit")
+    if ($Value.continuous) {
+        $Lines[1] = "Total training hours: $Used; runs until Pause or Stop"
+        $Lines += "$($Value.supervisor_detail)"
+        if ($Value.status -eq 'paused') { $Lines += 'GPU released for gaming. Click Resume when ready.' }
+    }
     $Tasks = @($Value.best_dev.tasks | Where-Object { $null -ne $_ })
     if ($Tasks.Count) {
         $Passed = @($Tasks | Where-Object { $_.passed -eq $true }).Count
@@ -127,7 +147,7 @@ function Start-Worker {
     }
     Invoke-Control 'resume' | Out-Null
     # An on-demand Task Scheduler job survives OpenSSH's child-process cleanup.
-    # No trigger, startup action, password, or elevated execution is required.
+    # Continuous recovery uses login plus the persisted command, without a stored password.
     $WorkerArguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',
         (Join-Path $ProjectRoot 'learning.ps1'),'-Action','worker','-Session',$Session,'-Hours',
         $Hours.ToString([Globalization.CultureInfo]::InvariantCulture))
@@ -143,9 +163,11 @@ function Start-Worker {
         -Argument $ArgumentText -WorkingDirectory $ProjectRoot
     $Principal = New-ScheduledTaskPrincipal -UserId ([Security.Principal.WindowsIdentity]::GetCurrent().Name) `
         -LogonType Interactive -RunLevel Limited
-    $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) `
-        -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew
-    Register-ScheduledTask -TaskName $TaskName -Action $TaskAction -Principal $Principal -Settings $Settings -Force | Out-Null
+    $Settings = Get-WorkerSettings
+    $Registration = @{ TaskName=$TaskName; Action=$TaskAction; Principal=$Principal; Settings=$Settings; Force=$true }
+    $Trigger = Get-WorkerTrigger ([Security.Principal.WindowsIdentity]::GetCurrent().Name)
+    if ($Trigger) { $Registration.Trigger=$Trigger }
+    Register-ScheduledTask @Registration | Out-Null
     Grant-TaskControl $TaskName
     Start-ScheduledTask -TaskName $TaskName
     Start-Sleep -Seconds 2
@@ -180,7 +202,7 @@ $Form.StartPosition = 'CenterScreen'
 $Label = New-Object Windows.Forms.Label
 $Label.Location = New-Object Drawing.Point(15,15)
 $Label.Size = New-Object Drawing.Size(635,50)
-$Label.Text = "CUDA training on this PC. Limit: $Hours active hours.`nPause saves progress and frees the GPU. Closing this panel keeps the session running."
+$Label.Text = if ($Continuous) { 'Continuous CUDA learning. Pause saves progress and releases the GPU for gaming. Resume continues it. Closing this panel keeps learning running.' } else { "CUDA training on this PC. Limit: $Hours active hours.`nPause saves progress and frees the GPU. Closing this panel keeps the session running." }
 $Form.Controls.Add($Label)
 $Status = New-Object Windows.Forms.TextBox
 $Status.Multiline = $true
@@ -208,7 +230,7 @@ foreach ($Name in @('Start','Pause','Resume','Stop','Refresh')) {
                 'refresh' { }
                 default { Invoke-Control $Sender.Tag | Out-Null }
             }
-            $Status.Text = Invoke-Control 'status'
+            $Status.Text = Format-LearningProgress (Invoke-Control 'status' | ConvertFrom-Json)
         } catch { $Status.Text = $_.Exception.Message }
         finally { $Form.UseWaitCursor = $false }
     })

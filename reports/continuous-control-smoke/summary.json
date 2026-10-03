@@ -1,0 +1,34 @@
+{
+  "scope": "Control and data pipeline smoke test. No new coding-quality claim.",
+  "checks": {
+    "cpu_behavior_tests": 17,
+    "windows_control_checks_passed": true,
+    "local_supervisor_running": true,
+    "gaming_pause_released_model_processes": true,
+    "gpu_utilization_while_paused_percent": 0,
+    "supervisor_task_restart_preserved_pause": true,
+    "login_trigger_registered": true,
+    "physical_windows_reboot_tested": false,
+    "historical_active_time_preserved": true,
+    "critical_running_trainer_source_unchanged": true
+  },
+  "public_curriculum": {
+    "dataset": "nvidia/OpenCodeInstruct",
+    "revision": "8f3ba5bafe4d6e8db46082cf7ae6741bc370604d",
+    "verified_fresh_fixtures": 421,
+    "train": 335,
+    "dev": 86,
+    "row_window": [
+      11000,
+      13000
+    ],
+    "scope": "Exact row and repository exclusions; no proof of semantic novelty or pretraining independence."
+  },
+  "retained_development_result": {
+    "passed": 18,
+    "total": 25,
+    "changed": false,
+    "scope": "Repeated development checks; not general coding quality."
+  },
+  "followup": "Full next-experiment runtime handoff and reserved confirmation evaluation occur when the adopted experiment finishes."
+}

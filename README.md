@@ -61,6 +61,8 @@ After WSL setup, `start-rlm.cmd` starts its model server.
 The [learning session](research/learning-session.md) collects checked repairs and trains local adapters.
 Double-click `learning.cmd` for Windows Start, Pause, Resume, and Stop controls.
 Checkpoints retain the optimizer and current step.
+[Continuous mode](research/continuous-learning.md) prepares fresh checked public tasks and runs until Pause or Stop.
+It recovers after Windows login when previously running. Pause releases the GPU for gaming and remains saved across logins.
 The tuned session uses 30 repair tasks, visible tests, and short training candidates.
 Candidates receive 15 development checks before acceptance. Three rounds without improvement stop the session.
 The [training evidence](research/rlm-training-evidence.md) compares published RLM methods, available weights, and history-derived data.

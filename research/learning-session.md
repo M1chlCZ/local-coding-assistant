@@ -3,6 +3,7 @@
 The session runs on the PC through CUDA in the dedicated `LocalCodingAssistant` WSL environment.
 An on-demand Windows task owns the worker process. An SSH disconnect does not stop the worker.
 The Mac supplies controls and source updates.
+For automatic task replenishment and login recovery, use [continuous mode](continuous-learning.md).
 
 Complete the [WSL setup](wsl.md) and [training environment setup](adapter-training.md#prepare-in-wsl) first.
 
