@@ -139,6 +139,42 @@ with tempfile.TemporaryDirectory() as directory:
         resumed.lock.close();resumed.gpu_lock.close()
 print('PASS: research mode and its time limit survive a worker restart')
 
+# A prepared curriculum can end before the time limit without a teacher process or an export.
+for phase, written in (('collect',False), ('export',False), ('export',True)):
+    with tempfile.TemporaryDirectory() as directory:
+        root=Path(directory)
+        with isolated_repository(root):
+            worker=session.Session(root,12,Path('/teacher.gguf'),research=True,fast_reject=True)
+            worker.state.update(status='paused',round=22,phase=phase,active_seconds=26185.65,
+                                best_adapter='/saved/accepted',research_score=18)
+            folder=root/'round-022';folder.mkdir()
+            adapter.atomic_json(folder/'tasks.json',[{'id':'old-task-r21','split':'train'}])
+            if written:
+                adapter.atomic_json(folder/'teacher.json',{'tasks':[], 'tasks_sha256':data.sha256(folder/'tasks.json')})
+            with patch.object(worker,'server',side_effect=AssertionError('Empty curriculum loaded a model')):
+                worker.run()
+            assert worker.state['status']=='completed', 'Empty curriculum did not complete'
+            assert worker.state['completion_reason']=='curriculum_exhausted'
+            assert worker.state['best_adapter']=='/saved/accepted' and worker.state['research_score']==18
+            assert 26185.65<=worker.state['active_seconds']<26187 and worker.state['limit_seconds']==43200
+            empty=json.loads((folder/'teacher.json').read_text())
+            assert empty['tasks']==[] and empty['tasks_sha256']==data.sha256(folder/'tasks.json')
+            assert not (folder/'training.jsonl').exists()
+            worker.lock.close();worker.gpu_lock.close()
+print('PASS: exhausted curriculum completes from collect or a failed export without duplicate training')
+
+# A missing report for real pending tasks is still an error, rather than silent completion.
+with tempfile.TemporaryDirectory() as directory:
+    root=Path(directory)
+    with isolated_repository(root):
+        worker=session.Session(root,12,Path('/teacher.gguf'))
+        folder=root/'round-001';folder.mkdir()
+        adapter.atomic_json(folder/'tasks.json',[{'id':'pending-r1','split':'train'}])
+        try: worker.dataset(folder)
+        except FileNotFoundError: pass
+        else: raise AssertionError('Missing nonempty collection was hidden')
+        worker.lock.close();worker.gpu_lock.close()
+
 if len(sys.argv)>1:
     if len(sys.argv) not in (3,4):
         raise SystemExit('Use DATA TASKS [WARM_ADAPTER], with the cached model and pinned training environment')

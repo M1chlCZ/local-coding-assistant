@@ -54,7 +54,8 @@ The API listens on loopback.
 The [RLM experiment](research/rlm.md) adds a bounded Python REPL and optional model subcalls.
 A finite search compares instructions and recursion depth on separate development and holdout tasks.
 The [adapter recipe](research/adapter-training.md) runs local QLoRA from successful training traces.
-A 50-step CUDA trial completed on the 16 GB GPU. This small run does not establish a coding improvement.
+The [confirmation comparison](research/confirmation.md) checked both retained 4B adapters on ten reserved public repairs.
+Both passed 9/10, against 1/10 for the unchanged base. The later training updates did not increase this confirmation score.
 The [WSL recipe](research/wsl.md) runs the complete experiment on the PC through CUDA.
 After WSL setup, `start-rlm.cmd` starts its model server.
 The [learning session](research/learning-session.md) collects checked repairs and trains local adapters.
@@ -64,7 +65,7 @@ The tuned session uses 30 repair tasks, visible tests, and short training candid
 Candidates receive 15 development checks before acceptance. Three rounds without improvement stop the session.
 The [training evidence](research/rlm-training-evidence.md) compares published RLM methods, available weights, and history-derived data.
 The [public-data pilot](research/public-data.md) prepares checked Python repairs from NVIDIA OpenCodeInstruct.
-Its latest 4B candidate passed 7/10 new development tasks, against 5/10 for the previous adapter, and preserved its older passes.
+Its initial 4B candidate passed 7/10 development tasks, against 5/10 for the previous adapter, and preserved its older passes.
 The [Strata pilot](research/strata.md) measures a larger MoE teacher on the same GPU.
 The [private history tool](research/private-history.md) exports local Codex messages and requests task ideas from the PC's model.
 Exports, reviews, and private adapters stay in the ignored `private-data/` directory.

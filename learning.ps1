@@ -40,6 +40,8 @@ public static class LearningPower {
     $WorkerProcess = Start-Process 'wsl.exe' -ArgumentList (Join-NativeArguments $NativeArguments) `
         -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $LogRoot "$Stamp.out.log") `
         -RedirectStandardError (Join-Path $LogRoot "$Stamp.err.log")
+    # Keep a process handle before exit so Windows PowerShell retains the native exit code.
+    $WorkerHandle = $WorkerProcess.Handle
     try {
         while (-not $WorkerProcess.HasExited) {
             try {
@@ -119,6 +121,10 @@ function Grant-TaskControl([string]$TaskName) {
 
 function Start-Worker {
     if ($Hours -lt 0.01 -or $Hours -gt 24) { throw 'Use 0.01 to 24 hours.' }
+    $Saved = Invoke-Control 'status' | ConvertFrom-Json
+    if ($Saved.status -in @('completed','stopped')) {
+        throw 'This session is finished. Choose a new session folder for fresh training tasks.'
+    }
     Invoke-Control 'resume' | Out-Null
     # An on-demand Task Scheduler job survives OpenSSH's child-process cleanup.
     # No trigger, startup action, password, or elevated execution is required.
@@ -145,6 +151,11 @@ function Start-Worker {
     Start-Sleep -Seconds 2
     if ((Get-ScheduledTask -TaskName $TaskName).State -ne 'Running') {
         $Info = Get-ScheduledTaskInfo -TaskName $TaskName
+        $Final = Invoke-Control 'status' | ConvertFrom-Json
+        if ($Info.LastTaskResult -eq 0 -and $Final.status -in @('completed','stopped')) {
+            return Invoke-Control 'status'
+        }
+        if ($Final.status -eq 'failed') { throw "Worker failed: $($Final.detail)" }
         throw "Worker did not start. Task result: $($Info.LastTaskResult). See .cache\learning-windows."
     }
     return Invoke-Control 'status'

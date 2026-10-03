@@ -1,5 +1,11 @@
 # Replay research
 
+The completed run retained an 18/25 development adapter after 309 fresh task attempts.
+Both the earlier 16/25 adapter and the later 18/25 adapter passed the same 9/10 reserved confirmation tasks.
+See the [confirmation comparison](confirmation.md) for complete results and the empty-batch recovery fix.
+
+## Earlier result
+
 The accepted adapter passed 16/25 development repairs.
 Two later checkpoints passed 17/25, but each lost one previously passing repair.
 The worker retained the accepted adapter and stopped after three rejected updates.

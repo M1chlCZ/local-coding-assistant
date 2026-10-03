@@ -238,6 +238,11 @@ class Session:
         report = json.loads(report_path.read_text()) if report_path.exists() else {
             'schema_version': 1, 'split': 'train', 'tasks_sha256': sha256(tasks_path),
             'settings': SETTINGS, 'limits': LIMITS, 'tasks': []}
+        if not current:
+            atomic_json(report_path, report)
+            self.save(status='completed', completion_reason='curriculum_exhausted',
+                      detail='No training tasks remain; session completed with saved checkpoints')
+            return
         if len(report['tasks']) == len(current):
             self.save(phase='export', detail='Teacher collection complete')
             return
@@ -275,7 +280,15 @@ class Session:
         self.save(phase='export', detail='Teacher collection complete')
 
     def dataset(self, folder):
-        report = json.loads((folder/'teacher.json').read_text())
+        report_path = folder/'teacher.json'
+        report = json.loads(report_path.read_text()) if report_path.exists() else None
+        if report is None or not report['tasks']:
+            tasks = json.loads((folder/'tasks.json').read_text())
+            if not any(t['id'].endswith(f"-r{self.state['round']}") for t in tasks):
+                self.collect(folder)
+                return
+        if report is None:
+            report = json.loads(report_path.read_text())
         if not any(row.get('passed') for row in report['tasks']):
             failures = self.state.get('rounds_without_repairs', 0)+1
             self.save(rounds_without_repairs=failures, round=self.state['round']+1, phase='collect',

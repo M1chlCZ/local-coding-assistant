@@ -1,0 +1,96 @@
+{
+  "scope": "Ten previously reserved public confirmation repairs. Every model uses all ten tasks, the same harness, greedy generation, NF4 and task budgets. No training or tuning on this set.",
+  "model": "Qwen/Qwen3-4B",
+  "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "quantization": "NF4",
+  "limits": {
+    "calls": 8,
+    "output_tokens": 4096,
+    "seconds": 120
+  },
+  "settings": {
+    "mode": "rlm",
+    "depth": 2,
+    "instruction": ""
+  },
+  "task_registry_sha256": "7e9cc0bf66dab9b6d9bc44822b2bd46ea7de484ec6f5484d9cc1512716062b6e",
+  "sources": {
+    "recursive_agent.py": "e9eeda6958fcf41b25f8243c5f864936d4d97f7801c05ce832fc4c7ec66073a5",
+    "evaluation.py": "6c149b0667a4ed661ce1951dcdfb9c59bd499f905e6c5081867d81828762cd03",
+    "rlm_worker.py": "749ec9efd3898d3a600ef254992accd9ca87ba1d67e49867a31a8c368dc514b8",
+    "research/adapter_eval_server.py": "722f24ed31dc8429954904fc31da83c59c56b04e895e642968be89af0d581535"
+  },
+  "script_sha256": "eced8efff2355b45320f95f3ce9eabd3494a9da19e5329d8fcd8bef736c5ee82",
+  "source_commit": "6e17cc9a3965f28e8542bd014375c6b1e0026db0",
+  "prior_adapter_sha256": "1c290a311766f3d47679696fd8bd6be66e15c461d8541da4a88a62f1d98abd07",
+  "current_adapter_sha256": "177403990b3f15a1a5651855dffa44d28964d1eea750f4daff6f829b6c1f503c",
+  "models": {
+    "base": {
+      "passed": 1,
+      "total": 10,
+      "seconds": 466.982,
+      "calls": 78,
+      "output_tokens": 10869,
+      "pass_flags": {
+        "opencode-856232025a91b7c1691dae86065e1150": false,
+        "opencode-87b8695df99b77fffe0ecf8327113cf9": false,
+        "opencode-1b26d1adc395ac28feec616f28829dfd": true,
+        "opencode-6ea953cc2882afdbadf562da96d6acd9": false,
+        "opencode-ad5fbd85df87f94a140849061c688a71": false,
+        "opencode-43f024e6bbb49bffca116512e76ae1ed": false,
+        "opencode-a5f0f79a6848e41324a8ae24ebac78b9": false,
+        "opencode-5c0912a0896ef1ec0eaa1f3febbeadd8": false,
+        "opencode-e183cef3286ff4b8adaef6ac8c14c5fb": false,
+        "opencode-4e2cd7726ac7445d5c2db9d2da48a688": false
+      }
+    },
+    "current-18": {
+      "passed": 9,
+      "total": 10,
+      "seconds": 77.445,
+      "calls": 20,
+      "output_tokens": 907,
+      "pass_flags": {
+        "opencode-856232025a91b7c1691dae86065e1150": true,
+        "opencode-87b8695df99b77fffe0ecf8327113cf9": true,
+        "opencode-1b26d1adc395ac28feec616f28829dfd": true,
+        "opencode-6ea953cc2882afdbadf562da96d6acd9": true,
+        "opencode-ad5fbd85df87f94a140849061c688a71": true,
+        "opencode-43f024e6bbb49bffca116512e76ae1ed": true,
+        "opencode-a5f0f79a6848e41324a8ae24ebac78b9": false,
+        "opencode-5c0912a0896ef1ec0eaa1f3febbeadd8": true,
+        "opencode-e183cef3286ff4b8adaef6ac8c14c5fb": true,
+        "opencode-4e2cd7726ac7445d5c2db9d2da48a688": true
+      }
+    },
+    "prior-16": {
+      "passed": 9,
+      "total": 10,
+      "seconds": 75.467,
+      "calls": 20,
+      "output_tokens": 907,
+      "pass_flags": {
+        "opencode-856232025a91b7c1691dae86065e1150": true,
+        "opencode-87b8695df99b77fffe0ecf8327113cf9": true,
+        "opencode-1b26d1adc395ac28feec616f28829dfd": true,
+        "opencode-6ea953cc2882afdbadf562da96d6acd9": true,
+        "opencode-ad5fbd85df87f94a140849061c688a71": true,
+        "opencode-43f024e6bbb49bffca116512e76ae1ed": true,
+        "opencode-a5f0f79a6848e41324a8ae24ebac78b9": false,
+        "opencode-5c0912a0896ef1ec0eaa1f3febbeadd8": true,
+        "opencode-e183cef3286ff4b8adaef6ac8c14c5fb": true,
+        "opencode-4e2cd7726ac7445d5c2db9d2da48a688": true
+      }
+    }
+  },
+  "tasks_used_for_training": false,
+  "current_vs_prior": {
+    "gained": [],
+    "lost": [],
+    "higher_score": false,
+    "no_regression": true
+  },
+  "warning": "One small reserved set, not general coding reliability. This set is now consumed; never tune against it.",
+  "interpretation": "Current and prior adapters passed the same nine reserved tasks. No additional confirmation-set quality gain is established. Both exceeded the unchanged base in this small repair harness.",
+  "all_models_completed": true
+}

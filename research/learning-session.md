@@ -55,6 +55,11 @@ Source changes also stop resume. Restore the original source or select a new ses
 
 The time limit counts active work. Paused time and time without a worker do not count.
 The worker saves progress at the limit and stops.
+The time limit is a ceiling. A session can finish earlier when its fresh training tasks run out.
+An empty final batch saves an empty collection report and finishes without another model load or training update.
+Resume also recovers this condition from an interrupted export.
+The saved status records `completion_reason: curriculum_exhausted` and keeps the accepted checkpoint and elapsed time.
+Start and Resume reject a completed or stopped session.
 For another session, select a new folder:
 
 ```powershell
@@ -158,6 +163,13 @@ Sources: [Transformers checkpoints](https://huggingface.co/docs/transformers/mai
 [Windows sleep control](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setthreadexecutionstate).
 
 ## Control test
+
+For Windows startup checks, run `powershell.exe -NoProfile -File .\test_learning_start.ps1`.
+For native failure reporting, run `powershell.exe -NoProfile -File .\test_learning_worker.ps1` after WSL setup.
+The latter check creates a temporary task and invalid session. It starts no model and deletes its own task and session.
+The worker retains its native process handle so Windows PowerShell reports the actual exit code.
+A worker that completes during startup returns its completed status instead of a false launch error.
+See the [PowerShell exit-code issue](https://github.com/PowerShell/PowerShell/issues/5421).
 
 The [PC control test](../reports/learning-session-smoke/summary.json) paused at step 20 and resumed after a worker restart.
 That earlier run completed all 80 steps and released the GPU while paused.
