@@ -1,0 +1,78 @@
+{
+  "scope": "Fresh public training continuation. No new model-quality result yet. Exact deduplication does not establish semantic or pretraining independence.",
+  "runtime_source_commit": "6459c0e1e6650b4f530411d49c0e15689e4fcb64",
+  "source": {
+    "dataset": "nvidia/OpenCodeInstruct",
+    "license": "CC-BY-4.0",
+    "attribution": "NVIDIA, OpenCodeInstruct",
+    "url": "https://huggingface.co/datasets/nvidia/OpenCodeInstruct",
+    "revision": "8f3ba5bafe4d6e8db46082cf7ae6741bc370604d",
+    "file": "data/train-00000-of-00050.parquet",
+    "file_sha256": "342757e0c6b706c8f68cf0a867ead5c417d0273726453dbcfc934f5c3c6ca891"
+  },
+  "row_windows": [
+    [
+      3000,
+      4999
+    ],
+    [
+      5000,
+      6999
+    ],
+    [
+      7000,
+      8999
+    ],
+    [
+      9000,
+      10999
+    ]
+  ],
+  "checked_tasks": 1559,
+  "available_training_tasks": 1224,
+  "queued_training_tasks": 960,
+  "batches": 60,
+  "batch_size": 16,
+  "replay_rows": 123,
+  "development_tasks": 25,
+  "reserved_confirmation_tasks": 20,
+  "original_limit_seconds": 43200,
+  "active_seconds_carried": 26185.703187281037,
+  "remaining_seconds_at_start": 17014.296812718963,
+  "accepted_seed_score": 18,
+  "accepted_adapter_sha256": "177403990b3f15a1a5651855dffa44d28964d1eea750f4daff6f829b6c1f503c",
+  "confirmation_tasks_sha256": "f2fec8b889b9ccd25a7266e33c882ec692c535618f064c88c01aaeea2e86c9d7",
+  "training_tasks_sha256": "e04d09dd70ccf937b9b3e82ed97c7ae0e07e9c37182484bac639ec35108a628e",
+  "snapshot_digests": [
+    "e0fe2278849fe8c52541c12d801d203153e0729d7064f417bbd6b670205226cc",
+    "1672cc6d2d3914d1230ff46b8fe4ac3e33c6800dbf5321de16642c6e1f106dc1",
+    "ee5ca7772e7d082a4558441da22e505680b7e42ce3dd773eb8199f4c5b55e44f",
+    "a7863bde9de75d7590279c74af3700ab0d8f8be61f2d47163d6e9351e1f4217e"
+  ],
+  "private_history_used": false,
+  "original_session_preserved": true,
+  "earlier_confirmation_consumed_and_excluded": true,
+  "windows_warning_probe": {
+    "old_native_pipeline_rejected_benign_stderr": true,
+    "separate_stderr_log_completed_exit_zero": true
+  },
+  "training_settings": {
+    "student": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "quantization": "NF4",
+    "lora_rank": 8,
+    "learning_rate": 5e-06,
+    "steps": [
+      5,
+      10,
+      20
+    ],
+    "maximum_epochs": 1,
+    "maximum_sequence_tokens": 4096
+  },
+  "limits": {
+    "calls": 8,
+    "output_tokens": 4096,
+    "seconds": 120
+  }
+}

@@ -40,3 +40,32 @@ Kimi reviewed the experiment and identified repeated selection on a small develo
 All prompts, datasets, and model files stay in ignored local folders.
 The live Windows console shows collection, training, evaluation, retained scores, and research scores.
 See [Windows controls](learning-session.md) and [public source attribution](public-data.md).
+
+## Fresh continuation
+
+The first research curriculum ended after all 309 prepared tasks were collected.
+The continuation starts from the accepted 18/25 checkpoint with 960 new training tasks.
+It carries 7 hours and 16 minutes of active work into the same 12-hour limit.
+Local round numbers start again for the new curriculum. The completed parent and its results stay unchanged.
+
+Fresh tasks come from rows 3000 through 10999 of the pinned NVIDIA OpenCodeInstruct shard.
+Container checks accept reference solutions and reject incomplete solutions before collection.
+Exact content and row identities exclude every earlier public task.
+These rules do not establish semantic novelty or independence from model pretraining.
+The original 123 verified examples remain the replay anchor.
+The training settings and 25 development checks stay unchanged.
+
+Twenty fresh tasks remain reserved for the next complete comparison.
+The starting accepted checkpoint is frozen for that comparison.
+The ten earlier confirmation tasks stay excluded from training and further model selection.
+The new adapter has no additional confirmation result yet.
+Promoted checkpoints still require a complete development check, a higher score, and no lost previously passing tasks.
+
+The live Windows console shows preparation before collection, CUDA training, and evaluation.
+Private preparation can reuse completed fixture groups after interruption.
+Its Windows wrapper records parsing warnings separately and uses the native process exit code.
+A warning does not terminate successful preparation.
+The continuation still has finite data, time, round, and storage limits.
+All task files, model traces, and weights remain in ignored local storage.
+
+See the [preparation report](../reports/fresh-continuation-2026-10-03/setup.json) for source digests, task counts, and preserved limits.
