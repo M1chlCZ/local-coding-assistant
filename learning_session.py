@@ -71,8 +71,23 @@ def accepted(candidate, baseline, previous=None, expected=5):
             and all(new[k] for k in new if base[k] or prior[k]))
 
 
+def cannot_improve(rows, baseline, previous=None, research_best=None):
+    """Reject a prefix only when its best possible completion cannot be retained."""
+    base = {r['id']:r.get('passed') is True for r in baseline['tasks']}
+    prior = {r['id']:r.get('passed') is True for r in (previous or baseline)['tasks']}
+    seen = {r['id']:r.get('passed') is True for r in rows}
+    if len(seen)!=len(rows) or prior.keys()!=base.keys() or not seen.keys()<=base.keys():
+        raise ValueError('Early rejection requires matching unique development task IDs')
+    ceiling = sum(seen.values()) + len(base)-len(seen)
+    lost = sum(prior[k] and not seen[k] for k in seen)
+    promotion = (ceiling>max(sum(base.values()),sum(prior.values()))
+                 and all(seen[k] for k in seen if base[k] or prior[k]))
+    research = research_best is not None and lost<=1 and (ceiling,-lost)>(research_best[0],-research_best[1])
+    return not (promotion or research)
+
+
 class Session:
-    def __init__(self, path, hours, model, research=False):
+    def __init__(self, path, hours, model, research=False, fast_reject=False):
         self.path = path.resolve()
         self.path.mkdir(parents=True, exist_ok=True)
         # ponytail: one worker per session, one GPU; add a job scheduler only for multiple GPUs.
@@ -85,6 +100,7 @@ class Session:
         self.state = json.loads((self.path/'status.json').read_text()) if (self.path/'status.json').exists() else {
             'schema_version': 1, 'status': 'running', 'phase': 'collect', 'round': 1,
             'active_seconds': 0, 'limit_seconds': hours*3600, 'teacher_model': str(model.resolve()), 'research': research,
+            'fast_reject': fast_reject,
             'best_adapter': None, 'accepted_rounds': [], 'completed_rounds': [],
             'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'sources': sources,
             'development_tasks_sha256': sha256(self.path/'development-tasks.json')
@@ -235,14 +251,22 @@ class Session:
             self.save(detail='Teacher task '+task['id'])
             if self.interrupted():
                 return
-            # Authored oracle verifies fixture consistency, never supplies a training answer.
-            if not grade(task, task['reference_patch'])['passed']:
-                raise ValueError('Authored reference failed: '+task['id'])
-            if grade(task, {p: task['files'][p] for p in task['editable']})['passed']:
-                raise ValueError('Broken task already passes: '+task['id'])
-            row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
-            if row.get('patch'):
-                row.update(grade(task, row['patch']))
+            # Reference repairs validate fixtures, never supply a training answer.
+            reference = grade(task, task['reference_patch'])
+            if not reference['passed']:
+                feedback = reference.get('feedback', '')
+                if (task.get('provenance', {}).get('dataset')!='nvidia/OpenCodeInstruct'
+                        or not feedback.startswith('Traceback (most recent call last):')):
+                    raise ValueError('Reference failed: '+task['id'])
+                row = {key:task[key] for key in ('id','repository','split')}
+                row.update(mode='rlm', depth=2, passed=False, trace=[], quarantined=True,
+                           feedback=feedback, error='Public reference tests failed; excluded from training')
+            else:
+                if grade(task, {p: task['files'][p] for p in task['editable']})['passed']:
+                    raise ValueError('Broken task already passes: '+task['id'])
+                row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
+                if row.get('patch'):
+                    row.update(grade(task, row['patch']))
             report['tasks'].append(row)
             atomic_json(report_path, report)
             self.save(collected=len(report['tasks']), passed=sum(r['passed'] for r in report['tasks']))
@@ -354,6 +378,13 @@ class Session:
                     'adapter_sha256': sha256(checkpoint/'adapter_model.safetensors') if mode=='adapter' else None}
                 request('http://127.0.0.1:8090', '/mode', {'mode': mode})
                 for task in tasks[len(report['tasks']):]:
+                    research_best = (self.state.get('research_score', 0), self.state.get('research_regressions', 0)) if self.state.get('research') else None
+                    if (mode=='adapter' and self.state.get('fast_reject')
+                            and cannot_improve(report['tasks'], reports['base'], previous, research_best)):
+                        report['early_rejected'] = True
+                        report['rejection_reason'] = 'No completion can meet promotion or research retention rules'
+                        atomic_json(path, report)
+                        break
                     self.save(detail=f'Development check {checkpoint.name} {mode}: '+task['id'],
                               evaluation={'checkpoint':checkpoint.name, 'mode':mode,
                                           'completed':len(report['tasks']), 'total':len(tasks)})
@@ -371,8 +402,11 @@ class Session:
             passed = sum(r.get('passed') is True for r in reports['adapter']['tasks'])
             prior = {r['id']:r.get('passed') is True for r in (previous or reports['base'])['tasks']}
             losses = sum(prior[r['id']] and not r.get('passed') for r in reports['adapter']['tasks'])
-            candidate = {'passed':passed, 'regressions':losses, 'total':len(tasks), 'checkpoint':checkpoint.name}
-            if best_candidate is None or (passed,-losses) > (best_candidate['passed'],-best_candidate['regressions']):
+            complete = len(reports['adapter']['tasks'])==len(tasks)
+            candidate = {'passed':passed, 'regressions':losses, 'total':len(tasks), 'checkpoint':checkpoint.name,
+                         'evaluated':len(reports['adapter']['tasks']), 'complete':complete,
+                         'early_rejected':reports['adapter'].get('early_rejected',False)}
+            if best_candidate is None or (complete,passed,-losses) > (best_candidate['complete'],best_candidate['passed'],-best_candidate['regressions']):
                 best_candidate = candidate
             if (self.state.get('research') and len(reports['adapter']['tasks'])==len(tasks)
                     and {r['id'] for r in reports['adapter']['tasks']}==prior.keys() and losses<=1):
@@ -387,6 +421,8 @@ class Session:
         result = {'round': self.state['round'], 'base_passed': sum(r['passed'] for r in reports['base']['tasks']),
                   'adapter_passed': sum(r['passed'] for r in reports['adapter']['tasks']), 'total': len(tasks),
                   'accepted': keep, 'checkpoint': checkpoint.name, 'best_candidate': best_candidate,
+                  'evaluated':len(reports['adapter']['tasks']), 'complete':complete,
+                  'early_rejected':reports['adapter'].get('early_rejected',False),
                   'warning': 'Small repeated development set; no general quality claim. Holdout unused.'}
         atomic_json(folder/'result.json', result)
         self.state['completed_rounds'].append(result)
@@ -450,6 +486,7 @@ def main():
     parser.add_argument('--session', type=Path, default=DEFAULT)
     parser.add_argument('--hours', type=float, default=12)
     parser.add_argument('--research', action='store_true', help='Explore short anchored updates without the three-round plateau stop; promotion stays strict')
+    parser.add_argument('--fast-reject', action='store_true', help='Stop checking a candidate once improvement is impossible; promotion still requires all tasks')
     parser.add_argument('--model', help='Teacher GGUF path, Windows or Linux; required for a new session')
     args = parser.parse_args()
     if not .01 <= args.hours <= 24:
@@ -469,7 +506,7 @@ def main():
                 model = json.loads((args.session/'status.json').read_text())['teacher_model']
             if not model or not Path(model).is_file():
                 raise ValueError('Teacher GGUF file is missing; pass --model')
-            Session(args.session, args.hours, Path(model), research=args.research).run()
+            Session(args.session, args.hours, Path(model), research=args.research, fast_reject=args.fast_reject).run()
     except (ValueError, OSError, RuntimeError) as error:
         parser.exit(1, str(error)+'\n')
 

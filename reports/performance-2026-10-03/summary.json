@@ -1,0 +1,321 @@
+{
+  "date": "2026-10-03",
+  "student": {
+    "model": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "quantization": "NF4",
+    "adapter": "rank-8 QLoRA",
+    "inference_runtime_changed": false
+  },
+  "hardware": {
+    "gpu": "NVIDIA RTX 5070 Ti",
+    "vram_gib": 16,
+    "power_limit_w": 300
+  },
+  "observations": {
+    "decode_tokens_per_second_approx": [
+      14,
+      16
+    ],
+    "gpu_activity_percent_approx": [
+      30,
+      35
+    ],
+    "memory_controller_activity_percent_approx": [
+      6,
+      8
+    ],
+    "power_w_approx": [
+      80,
+      100
+    ],
+    "active_session_seconds": 21586.931067223,
+    "training_seconds": 747.477,
+    "kernel_launches_per_profiled_128_token_request": 490330,
+    "bottleneck_interpretation": "Serial decoding and small kernel overhead are supported by sampling; no direct bandwidth saturation measurement."
+  },
+  "runtime_trials": {
+    "cpu_threads": [
+      1,
+      4,
+      12
+    ],
+    "thread_speedup_reproducible": false,
+    "compiled_decode_adopted": false,
+    "static_cache_tokens_unchanged": false
+  },
+  "live_rejected_checkpoint": {
+    "scope": "One real rejected checkpoint; same NF4 runtime, task order, greedy generation and individual task budgets.",
+    "original_evaluated": 25,
+    "fast_evaluated": 20,
+    "original_solve_seconds": 398.63,
+    "fast_solve_seconds": 317.968,
+    "fast_wall_seconds": 329.27919320399997,
+    "observed_prefix_outcomes_identical": true,
+    "original_and_fast_rejected": true,
+    "accepted_adapter_untouched": true,
+    "source_adapter_sha256": "23d20c8c3e960c2675b00a4ab91cca590f6cec0b3591b0a166808082ac82b5bd",
+    "solve_time_reduction_percent": 20.23,
+    "comparison_limit": "Original full evaluation was recorded earlier. No simultaneous full rerun or measured complete-session speedup."
+  },
+  "saved_reports_estimate": {
+    "scope": "Counterfactual replay of complete saved task results; estimated task time, not measured whole-session speedup.",
+    "original_evaluation_solve_seconds": 11615.651000000002,
+    "avoidable_solve_seconds": 3879.7069999999994,
+    "evaluation_solve_reduction_percent": 33.400684989588605,
+    "checked_tasks": 511,
+    "omitted_tasks": 239,
+    "comparisons": [
+      {
+        "round": "round-002",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 15,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 129.43899999999996
+      },
+      {
+        "round": "round-003",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 15,
+        "early_evaluated": 4,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 338.288
+      },
+      {
+        "round": "round-003",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 16,
+        "early_evaluated": 21,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 42.85899999999998
+      },
+      {
+        "round": "round-004",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 17,
+        "early_evaluated": 24,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 32.68799999999999
+      },
+      {
+        "round": "round-004",
+        "checkpoint": "dev-adapter-checkpoint-15",
+        "complete_original_passes": 16,
+        "early_evaluated": 21,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 110.74700000000001
+      },
+      {
+        "round": "round-004",
+        "checkpoint": "dev-adapter-checkpoint-20",
+        "complete_original_passes": 14,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 131.978
+      },
+      {
+        "round": "round-005",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 13,
+        "early_evaluated": 18,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 124.35700000000003
+      },
+      {
+        "round": "round-006",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 16,
+        "early_evaluated": 25,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 0.0
+      },
+      {
+        "round": "round-006",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 16,
+        "early_evaluated": 24,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 25.204000000000008
+      },
+      {
+        "round": "round-007",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 15,
+        "early_evaluated": 21,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 89.74100000000004
+      },
+      {
+        "round": "round-007",
+        "checkpoint": "dev-adapter-checkpoint-15",
+        "complete_original_passes": 16,
+        "early_evaluated": 25,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 0.0
+      },
+      {
+        "round": "round-007",
+        "checkpoint": "dev-adapter-checkpoint-20",
+        "complete_original_passes": 15,
+        "early_evaluated": 21,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 87.21800000000002
+      },
+      {
+        "round": "round-008",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 18,
+        "early_evaluated": 25,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 0.0
+      },
+      {
+        "round": "round-009",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 17,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 56.41199999999998
+      },
+      {
+        "round": "round-009",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 14,
+        "early_evaluated": 12,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 171.944
+      },
+      {
+        "round": "round-010",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 14,
+        "early_evaluated": 8,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 191.95399999999998
+      },
+      {
+        "round": "round-010",
+        "checkpoint": "dev-adapter-checkpoint-15",
+        "complete_original_passes": 16,
+        "early_evaluated": 18,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 70.24799999999999
+      },
+      {
+        "round": "round-010",
+        "checkpoint": "dev-adapter-checkpoint-20",
+        "complete_original_passes": 16,
+        "early_evaluated": 18,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 70.268
+      },
+      {
+        "round": "round-011",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 15,
+        "early_evaluated": 8,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 268.11
+      },
+      {
+        "round": "round-012",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 15,
+        "early_evaluated": 4,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 391.798
+      },
+      {
+        "round": "round-012",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 14,
+        "early_evaluated": 8,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 212.1
+      },
+      {
+        "round": "round-013",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 16,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 103.92199999999997
+      },
+      {
+        "round": "round-013",
+        "checkpoint": "dev-adapter-checkpoint-15",
+        "complete_original_passes": 15,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 84.392
+      },
+      {
+        "round": "round-013",
+        "checkpoint": "dev-adapter-checkpoint-20",
+        "complete_original_passes": 16,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 102.416
+      },
+      {
+        "round": "round-014",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 14,
+        "early_evaluated": 18,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 148.22799999999995
+      },
+      {
+        "round": "round-015",
+        "checkpoint": "dev-adapter-checkpoint-5",
+        "complete_original_passes": 15,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 103.495
+      },
+      {
+        "round": "round-015",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 13,
+        "early_evaluated": 8,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 262.56899999999996
+      },
+      {
+        "round": "round-016",
+        "checkpoint": "dev-adapter-checkpoint-10",
+        "complete_original_passes": 15,
+        "early_evaluated": 12,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 173.353
+      },
+      {
+        "round": "round-016",
+        "checkpoint": "dev-adapter-checkpoint-15",
+        "complete_original_passes": 16,
+        "early_evaluated": 20,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 135.96000000000004
+      },
+      {
+        "round": "round-016",
+        "checkpoint": "dev-adapter-checkpoint-20",
+        "complete_original_passes": 15,
+        "early_evaluated": 8,
+        "strict_decision_unchanged": true,
+        "saved_solve_seconds": 220.019
+      }
+    ],
+    "all_promotion_decisions_unchanged": true,
+    "active_session_time_reduction_estimate_percent": 17.97
+  },
+  "quality": {
+    "accepted_development_passes": 18,
+    "development_tasks": 25,
+    "fresh_confirmation_tasks_reserved": 10,
+    "promotion_rule_changed": false,
+    "private_history_used": false,
+    "warning": "Repeated development checks do not establish general coding quality."
+  }
+}

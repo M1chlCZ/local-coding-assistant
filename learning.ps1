@@ -2,7 +2,8 @@ param(
     [ValidateSet('panel','start','pause','resume','stop','status','worker','watch')][string]$Action = 'panel',
     [double]$Hours = 12,
     [string]$Session = '.cache/learning/tuned',
-    [switch]$Research
+    [switch]$Research,
+    [switch]$FastReject
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -18,6 +19,11 @@ function Join-NativeArguments($Items) {
     }) -join ' ')
 }
 
+function Get-SessionSwitches([switch]$Linux) {
+    if ($Research) { if ($Linux) { '--research' } else { '-Research' } }
+    if ($FastReject) { if ($Linux) { '--fast-reject' } else { '-FastReject' } }
+}
+
 if ($Action -eq 'worker') {
     $LogRoot = Join-Path $ProjectRoot '.cache\learning-windows'
     New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
@@ -30,7 +36,7 @@ public static class LearningPower {
 '@
     $NativeArguments = $Common + @('.cache/rlm-env/bin/python','learning_session.py','run','--session',$Session,
         '--hours',$Hours.ToString([Globalization.CultureInfo]::InvariantCulture),'--model',$ModelPath)
-    if ($Research) { $NativeArguments += '--research' }
+    $NativeArguments += @(Get-SessionSwitches -Linux)
     $WorkerProcess = Start-Process 'wsl.exe' -ArgumentList (Join-NativeArguments $NativeArguments) `
         -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $LogRoot "$Stamp.out.log") `
         -RedirectStandardError (Join-Path $LogRoot "$Stamp.err.log")
@@ -119,7 +125,7 @@ function Start-Worker {
     $WorkerArguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',
         (Join-Path $ProjectRoot 'learning.ps1'),'-Action','worker','-Session',$Session,'-Hours',
         $Hours.ToString([Globalization.CultureInfo]::InvariantCulture))
-    if ($Research) { $WorkerArguments += '-Research' }
+    $WorkerArguments += @(Get-SessionSwitches)
     $ArgumentText = Join-NativeArguments $WorkerArguments
     $Hash = [Security.Cryptography.SHA256]::Create()
     try { $Suffix = ([BitConverter]::ToString($Hash.ComputeHash([Text.Encoding]::UTF8.GetBytes($Session)))).Replace('-','').Substring(0,8) }

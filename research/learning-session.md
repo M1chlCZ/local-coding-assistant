@@ -112,6 +112,7 @@ Research can continue from a higher-scoring checkpoint with at most one lost tas
 This experimental checkpoint stays separate from the accepted adapter. Promotion still requires improvement without lost passing tasks.
 The unchanged base receives one evaluation per session. Later rounds reuse that result.
 See [the replay research experiment](replay-research.md).
+For optional early rejection and measured runtime limits, see [research speed](performance.md).
 This experiment leaves the original holdout untouched. The chat model receives no automatic replacement.
 The worker also stops after 64 rounds or three rounds without a successful new repair.
 It stops at 20 GiB of session files or less than 10 GiB of free disk space.

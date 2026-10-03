@@ -256,3 +256,87 @@ with tempfile.TemporaryDirectory() as temporary:
     rows=data.load_verified(root/'round-004/training.jsonl',root/'round-004/tasks.json')
     assert {r['task_id'] for r in rows}=={known[0]['id'],known[3]['id']}, 'The original replay anchor was diluted by recent rounds'
 print('PASS: research mixes the original verified training anchor with the current fresh round')
+
+# A rejected prefix can stop only when neither strict promotion nor research retention is possible.
+assert hasattr(session,'cannot_improve'), 'Evaluation has no safe early rejection rule'
+def quality_row(values):
+    return {'tasks':[{'id':str(i),'passed':value} for i,value in enumerate(values)]}
+base=quality_row([False]*5);prior=quality_row([True,True,True,False,False])
+assert not session.cannot_improve(quality_row([True])['tasks'],base,prior,(4,1))
+assert session.cannot_improve(quality_row([False,False])['tasks'],base,prior,(4,1))
+assert not session.cannot_improve(quality_row([False,True])['tasks'],base,prior,(3,1)), 'A possible higher research score was pruned'
+assert session.cannot_improve(quality_row([False,True,True])['tasks'],base,prior,(4,0))
+assert session.cannot_improve(quality_row([False])['tasks'],base,prior), 'Strict promotion cannot lose a prior pass'
+assert not session.cannot_improve(quality_row([True,True,True,False])['tasks'],base,prior)
+assert session.cannot_improve(quality_row([True,True,True,False,False])['tasks'],base,prior)
+assert not session.cannot_improve(quality_row([True,True,True,True])['tasks'],base,prior)
+print('PASS: early rejection preserves every possible promotion or research improvement')
+
+from itertools import product
+for threshold in (None,(3,0),(4,1),(4,0)):
+    for count in range(6):
+        for prefix in product((False,True),repeat=count):
+            possible=False
+            for tail in product((False,True),repeat=5-count):
+                values=prefix+tail;report=quality_row(values)
+                lost=sum(prior['tasks'][i]['passed'] and not values[i] for i in range(5))
+                possible |= session.accepted(report,base,prior,expected=5) or (
+                    threshold is not None and lost<=1 and (sum(values),-lost)>(threshold[0],-threshold[1]))
+            assert session.cannot_improve(quality_row(prefix)['tasks'],base,prior,threshold)==(not possible)
+print('PASS: exhaustive prefix checks agree with every possible complete outcome')
+
+with tempfile.TemporaryDirectory() as temporary:
+    root=Path(temporary); dev=session.development_tasks(); ids=[t['id'] for t in dev]
+    worker=object.__new__(session.Session);worker.path=root;worker.child=None
+    prior={'tasks':[{'id':name,'passed':i<3} for i,name in enumerate(ids)]}
+    worker.state={'research':True,'fast_reject':True,'round':2,'completed_rounds':[],
+        'accepted_rounds':[],'best_adapter':'/retained','best_dev':prior,'research_score':3,'research_regressions':0}
+    worker.save=lambda **changes:worker.state.update(changes);worker.interrupted=lambda:False
+    mode={'value':'base','checkpoint':None};observed=[]
+    def server(command,*args):mode['checkpoint']=Path(command[-1]).name;return True
+    worker.server=server
+    def switch(base,path,payload):mode['value']=payload['mode']
+    def solve(task,*args,**kwargs):
+        observed.append((mode['checkpoint'],task['id']))
+        return {'id':task['id'],'passed':mode['checkpoint']=='checkpoint-10'}
+    trainer.atomic_json(root/'dev-base.json',{'tasks':[{'id':name,'passed':False} for name in ids]})
+    folder=root/'round-002';output=folder/'adapter';output.mkdir(parents=True)
+    binding={'test':'early-rejection'};trainer.atomic_json(output/'run.json',binding)
+    for step in (5,10):
+        c=output/f'checkpoint-{step}';c.mkdir()
+        for name in trainer.CHECKPOINT_FILES:(c/name).write_text(name)
+        trainer.complete_checkpoint(c,binding)
+    with patch('evaluation.request',switch),patch('recursive_agent.solve',solve):worker.evaluate(folder)
+    first=json.loads((folder/'dev-adapter-checkpoint-5.json').read_text())
+    assert len(first['tasks'])==2 and first['early_rejected'], 'Hopeless checkpoints still receive every task'
+    assert len([x for x in observed if x[0]=='checkpoint-10'])==15, 'A promising checkpoint was not fully checked'
+    assert worker.state['best_adapter']==str(output/'checkpoint-10')
+    assert len(worker.state['best_dev']['tasks'])==15
+    assert worker.state['candidate_best']['complete'] is True
+print('PASS: the live evaluator prunes hopeless checkpoints and fully checks improvements')
+
+# Public data failures are excluded; authored and infrastructure failures still stop the worker.
+for public,feedback in [(True,'Traceback (most recent call last):\nAssertionError'),
+                         (False,'Traceback (most recent call last):\nAssertionError'),
+                         (True,'Cannot connect to the Docker daemon')]:
+    with tempfile.TemporaryDirectory() as temporary:
+        root=Path(temporary);folder=root/'round-002';folder.mkdir()
+        task=session.round_tasks(2)[0]
+        if public:task['provenance']={'dataset':'nvidia/OpenCodeInstruct'}
+        trainer.atomic_json(folder/'tasks.json',[task])
+        worker=object.__new__(session.Session);worker.path=root;worker.child=None
+        worker.state={'round':2,'teacher_model':'/teacher'}
+        worker.save=lambda **changes:worker.state.update(changes)
+        worker.server=lambda *args:True;worker.interrupted=lambda:False
+        with patch('recursive_agent.grade',return_value={'passed':False,'feedback':feedback}),patch('recursive_agent.solve') as solve:
+            if public and feedback.startswith('Traceback'):
+                worker.collect(folder)
+                rows=json.loads((folder/'teacher.json').read_text())['tasks']
+                assert len(rows)==1 and not rows[0]['passed'] and rows[0]['quarantined']
+                assert rows[0]['trace']==[] and worker.state['phase']=='export'
+            else:
+                try:worker.collect(folder)
+                except ValueError:pass
+                else:raise AssertionError('Authored or infrastructure failure was silently excluded')
+            solve.assert_not_called()
+print('PASS: public fixture quarantine retains authored and infrastructure failure guards')
