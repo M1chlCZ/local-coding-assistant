@@ -15,6 +15,15 @@ Select **Pause** to save progress and release the GPU.
 Select **Resume** to continue the same session.
 Select **Stop** to finish the session permanently.
 Closing the panel keeps the worker active.
+
+For live PowerShell progress, use:
+
+```powershell
+.\learning.cmd -Action watch -Session .cache/learning/research
+```
+
+The console shows task counts, training steps, quality checks, model scores, and elapsed time.
+Closing this console keeps the worker active. The panel also prints progress in its PowerShell console.
 During work, the Windows worker prevents automatic idle sleep.
 Pause restores normal idle sleep. The display can turn off.
 
@@ -94,6 +103,15 @@ The registry accepts only development tasks with unique IDs. It never supplies t
 Acceptance requires more successful repairs than the base and the previous accepted candidate, with no regression on individual tasks.
 The worker stops after three consecutive rounds without development improvement.
 The repeated development set can overfit. It does not prove general coding quality.
+
+For an explicit research session, add `-Research` to the Windows start command or `--research` to the Linux worker.
+Research continues after three rejected updates and retains the active time limit.
+It mixes the original verified training round with each fresh round and tries 5, 10, and 20 steps in turn.
+Prepare fresh training tasks before each round. Changing old task labels does not supply new problems.
+Research can continue from a higher-scoring checkpoint with at most one lost task.
+This experimental checkpoint stays separate from the accepted adapter. Promotion still requires improvement without lost passing tasks.
+The unchanged base receives one evaluation per session. Later rounds reuse that result.
+See [the replay research experiment](replay-research.md).
 This experiment leaves the original holdout untouched. The chat model receives no automatic replacement.
 The worker also stops after 64 rounds or three rounds without a successful new repair.
 It stops at 20 GiB of session files or less than 10 GiB of free disk space.

@@ -56,8 +56,8 @@ def round_tasks(index):
     return tasks
 
 
-def should_stop_for_quality(results):
-    return len(results)>=3 and not any(r['accepted'] for r in results[-3:])
+def should_stop_for_quality(results, research=False):
+    return not research and len(results)>=3 and not any(r['accepted'] for r in results[-3:])
 
 
 def accepted(candidate, baseline, previous=None, expected=5):
@@ -72,7 +72,7 @@ def accepted(candidate, baseline, previous=None, expected=5):
 
 
 class Session:
-    def __init__(self, path, hours, model):
+    def __init__(self, path, hours, model, research=False):
         self.path = path.resolve()
         self.path.mkdir(parents=True, exist_ok=True)
         # ponytail: one worker per session, one GPU; add a job scheduler only for multiple GPUs.
@@ -84,7 +84,7 @@ class Session:
         sources = {name: sha256(ROOT/name) for name in SOURCE_FILES}
         self.state = json.loads((self.path/'status.json').read_text()) if (self.path/'status.json').exists() else {
             'schema_version': 1, 'status': 'running', 'phase': 'collect', 'round': 1,
-            'active_seconds': 0, 'limit_seconds': hours*3600, 'teacher_model': str(model.resolve()),
+            'active_seconds': 0, 'limit_seconds': hours*3600, 'teacher_model': str(model.resolve()), 'research': research,
             'best_adapter': None, 'accepted_rounds': [], 'completed_rounds': [],
             'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'sources': sources,
             'development_tasks_sha256': sha256(self.path/'development-tasks.json')
@@ -176,15 +176,18 @@ class Session:
         return True
 
     def training_command(self, round_path):
+        warm = self.state.get('research_adapter') if self.state.get('research') else None
+        warm = warm or self.state['best_adapter']
+        steps = (5, 10, 20)[(self.state['round']-2)%3] if self.state.get('research') and warm else (20 if warm else 80)
         command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'train_adapter.py'),
             '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
             '--model', MODEL, '--revision', REVISION, '--output', str(round_path/'adapter'),
-            '--max-steps', '20' if self.state['best_adapter'] else '80', '--max-epochs', '1', '--learning-rate',
-            '0.000005' if self.state['best_adapter'] else '0.00005',
+            '--max-steps', str(steps), '--max-epochs', '1', '--learning-rate',
+            '0.000005' if warm else '0.00005',
             '--max-length', '4096', '--save-steps', '5',
             '--pause-file', str(self.path/'pause-training')]
-        if self.state['best_adapter']:
-            command += ['--warm-start', self.state['best_adapter']]
+        if warm:
+            command += ['--warm-start', warm]
         return command
 
     def teacher_baseline(self, folder):
@@ -264,8 +267,9 @@ class Session:
             # Bind earlier reports to the cumulative registry without modifying their originals.
             reports = []
             digest = sha256(folder/'tasks.json')
-            # ponytail: four recent rounds bound replay and grading cost; extend only after measured forgetting.
-            for number in range(max(1, self.state['round']-3), self.state['round']+1):
+            # Research keeps its original verified anchor rather than diluting it with recent rounds.
+            rounds = sorted({1, self.state['round']}) if self.state.get('research') else range(max(1, self.state['round']-3), self.state['round']+1)
+            for number in rounds:
                 original = self.path/f'round-{number:03d}/teacher.json'
                 value = json.loads(original.read_text())
                 value['tasks_sha256'] = digest
@@ -333,6 +337,7 @@ class Session:
             raise ValueError('No complete candidate checkpoint exists')
         tasks = development_tasks(self.path/'development-tasks.json') if self.state.get('development_tasks_sha256') else development_tasks()
         previous = self.state.get('best_dev')
+        best_candidate = None
         for checkpoint in checkpoints:
             verified_checkpoint(checkpoint, binding)
             command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'research/adapter_eval_server.py'),
@@ -342,14 +347,16 @@ class Session:
             reports = {}
             for mode in ('base', 'adapter'):
                 suffix = '-'+checkpoint.name if mode=='adapter' else ''
-                path = folder/f'dev-{mode}{suffix}.json'
+                path = self.path/'dev-base.json' if mode=='base' else folder/f'dev-{mode}{suffix}.json'
                 report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
                     'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': SETTINGS, 'limits': LIMITS,
                     'development_tasks_sha256': self.state.get('development_tasks_sha256'),
                     'adapter_sha256': sha256(checkpoint/'adapter_model.safetensors') if mode=='adapter' else None}
                 request('http://127.0.0.1:8090', '/mode', {'mode': mode})
                 for task in tasks[len(report['tasks']):]:
-                    self.save(detail=f'Development check {checkpoint.name} {mode}: '+task['id'])
+                    self.save(detail=f'Development check {checkpoint.name} {mode}: '+task['id'],
+                              evaluation={'checkpoint':checkpoint.name, 'mode':mode,
+                                          'completed':len(report['tasks']), 'total':len(tasks)})
                     if self.interrupted():
                         return
                     row = solve(task, 'http://127.0.0.1:8090', **SETTINGS, **LIMITS)
@@ -357,15 +364,29 @@ class Session:
                         row.update(grade(task, row['patch']))
                     report['tasks'].append(row)
                     atomic_json(path, report)
-                    self.save()
+                    self.save(evaluation={'checkpoint':checkpoint.name, 'mode':mode,
+                                          'completed':len(report['tasks']), 'total':len(tasks)})
                 reports[mode] = report
             keep = accepted(reports['adapter'], reports['base'], previous, expected=len(tasks))
+            passed = sum(r.get('passed') is True for r in reports['adapter']['tasks'])
+            prior = {r['id']:r.get('passed') is True for r in (previous or reports['base'])['tasks']}
+            losses = sum(prior[r['id']] and not r.get('passed') for r in reports['adapter']['tasks'])
+            candidate = {'passed':passed, 'regressions':losses, 'total':len(tasks), 'checkpoint':checkpoint.name}
+            if best_candidate is None or (passed,-losses) > (best_candidate['passed'],-best_candidate['regressions']):
+                best_candidate = candidate
+            if (self.state.get('research') and len(reports['adapter']['tasks'])==len(tasks)
+                    and {r['id'] for r in reports['adapter']['tasks']}==prior.keys() and losses<=1):
+                old = (self.state.get('research_score',sum(prior.values())), -self.state.get('research_regressions',0))
+                if (passed,-losses)>old:
+                    # Research may explore one lost task; this never relaxes the promotion rule.
+                    self.state.update(research_adapter=str(checkpoint), research_score=passed, research_regressions=losses)
+            self.save(candidate_best=best_candidate)
             self.stop_child()
             if keep:
                 break
         result = {'round': self.state['round'], 'base_passed': sum(r['passed'] for r in reports['base']['tasks']),
                   'adapter_passed': sum(r['passed'] for r in reports['adapter']['tasks']), 'total': len(tasks),
-                  'accepted': keep, 'checkpoint': checkpoint.name,
+                  'accepted': keep, 'checkpoint': checkpoint.name, 'best_candidate': best_candidate,
                   'warning': 'Small repeated development set; no general quality claim. Holdout unused.'}
         atomic_json(folder/'result.json', result)
         self.state['completed_rounds'].append(result)
@@ -374,10 +395,13 @@ class Session:
             self.state['best_dev'] = {'tasks': [{'id': r['id'], 'passed': r['passed']}
                                                for r in reports['adapter']['tasks']]}
             self.state['accepted_rounds'].append(self.state['round'])
+            if self.state.get('research'):
+                self.state.update(research_adapter=str(checkpoint), research_score=passed, research_regressions=0)
+        stop = should_stop_for_quality(self.state['completed_rounds'], self.state.get('research',False))
         self.save(round=self.state['round']+1, phase='collect',
-                  status='completed' if should_stop_for_quality(self.state['completed_rounds']) else 'running',
+                  status='completed' if stop else 'running', collected=0, passed=0, training=None, evaluation=None,
                   detail='Stopped after three rounds without development improvement'
-                  if should_stop_for_quality(self.state['completed_rounds']) else 'Starting a new data collection round')
+                  if stop else 'Starting a new data collection round')
 
     def run(self):
         if self.state['status'] in ('completed', 'stopped'):
@@ -425,6 +449,7 @@ def main():
     parser.add_argument('action', choices=('run','pause','resume','stop','status'))
     parser.add_argument('--session', type=Path, default=DEFAULT)
     parser.add_argument('--hours', type=float, default=12)
+    parser.add_argument('--research', action='store_true', help='Explore short anchored updates without the three-round plateau stop; promotion stays strict')
     parser.add_argument('--model', help='Teacher GGUF path, Windows or Linux; required for a new session')
     args = parser.parse_args()
     if not .01 <= args.hours <= 24:
@@ -444,7 +469,7 @@ def main():
                 model = json.loads((args.session/'status.json').read_text())['teacher_model']
             if not model or not Path(model).is_file():
                 raise ValueError('Teacher GGUF file is missing; pass --model')
-            Session(args.session, args.hours, Path(model)).run()
+            Session(args.session, args.hours, Path(model), research=args.research).run()
     except (ValueError, OSError, RuntimeError) as error:
         parser.exit(1, str(error)+'\n')
 

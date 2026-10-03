@@ -127,6 +127,17 @@ with tempfile.TemporaryDirectory() as directory:
         else: raise AssertionError('Changed quality checks accepted on resume')
 print('PASS: extra development tasks are immutable across resume')
 
+with tempfile.TemporaryDirectory() as directory:
+    root=Path(directory)
+    with isolated_repository(root):
+        worker=session.Session(root,12,Path('/teacher.gguf'),research=True)
+        worker.save(status='paused')
+        worker.lock.close();worker.gpu_lock.close()
+        resumed=session.Session(root,1,Path('/other.gguf'))
+        assert resumed.state['research'] is True and resumed.state['limit_seconds']==43200
+        resumed.lock.close();resumed.gpu_lock.close()
+print('PASS: research mode and its time limit survive a worker restart')
+
 if len(sys.argv)>1:
     if len(sys.argv) not in (3,4):
         raise SystemExit('Use DATA TASKS [WARM_ADAPTER], with the cached model and pinned training environment')

@@ -1,0 +1,132 @@
+{
+  "scope": "Small repeated 25-task development set; not a general coding benchmark.",
+  "model": "Qwen/Qwen3-4B",
+  "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "holdout_used": false,
+  "private_history_used": false,
+  "active_seconds": 10051.405252547,
+  "retained_passed": 16,
+  "retained_total": 25,
+  "retained_adapter_sha256": "1c290a311766f3d47679696fd8bd6be66e15c461d8541da4a88a62f1d98abd07",
+  "accepted_rounds": [],
+  "rounds": [
+    {
+      "round": 2,
+      "teacher_passed": 32,
+      "teacher_total": 32,
+      "verified_rows": 401,
+      "trained_rows": 399,
+      "training_steps": 20,
+      "learning_rate": 5e-06,
+      "dataset_sha256": "88e49ab189f4bb1e5441be671be984c154266e85dae0f2e680ef09e0c09dcdb2",
+      "checkpoints": [
+        {
+          "checkpoint": "checkpoint-10",
+          "passed": 15,
+          "total": 25,
+          "lost_previous_passes": [
+            "checkout-transitions"
+          ],
+          "adapter_sha256": "4ad8f606b5ef1b8700b5cd50949ae116edccc768922966b0f30c0abbbc4923c6"
+        },
+        {
+          "checkpoint": "checkpoint-15",
+          "passed": 17,
+          "total": 25,
+          "lost_previous_passes": [
+            "opencode-6a7560d8ce72e17d61a4d533ff77eda8"
+          ],
+          "adapter_sha256": "be45ad045ed2aea61dd9f666056b0274d9a18d6cddff279ae26af992379a46b1"
+        },
+        {
+          "checkpoint": "checkpoint-20",
+          "passed": 16,
+          "total": 25,
+          "lost_previous_passes": [],
+          "adapter_sha256": "475528b3a0b6831f04743483410c6135cbf1bd682375bb324a4dcd92751967b5"
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "teacher_passed": 31,
+      "teacher_total": 32,
+      "verified_rows": 541,
+      "trained_rows": 539,
+      "training_steps": 20,
+      "learning_rate": 5e-06,
+      "dataset_sha256": "eb173ae4e1545868b03dac4261eaa0abc2598f54df9a45b33b628a6e015a0318",
+      "checkpoints": [
+        {
+          "checkpoint": "checkpoint-10",
+          "passed": 17,
+          "total": 25,
+          "lost_previous_passes": [
+            "checkout-transitions"
+          ],
+          "adapter_sha256": "fcc380b16e1821c0541d01dc9531cfa17009bd9283b648d204076f10d1f4b5f1"
+        },
+        {
+          "checkpoint": "checkpoint-15",
+          "passed": 16,
+          "total": 25,
+          "lost_previous_passes": [
+            "checkout-transitions"
+          ],
+          "adapter_sha256": "10df9a83b45930588d0083785edeadfc3c566316b2be1de5ae6ef9b0ef27a663"
+        },
+        {
+          "checkpoint": "checkpoint-20",
+          "passed": 15,
+          "total": 25,
+          "lost_previous_passes": [
+            "opencode-d3245009ebd0855d0cc8cf57da96b494"
+          ],
+          "adapter_sha256": "b16cbcfbe836f1a799d65903f74d8f30a78e859eb9a5a822af850adec9ca3b03"
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "teacher_passed": 31,
+      "teacher_total": 32,
+      "verified_rows": 674,
+      "trained_rows": 672,
+      "training_steps": 20,
+      "learning_rate": 5e-06,
+      "dataset_sha256": "7a2ba3fddc79bf2999fc45dc68a46d0a72ac8c61f87f18ec09e3caa073f9e982",
+      "checkpoints": [
+        {
+          "checkpoint": "checkpoint-10",
+          "passed": 15,
+          "total": 25,
+          "lost_previous_passes": [
+            "checkout-transitions",
+            "opencode-d3245009ebd0855d0cc8cf57da96b494"
+          ],
+          "adapter_sha256": "4247a886c48ebf2f5d16fe7960de530ce7ced42d2ddfb4908359a647499d61fa"
+        },
+        {
+          "checkpoint": "checkpoint-15",
+          "passed": 14,
+          "total": 25,
+          "lost_previous_passes": [
+            "checkout-transitions",
+            "opencode-6a7560d8ce72e17d61a4d533ff77eda8"
+          ],
+          "adapter_sha256": "c9719a21c1e1a96ca7db09c34b7c0384f6b265b798a3021073b0c39d0245808b"
+        },
+        {
+          "checkpoint": "checkpoint-20",
+          "passed": 16,
+          "total": 25,
+          "lost_previous_passes": [
+            "checkout-transitions",
+            "tuning-edit-distance"
+          ],
+          "adapter_sha256": "d9a4c8c338bf0dbb3cd9c19758ae99d7cb3f281bbc7e62d08522e1f3d4b26a43"
+        }
+      ]
+    }
+  ]
+}

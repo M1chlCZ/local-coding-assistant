@@ -1,7 +1,8 @@
 param(
-    [ValidateSet('panel','start','pause','resume','stop','status','worker')][string]$Action = 'panel',
+    [ValidateSet('panel','start','pause','resume','stop','status','worker','watch')][string]$Action = 'panel',
     [double]$Hours = 12,
-    [string]$Session = '.cache/learning/tuned'
+    [string]$Session = '.cache/learning/tuned',
+    [switch]$Research
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -29,6 +30,7 @@ public static class LearningPower {
 '@
     $NativeArguments = $Common + @('.cache/rlm-env/bin/python','learning_session.py','run','--session',$Session,
         '--hours',$Hours.ToString([Globalization.CultureInfo]::InvariantCulture),'--model',$ModelPath)
+    if ($Research) { $NativeArguments += '--research' }
     $WorkerProcess = Start-Process 'wsl.exe' -ArgumentList (Join-NativeArguments $NativeArguments) `
         -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $LogRoot "$Stamp.out.log") `
         -RedirectStandardError (Join-Path $LogRoot "$Stamp.err.log")
@@ -53,6 +55,43 @@ function Invoke-Control([string]$Command) {
     $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' 'learning_session.py' $Command '--session' $Session
     if ($LASTEXITCODE -ne 0) { throw "Session command failed: $Result" }
     return ($Result -join "`n")
+}
+
+function Format-LearningProgress($Value) {
+    $Used = [Math]::Round($Value.active_seconds/3600,2)
+    $Limit = [Math]::Round($Value.limit_seconds/3600,2)
+    $Lines = @("State: $($Value.status)  Round: $($Value.round)  Phase: $($Value.phase)", "Active hours: $Used / $Limit")
+    $Tasks = @($Value.best_dev.tasks | Where-Object { $null -ne $_ })
+    if ($Tasks.Count) {
+        $Passed = @($Tasks | Where-Object { $_.passed -eq $true }).Count
+        $Lines += "Retained: $Passed/$($Tasks.Count)"
+        if ($Value.research -and $null -ne $Value.research_score) {
+            $Lines += "Research: $($Value.research_score)/$($Tasks.Count)  lost: $($Value.research_regressions)"
+        }
+    }
+    switch ($Value.phase) {
+        'collect' { $Lines += "Examples: $($Value.collected) collected, $($Value.passed) passed" }
+        'train' { $Lines += "Training: $($Value.training.step)/$($Value.training.max_steps)" }
+        'evaluate' { $Lines += "Tests: $($Value.evaluation.completed)/$($Value.evaluation.total)  $($Value.evaluation.mode) $($Value.evaluation.checkpoint)" }
+    }
+    $Lines += $Value.detail
+    return ($Lines -join "`r`n")
+}
+
+function Watch-LearningProgress {
+    Write-Host 'Live coding research progress. Closing this window keeps the worker running.'
+    $Previous = ''; $Printed = [DateTime]::MinValue
+    while ($true) {
+        $Value = Invoke-Control 'status' | ConvertFrom-Json
+        if (-not $Value.status) { throw 'No prepared learning session exists at this location.' }
+        $Text = Format-LearningProgress $Value
+        if ($Text -ne $Previous -or ((Get-Date)-$Printed).TotalSeconds -ge 30) {
+            Write-Host ("`n"+(Get-Date).ToString('HH:mm:ss')+"`n"+$Text)
+            $Previous = $Text; $Printed = Get-Date
+        }
+        if ($Value.status -in @('completed','stopped','failed')) { return }
+        Start-Sleep -Seconds 5
+    }
 }
 
 function Grant-TaskControl([string]$TaskName) {
@@ -80,6 +119,7 @@ function Start-Worker {
     $WorkerArguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',
         (Join-Path $ProjectRoot 'learning.ps1'),'-Action','worker','-Session',$Session,'-Hours',
         $Hours.ToString([Globalization.CultureInfo]::InvariantCulture))
+    if ($Research) { $WorkerArguments += '-Research' }
     $ArgumentText = Join-NativeArguments $WorkerArguments
     $Hash = [Security.Cryptography.SHA256]::Create()
     try { $Suffix = ([BitConverter]::ToString($Hash.ComputeHash([Text.Encoding]::UTF8.GetBytes($Session)))).Replace('-','').Substring(0,8) }
@@ -110,6 +150,7 @@ switch ($Action) {
     'pause' { Invoke-Control 'pause'; exit }
     'stop' { Invoke-Control 'stop'; exit }
     'status' { Invoke-Control 'status'; exit }
+    'watch' { Watch-LearningProgress; return }
 }
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -160,10 +201,15 @@ foreach ($Name in @('Start','Pause','Resume','Stop','Refresh')) {
 }
 $Timer = New-Object Windows.Forms.Timer
 $Timer.Interval = 5000
+$script:LastProgress = ''
 $Timer.Add_Tick({
     try {
         $Value = Invoke-Control 'status' | ConvertFrom-Json
-        $Status.Text = "State: $($Value.status)`r`nRound: $($Value.round)   Phase: $($Value.phase)`r`n$($Value.detail)`r`nActive hours: $([Math]::Round($Value.active_seconds/3600,2)) / $([Math]::Round($Value.limit_seconds/3600,2))`r`nTraining step: $($Value.training.step) / $($Value.training.max_steps)`r`nAccepted rounds: $($Value.accepted_rounds -join ', ')`r`nSession: $Session"
+        $Status.Text = Format-LearningProgress $Value
+        if ($Status.Text -ne $script:LastProgress) {
+            Write-Host ("`n"+(Get-Date).ToString('HH:mm:ss')+"`n"+$Status.Text)
+            $script:LastProgress = $Status.Text
+        }
     } catch { $Status.Text = $_.Exception.Message }
 })
 $Timer.Start()

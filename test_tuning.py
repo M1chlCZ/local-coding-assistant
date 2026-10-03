@@ -192,3 +192,67 @@ with tempfile.TemporaryDirectory() as temporary:
     assert json.loads((folder/'result.json').read_text())['total']==16
     assert worker.state['best_adapter']==str(output/'checkpoint-10'), 'The final checkpoint replaced an earlier passing candidate'
 print('PASS: matched base and adapter evaluation includes every extra development task')
+
+# Research continues exploring without replacing a model that still passes older tasks.
+import inspect
+assert 'research' in inspect.signature(session.should_stop_for_quality).parameters, 'Research cannot continue past the old plateau stop'
+assert not session.should_stop_for_quality([{'accepted':False}]*3, research=True)
+worker=object.__new__(session.Session); worker.path=Path('/session')
+worker.state={'research':True,'best_adapter':'/retained','research_adapter':'/experiment'}
+for number,steps in [(2,5),(3,10),(4,20)]:
+    worker.state['round']=number
+    command=worker.training_command(Path('/round'))
+    assert command[command.index('--warm-start')+1]=='/experiment'
+    assert int(command[command.index('--max-steps')+1])==steps
+
+with tempfile.TemporaryDirectory() as temporary:
+    root=Path(temporary); dev=session.development_tasks(); ids=[t['id'] for t in dev]
+    worker=object.__new__(session.Session); worker.path=root; worker.child=None
+    worker.state={'research':True,'round':4,'completed_rounds':[{'accepted':False}]*2,
+                  'accepted_rounds':[],'best_adapter':'/retained',
+                  'best_dev':{'tasks':[{'id':name,'passed':i<5} for i,name in enumerate(ids)]},
+                  'research_score':5,'research_regressions':0}
+    worker.save=lambda **changes:worker.state.update(changes)
+    worker.interrupted=lambda:False
+    mode={'value':'base','checkpoint':None}; observed=[]
+    def server(command,*args):
+        mode['checkpoint']=Path(command[-1]).name; return True
+    worker.server=server
+    def switch(base,path,payload):mode['value']=payload['mode']
+    def solve(task,*args,**kwargs):
+        observed.append(mode['value'])
+        passing={'checkpoint-5':{0,1,2,3,5,6},'checkpoint-10':{0,1,2,5,6,7,8},'checkpoint-20':set(range(5))}
+        return {'id':task['id'],'passed':mode['value']=='adapter' and ids.index(task['id']) in passing[mode['checkpoint']]}
+    for number,steps in [(4,(5,10,20)),(5,(5,))]:
+        folder=root/f'round-{number:03d}'; output=folder/'adapter'; output.mkdir(parents=True)
+        binding={'test':'research'}; trainer.atomic_json(output/'run.json',binding)
+        for step in steps:
+            checkpoint=output/f'checkpoint-{step}';checkpoint.mkdir()
+            for name in trainer.CHECKPOINT_FILES:(checkpoint/name).write_text(name)
+            trainer.complete_checkpoint(checkpoint,binding)
+        with patch('evaluation.request',switch),patch('recursive_agent.solve',solve):worker.evaluate(folder)
+        assert worker.state['best_adapter']=='/retained' and not worker.state['accepted_rounds']
+        assert worker.state['status']=='running', 'Research stopped after three non-promoting rounds'
+        assert worker.state['research_adapter']==str(root/'round-004/adapter/checkpoint-5')
+        assert worker.state['research_score']==6 and worker.state['research_regressions']==1
+    assert observed.count('base')==15, 'The unchanged base was evaluated again in the next round'
+    assert len(observed)==75
+print('PASS: research follows a bounded promising branch, preserves promotion rules, and reuses its baseline')
+
+with tempfile.TemporaryDirectory() as temporary:
+    root=Path(temporary); task=next(t for t in tasks if t['split']=='train'); known=[]
+    for number in range(1,5):
+        folder=root/f'round-{number:03d}';folder.mkdir()
+        variant={**task,'id':task['id']+f'-r{number}','repository':task['repository']+f'-r{number}'}; known.append(variant)
+        trainer.atomic_json(folder/'tasks.json',known)
+        trace={'kind':'root','messages':[{'role':'user','content':f'Training problem {number}'}],
+               'response':f'```repl\nprint({number})\n```','input_tokens':5,'output_tokens':5}
+        trainer.atomic_json(folder/'teacher.json',{'schema_version':1,'split':'train','tasks_sha256':data.sha256(folder/'tasks.json'),
+            'tasks':[{**variant,'passed':True,'mode':'rlm','trace':[trace]}]})
+    worker=object.__new__(session.Session);worker.path=root
+    worker.state={'research':True,'round':4,'status':'running'}
+    worker.save=lambda **changes:worker.state.update(changes)
+    worker.dataset(root/'round-004')
+    rows=data.load_verified(root/'round-004/training.jsonl',root/'round-004/tasks.json')
+    assert {r['task_id'] for r in rows}=={known[0]['id'],known[3]['id']}, 'The original replay anchor was diluted by recent rounds'
+print('PASS: research mixes the original verified training anchor with the current fresh round')
