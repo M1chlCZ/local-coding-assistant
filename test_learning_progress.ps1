@@ -28,4 +28,9 @@ foreach($Expected in @('Next HumanEval audit:','2 active hours','Last HumanEval:
 }
 $State.benchmark.progress=$null;$State.benchmark.last.reused=$true
 if(-not (Format-LearningProgress $State).Contains('unchanged weights; verified result reused')){throw 'Cached benchmark is presented as a new measurement.'}
+$State.phase='confirmation'
+$State|Add-Member -NotePropertyName confirmation_progress -NotePropertyValue @{mode='base';completed=12;total=20}
+$Text=Format-LearningProgress $State
+if(-not $Text.Contains('Fresh reserved checks: base 12/20')){throw 'Fresh confirmation progress is hidden behind completed training.'}
+if($Text.Contains('Examples:')){throw 'Completed collection still appears active during confirmation.'}
 'PASS: Windows console shows training, independent benchmark schedule, progress, complete scores, and reuse'

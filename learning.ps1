@@ -114,7 +114,11 @@ public static class LearningPower {
 }
 
 function Invoke-Control([string]$Command) {
-    $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript $Command '--session' $Session
+    if ($Continuous -and $Command -eq 'status') {
+        $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' 'learning_progress.py' '--session' $Session
+    } else {
+        $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript $Command '--session' $Session
+    }
     if ($LASTEXITCODE -ne 0) { throw "Session command failed: $Result" }
     return ($Result -join "`n")
 }
@@ -151,6 +155,7 @@ function Format-LearningProgress($Value) {
         'collect' { $Lines += "Examples: $($Value.collected) collected, $($Value.passed) passed" }
         'train' { $Lines += "Training: $($Value.training.step)/$($Value.training.max_steps)" }
         'evaluate' { $Lines += "Tests: $($Value.evaluation.completed)/$($Value.evaluation.total)  $($Value.evaluation.mode) $($Value.evaluation.checkpoint)" }
+        'confirmation' { $Lines += "Fresh reserved checks: $($Value.confirmation_progress.mode) $($Value.confirmation_progress.completed)/$($Value.confirmation_progress.total)" }
     }
     $Lines += $Value.detail
     return ($Lines -join "`r`n")

@@ -88,6 +88,9 @@ Unchanged accepted weights reuse a verified complete result without GPU generati
 Interrupted audits retain finished tasks. Resume and login recovery continue them automatically.
 HumanEval reports trends and does not supply training targets or select checkpoints.
 The Windows progress display shows the next audit, current task count, and last complete comparison.
+During fresh confirmation, the display shows the model mode and completed task count.
+A finished experiment remains separate from the running continuous worker.
+The read-only progress view does not change the saved command, clock, or checkpoints.
 
 ## Storage and privacy
 
@@ -102,7 +105,7 @@ Each experiment retains the 20 GiB storage ceiling.
 ## Validation
 
 ```bash
-.cache/rlm-env/bin/python -m unittest test_continuous_learning test_learning_bootstrap test_scheduled_benchmark
+.cache/rlm-env/bin/python -m unittest test_continuous_learning test_learning_bootstrap test_scheduled_benchmark test_learning_progress
 ```
 
 On Windows:
