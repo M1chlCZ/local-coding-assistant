@@ -76,7 +76,9 @@ History-derived ideas need executable tests before training.
 ## Measured results
 
 The [benchmark guide](research/benchmarking.md) separates training checks, reserved repair tests, and direct coding benchmarks.
-The trained 4B student receives a matched full HumanEval comparison against its unchanged NF4 base.
+Training uses a separate Qwen3-4B student.
+On all 164 HumanEval tasks, its unchanged NF4 base passed 118 and the accepted adapter passed 121.
+The adapter gained 14 tasks and lost 11, so the higher total does not establish an improvement without regressions.
 
 RTX 5070 Ti, Ryzen 9 9900X, 32 GB RAM, 8K context:
 
