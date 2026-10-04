@@ -39,6 +39,44 @@ function Get-WorkerTrigger([string]$Owner) {
     if ($Continuous) { return New-ScheduledTaskTrigger -AtLogOn -User $Owner }
 }
 
+function Get-BootProbeResult([int]$ExitCode,[string]$Output) {
+    $Reason = 'WSL readiness probe failed; see boot logs'
+    try {
+        $Value = $Output | ConvertFrom-Json
+        if ($Value.reason) { $Reason=$Value.reason }
+    } catch {
+        if ($ExitCode -ne 0 -and $Output -match 'Wsl/Service/CreateInstance/ERROR_TIMEOUT') {
+            return [pscustomobject]@{ ExitCode=75; Reason='Waiting for the WSL service to finish starting' }
+        }
+    }
+    return [pscustomobject]@{ ExitCode=$ExitCode; Reason=$Reason }
+}
+
+function Invoke-BootProbe([string]$LogPrefix) {
+    $Items = $Common + @('/usr/bin/python3','learning_bootstrap.py','--session',$Session,'--continuous')
+    $Out = "$LogPrefix.boot.out.log"; $Err = "$LogPrefix.boot.err.log"
+    # Keep native WSL stderr as data. Early boot warnings must not become PowerShell exceptions.
+    $Probe = Start-Process 'wsl.exe' -ArgumentList (Join-NativeArguments $Items) -WindowStyle Hidden `
+        -PassThru -RedirectStandardOutput $Out -RedirectStandardError $Err
+    $Handle = $Probe.Handle
+    $Probe.WaitForExit(); $Probe.Refresh()
+    return Get-BootProbeResult $Probe.ExitCode (Get-Content $Out -Raw)
+}
+
+function Wait-LearningReady([string]$LogPrefix) {
+    if (-not $Continuous) { return }
+    $Deadline = (Get-Date).AddMinutes(2)
+    do {
+        # A new invocation gets a fresh mount namespace; one long-lived failed view cannot recover itself.
+        $Probe = Invoke-BootProbe $LogPrefix
+        if ($Probe.ExitCode -eq 0) { return }
+        if ($Probe.ExitCode -ne 75) { throw $Probe.Reason }
+        Write-Host $Probe.Reason
+        Start-Sleep -Seconds 2
+    } while ((Get-Date) -lt $Deadline)
+    throw 'WSL boot dependencies remain unavailable; Windows will retry the worker. See boot logs.'
+}
+
 if ($Action -eq 'worker') {
     $LogRoot = Join-Path $ProjectRoot '.cache\learning-windows'
     New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
@@ -49,6 +87,7 @@ public static class LearningPower {
     [DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags);
 }
 '@
+    Wait-LearningReady (Join-Path $LogRoot $Stamp)
     $NativeArguments = $Common + @('.cache/rlm-env/bin/python',$WorkerScript,'run','--session',$Session)
     if (-not $Continuous) { $NativeArguments += @('--hours',$Hours.ToString([Globalization.CultureInfo]::InvariantCulture),'--model',$ModelPath) }
     $NativeArguments += @(Get-SessionSwitches -Linux)

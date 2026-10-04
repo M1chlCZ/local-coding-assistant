@@ -61,6 +61,26 @@ systemctl enable --now docker
 exit
 ```
 
+For this dedicated environment, preserve the existing `/etc/wsl.conf` sections and add:
+
+```ini
+[automount]
+enabled=true
+
+[interop]
+appendWindowsPath=false
+```
+
+Learning uses Linux commands and does not need the Windows PATH.
+Windows drives remain available under `/mnt/`.
+Pause learning before applying this change. Restart only this environment:
+
+```powershell
+wsl.exe --terminate LocalCodingAssistant
+```
+
+See [Microsoft's WSL configuration guide](https://learn.microsoft.com/en-us/windows/wsl/wsl-config).
+
 Ubuntu enables systemd in this WSL image.
 The `coder` account controls Docker. Generated code still runs as an unprivileged user inside isolated containers.
 

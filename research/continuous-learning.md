@@ -48,6 +48,12 @@ The Windows task starts after login without a stored password or elevated execut
 It resumes only when the saved command permits running.
 Pause and Stop survive login. Pause also restores normal idle sleep.
 
+Before launching its long-lived worker, Windows probes drive access and Docker readiness in fresh WSL processes.
+It waits up to two minutes for boot dependencies. Native WSL startup timeouts also receive retries.
+If the worker itself still sees an unavailable drive, it exits so Windows can start a fresh process.
+It does not spend repeated training attempts inside a filesystem view without the model drive.
+See the [dedicated WSL settings](wsl.md#2-install-docker) to disable Windows PATH translation warnings.
+
 Temporary failures use increasing retry delays, with six consecutive attempts at most.
 Integrity failures block immediately. The status explains the required action.
 Windows can retry a failed supervisor process three times.
@@ -88,13 +94,14 @@ Each experiment retains the 20 GiB storage ceiling.
 ## Validation
 
 ```bash
-.cache/rlm-env/bin/python -m unittest test_continuous_learning
+.cache/rlm-env/bin/python -m unittest test_continuous_learning test_learning_bootstrap
 ```
 
 On Windows:
 
 ```powershell
 powershell.exe -NoProfile -File .\test_learning_continuous.ps1
+powershell.exe -NoProfile -File .\test_learning_bootstrap.ps1
 ```
 
 These checks cover durable control, retry limits, historical accounting, fresh curriculum handoff, identity exclusions, recovery, retention, and Windows task settings.

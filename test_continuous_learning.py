@@ -176,7 +176,9 @@ class ContinuousTests(unittest.TestCase):
         (self.root/'.cache/learning').mkdir(parents=True)
         with patch.object(self.controller,'validate'),patch.object(confirmation,'ROOT',self.root), \
              patch.object(confirmation,'grade',side_effect=lambda task,patch:{'passed':patch['solution.py']=='correct'}), \
-             patch.object(confirmation.subprocess,'Popen',side_effect=AssertionError('Completed checks were repeated')):
+             patch.object(confirmation.subprocess,'Popen',side_effect=AssertionError('Completed checks were repeated')), \
+             patch.object(confirmation.socket,'socket') as socket:
+            socket.return_value.__enter__.return_value.connect_ex.return_value=1
             confirmation.compare(self.controller)
         result=json.loads((output/'summary.json').read_text())
         self.assertTrue(result['completed']);self.assertTrue(result['same_weights_evaluated_once'])

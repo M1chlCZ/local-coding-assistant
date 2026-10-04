@@ -330,11 +330,15 @@ def main():
             controller=Controller.create(args.session,args.adopt)
             from continuous_data import initialize
             initialize(controller.path/'pool',row=args.start_row)
-            names=('continuous_learning.py','continuous_data.py','continuous_confirmation.py','research/opencode-source.json')
+            names=('continuous_learning.py','continuous_data.py','continuous_confirmation.py','learning_bootstrap.py','research/opencode-source.json')
             atomic_json(controller.path/'binding.json',{n:sha256(ROOT/n) for n in names})
             print(json.dumps(controller.snapshot()));return
         controller=Controller(args.session)
-        if args.action=='run':controller.run()
+        if args.action=='run':
+            from learning_bootstrap import check_ready, RETRY_EXIT
+            ready,reason=check_ready(controller.path,continuous=True)
+            if not ready:parser.exit(RETRY_EXIT,reason+'; retry in a fresh WSL process\n')
+            controller.run()
         elif args.action=='status':print(json.dumps(controller.snapshot()))
         else:controller.control(args.action);print(json.dumps(controller.snapshot()))
     except (ValueError,OSError,RuntimeError) as error:parser.exit(1,str(error)+'\n')

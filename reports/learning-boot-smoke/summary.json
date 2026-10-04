@@ -1,0 +1,32 @@
+{
+  "scope": "Startup and recovery checks. No new model-quality claim.",
+  "before": {
+    "worker_windows_drive_mounted": false,
+    "teacher_model_visible_in_worker": false,
+    "missing_model_retries": true
+  },
+  "after": {
+    "native_readiness_probe_ready": true,
+    "windows_drive_visible_in_actual_worker": true,
+    "teacher_model_visible_in_actual_worker": true,
+    "fresh_worker_stderr_bytes": 0,
+    "cuda_evaluation_running": true,
+    "resumed_round": 7,
+    "saved_control_unchanged": true,
+    "historical_active_time_preserved": true,
+    "critical_trainer_source_unchanged": true,
+    "other_wsl_distributions_restarted": false
+  },
+  "validation": {
+    "cpu_checks_passed": 22,
+    "windows_startup_control_checks_passed": true,
+    "dedicated_distribution_cold_start_tested": true,
+    "full_windows_reboot_after_fix_tested": false
+  },
+  "changes": [
+    "Fresh WSL readiness probes before long-lived startup",
+    "Retry a worker in a new process when its model drive is unavailable",
+    "Retry the native WSL CreateInstance timeout during readiness checks",
+    "Disable imported Windows PATH in the dedicated research distribution"
+  ]
+}
