@@ -3,6 +3,7 @@ import argparse
 import copy
 import fcntl
 import json
+import math
 import os
 import shutil
 import signal
@@ -16,6 +17,7 @@ from training_data import registry, sha256
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT = ROOT/'.cache/learning/continuous'
+EXPERIMENT_SECONDS = 6 * 3600
 
 
 def read(path, default=None):
@@ -56,6 +58,22 @@ class Controller:
     def desired(self):
         return read(self.path/'command.json',{'action':'pause'})['action']
 
+    def set_hours(self,hours):
+        """Change an idle experiment's limit without resetting work or resuming it."""
+        if not math.isfinite(hours) or not .01<=hours<=24:
+            raise ValueError('Use an experiment limit between 0.01 and 24 hours')
+        child=self.child_state()
+        if (self.desired() not in ('pause','stop') or child_busy(self.path)
+                or child_busy(self.state['child']) or child.get('status') not in ('paused','completed','stopped','failed')):
+            raise ValueError('Pause learning and release the idle supervisor before changing its duration')
+        seconds=hours*3600
+        history=self.state.get('duration_changes',[])+[{'previous_limit_seconds':child.get('limit_seconds'),
+            'limit_seconds':seconds,'active_seconds_preserved':child.get('active_seconds',0),'changed_at':time.time()}]
+        self.save(experiment_limit_seconds=seconds,duration_changes=history)
+        if child.get('status') not in ('completed','stopped'):
+            atomic_json(Path(self.state['child'])/'status.json',{**child,'limit_seconds':seconds})
+        self.snapshot(persist=True)
+
     def child_state(self):
         return read(Path(self.state['child'])/'status.json',{})
 
@@ -87,9 +105,10 @@ class Controller:
                'child_status':child.get('status'),'child_active_seconds':child.get('active_seconds'),
                'child_limit_seconds':child.get('limit_seconds'),'batches':self.state['batches'],
                'supervisor_detail':self.state['detail'],'retry_at':self.state['retry_at']}
+        limit=child.get('limit_seconds',self.state.get('experiment_limit_seconds',EXPERIMENT_SECONDS))
         value['benchmark']={
-            'schedule':'After each experiment, at most 12 active training hours; unchanged weights reuse verified results',
-            'next_after_active_seconds':max(0,child.get('limit_seconds',43200)-child.get('active_seconds',0)),
+            'schedule':f'After each experiment, at most {limit/3600:g} active training hours; unchanged weights reuse verified results',
+            'next_after_active_seconds':max(0,limit-child.get('active_seconds',0)),
             'last':read(self.path/'benchmarks/latest.json'),
             'progress':read(Path(self.state['benchmark_output'])/'status.json',{'status':'starting'})
                 if self.state.get('auxiliary_active') and self.state['detail'].startswith('Scheduled HumanEval') else None}
@@ -262,7 +281,8 @@ class Controller:
             state.pop(key,None)
         for field in ('best_adapter','research_adapter'):
             if state.get(field):state[field]=self.stash_adapter(state[field])
-        state.update(status='paused',phase='collect',round=2,active_seconds=0,limit_seconds=43200,
+        state.update(status='paused',phase='collect',round=2,active_seconds=0,
+            limit_seconds=self.state.get('experiment_limit_seconds',EXPERIMENT_SECONDS),
             completed_rounds=[],accepted_rounds=[],collected=0,passed=0,training=None,evaluation=None,
             rounds_without_repairs=0,pid=None,detail='Fresh continuous curriculum; accepted model preserved')
         atomic_json(child/'confirmation-tasks.json',confirm)
@@ -407,10 +427,11 @@ class Controller:
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=('init','run','status','pause','resume','stop'))
+    parser.add_argument('action',choices=('init','run','status','pause','resume','stop','set-hours'))
     parser.add_argument('--session',type=Path,default=DEFAULT)
     parser.add_argument('--adopt',type=Path)
     parser.add_argument('--start-row',type=int,default=0)
+    parser.add_argument('--hours',type=float,default=6)
     args=parser.parse_args()
     try:
         if args.action=='init':
@@ -436,6 +457,7 @@ def main():
             if not ready:parser.exit(RETRY_EXIT,reason+'; retry in a fresh WSL process\n')
             controller.run()
         elif args.action=='status':print(json.dumps(controller.snapshot()))
+        elif args.action=='set-hours':controller.set_hours(args.hours);print(json.dumps(controller.snapshot()))
         else:controller.control(args.action);print(json.dumps(controller.snapshot()))
     except (ValueError,OSError,RuntimeError) as error:parser.exit(1,str(error)+'\n')
 

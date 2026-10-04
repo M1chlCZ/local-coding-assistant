@@ -9,6 +9,12 @@ Each 16-example round starts with eight examples in its main language.
 Eight examples cover the other languages. The main language rotates each round.
 Training also replays the original verified anchor and the last five rounds.
 
+Each experiment has a six-active-hour limit, followed by confirmation and full audits.
+Teacher collection allows 180 seconds per task. Matched development checks keep their 120-second limit.
+Multilingual warm updates use a learning rate of `2.5e-6`, half the previous rate.
+This is a conservative recipe trial after updates lost earlier passes. It does not establish an improvement.
+The 5, 10, and 20-step trials, 4,096-token limit, replay, and acceptance rules stay the same.
+
 ## Data and checks
 
 The loop downloads pinned [CodeContests](https://github.com/google-deepmind/code_contests) training shards.

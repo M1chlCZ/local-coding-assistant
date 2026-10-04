@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 MODEL = 'Qwen/Qwen3-4B'
 REVISION = '1cfa9a7208912126459214e8b04321603b3df60c'
 LIMITS = {'calls': 8, 'output_tokens': 4096, 'seconds': 120}
+TEACHER_LIMITS = {**LIMITS, 'seconds': 180}
 SETTINGS = {'mode': 'rlm', 'depth': 2, 'instruction': ''}
 DEFAULT = ROOT/'.cache/learning/tuned'
 SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
@@ -205,7 +206,7 @@ class Session:
             '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
             '--model', MODEL, '--revision', REVISION, '--output', str(round_path/'adapter'),
             '--max-steps', str(steps), '--max-epochs', '1', '--learning-rate',
-            '0.000005' if warm else '0.00005',
+            ('0.0000025' if self.state.get('polyglot') else '0.000005') if warm else '0.00005',
             '--max-length', '4096', '--save-steps', '5',
             '--pause-file', str(self.path/'pause-training')]
         if warm:
@@ -246,7 +247,7 @@ class Session:
         report_path = folder/'teacher.json'
         report = json.loads(report_path.read_text()) if report_path.exists() else {
             'schema_version': 1, 'split': 'train', 'tasks_sha256': sha256(tasks_path),
-            'settings': SETTINGS, 'limits': LIMITS, 'tasks': []}
+            'settings': SETTINGS, 'limits': TEACHER_LIMITS, 'tasks': []}
         if not current:
             atomic_json(report_path, report)
             self.save(status='completed', completion_reason='curriculum_exhausted',
@@ -269,7 +270,7 @@ class Session:
             if task.get('language'):
                 if task.get('source_reference_passed') is not True:
                     raise ValueError('Unvalidated multilingual fixture: '+task['id'])
-                row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
+                row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **TEACHER_LIMITS)
                 if row.get('patch'):row.update(grade(task,row['patch']))
             else:
                 reference = grade(task, task['reference_patch'])
@@ -284,7 +285,7 @@ class Session:
                 else:
                     if grade(task, {p: task['files'][p] for p in task['editable']})['passed']:
                         raise ValueError('Broken task already passes: '+task['id'])
-                    row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
+                    row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **TEACHER_LIMITS)
                     if row.get('patch'):row.update(grade(task,row['patch']))
             report['tasks'].append(row)
             atomic_json(report_path, report)

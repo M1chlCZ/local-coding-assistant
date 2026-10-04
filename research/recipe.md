@@ -8,7 +8,9 @@ The [Windows learning session](learning-session.md) adds tested repair examples,
 The [reserved comparison](confirmation.md) records the latest 4B adapter checks and session recovery behavior.
 
 The [multilingual recipe](polyglot.md) adds compiler checks and scheduled HumanEval / MultiPL-E audits for five programming languages.
-It uses the existing CUDA student. Multilingual gains still require matched evaluation.
+It uses the existing CUDA student, six-hour experiments, and a conservative learning-rate trial.
+Teacher collection allows three minutes per task; quality checks keep the same limits.
+Multilingual gains still require matched evaluation.
 
 Run PowerShell from the project folder on the PC.
 Use Python 3.14, Git, and a CUDA GPU for research.

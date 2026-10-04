@@ -18,12 +18,13 @@ if(-not (Format-LearningProgress $State).Contains('Training: 3/5')){throw 'Train
 $State.phase='collect';$State|Add-Member -NotePropertyName collected -NotePropertyValue 2;$State|Add-Member -NotePropertyName passed -NotePropertyValue 1
 if(-not (Format-LearningProgress $State).Contains('Examples: 2 collected, 1 passed')){throw 'Collection progress is hidden.'}
 $State|Add-Member -NotePropertyName continuous -NotePropertyValue $true
+$State|Add-Member -NotePropertyName child_limit_seconds -NotePropertyValue 21600
 $State|Add-Member -NotePropertyName benchmark -NotePropertyValue @{
     next_after_active_seconds=7200;
     last=@{base_passed=118;adapter_passed=121;total=164;gained=14;lost=11;reused=$false};
     progress=@{status='running';phase='adapter';completed=42;total=164}}
 $Text=Format-LearningProgress $State
-foreach($Expected in @('Next coding benchmark:','2 active hours','Last coding benchmark: base 118/164; adapter 121/164','gained 14; lost 11','Coding benchmark:  adapter 42/164')){
+foreach($Expected in @('Next coding benchmark:','2 active hours','6-hour training maximum','Last coding benchmark: base 118/164; adapter 121/164','gained 14; lost 11','Coding benchmark:  adapter 42/164')){
     if(-not $Text.Contains($Expected)){throw ('Missing scheduled benchmark progress: '+$Expected)}
 }
 $State.benchmark.progress=$null;$State.benchmark.last.reused=$true

@@ -18,7 +18,7 @@ The Mac chat does not start each comparison.
 | When | Check | Result use |
 | --- | --- | --- |
 | After each training round | Development repairs | Accept only complete results with more passes and no lost tasks |
-| After each experiment, with a 12-active-hour limit | 20 fresh reserved repairs | Compare the base, starting adapter, and final adapter. Return to the starting adapter after a regression |
+| After each experiment, with a six-active-hour limit | 20 fresh reserved repairs | Compare the base, starting adapter, and final adapter. Return to the starting adapter after a regression |
 | After that fresh comparison, before the next experiment | Full 164-task HumanEval comparison | Report coding outcomes and speed for the adapter that continues |
 
 HumanEval runs again only when the accepted weights change.

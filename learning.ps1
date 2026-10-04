@@ -133,7 +133,8 @@ function Format-LearningProgress($Value) {
         if ($Value.status -eq 'paused') { $Lines += 'GPU released for gaming. Click Resume when ready.' }
         if ($Value.benchmark) {
             $Remaining = [Math]::Round($Value.benchmark.next_after_active_seconds/3600,2)
-            $Lines += "Next coding benchmark: after this experiment; about $Remaining active hours remain (12-hour maximum)."
+            $ExperimentLimit = [Math]::Round($Value.child_limit_seconds/3600,2)
+            $Lines += "Next coding benchmark: after this experiment; about $Remaining active hours remain ($ExperimentLimit-hour training maximum)."
             $Last = $Value.benchmark.last
             if ($Last) {
                 $Lines += "Last coding benchmark: base $($Last.base_passed)/$($Last.total); adapter $($Last.adapter_passed)/$($Last.total); gained $($Last.gained); lost $($Last.lost)"

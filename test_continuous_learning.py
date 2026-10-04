@@ -24,6 +24,46 @@ class ContinuousTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_six_hour_setting_preserves_clocks_and_saved_work(self):
+        self.status.update(status='paused',limit_seconds=43200,best_adapter='saved-checkpoint')
+        atomic_json(self.parent/'status.json',self.status)
+        self.controller.control('pause')
+        self.controller.set_hours(6)
+        reopened=Controller(self.path)
+        self.assertEqual(reopened.state['experiment_limit_seconds'],21600)
+        value=reopened.snapshot()
+        self.assertEqual(value['child_limit_seconds'],21600)
+        self.assertEqual(value['active_seconds'],27000)
+        self.assertEqual(value['child_active_seconds'],27000)
+        self.assertEqual(value['best_adapter'],'saved-checkpoint')
+        self.assertEqual(value['best_dev'],self.status['best_dev'])
+        self.assertEqual(value['desired'],'pause')
+        self.assertEqual(value['child_status'],'paused')
+        self.assertEqual(value['benchmark']['next_after_active_seconds'],0)
+        self.assertIn('6 active training hours',value['benchmark']['schedule'])
+
+    def test_duration_change_never_restarts_a_finished_or_stopped_session(self):
+        for status in ('completed','stopped'):
+            self.status.update(status=status,limit_seconds=43200)
+            atomic_json(self.parent/'status.json',self.status)
+            self.controller.control('stop')
+            before=json.loads((self.parent/'status.json').read_text())
+            self.controller.set_hours(6)
+            self.assertEqual(json.loads((self.parent/'status.json').read_text()),before)
+            self.assertEqual(self.controller.desired(),'stop')
+            self.assertFalse(self.controller.should_launch())
+
+    def test_duration_change_requires_an_idle_paused_worker(self):
+        with self.assertRaises(ValueError):self.controller.set_hours(6)
+        self.controller.control('pause')
+        self.status['status']='paused';atomic_json(self.parent/'status.json',self.status)
+        import fcntl
+        with (self.parent/'worker.lock').open('a') as lock:
+            fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            with self.assertRaises(ValueError):self.controller.set_hours(6)
+        for hours in (0,25,float('nan'),float('inf')):
+            with self.assertRaises(ValueError):self.controller.set_hours(hours)
+
     def test_pause_is_durable_and_forwarded_before_acknowledgement(self):
         self.controller.control('pause')
         self.assertEqual(json.loads((self.parent/'command.json').read_text())['action'], 'pause')
@@ -133,6 +173,7 @@ class ContinuousTests(unittest.TestCase):
         child=self.controller.prepare_child(source)
         state=json.loads((child/'status.json').read_text())
         self.assertEqual(state['active_seconds'],0)
+        self.assertEqual(state['limit_seconds'],21600)
         self.assertEqual(self.controller.snapshot()['active_seconds'],27000)
         rows=json.loads((child/'round-003/tasks.json').read_text())
         self.assertEqual(len(rows),33)

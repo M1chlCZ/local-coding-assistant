@@ -6,7 +6,7 @@ A local supervisor owns fresh data preparation, bounded experiments, retries, an
 
 Each experiment retains its time and storage limits.
 When it finishes, the supervisor prepares another experiment with fresh checked tasks.
-The overall training clock carries forward. Continuous mode has no overall 12-hour cutoff.
+The overall training clock carries forward. Continuous mode has no overall time cutoff.
 
 ## Prepare
 
@@ -83,7 +83,10 @@ Repeated development checks can overfit. Continuous updates do not guarantee con
 
 After the fresh comparison, the supervisor runs the [full HumanEval audit](benchmarking.md#automatic-schedule).
 It evaluates the adapter selected for the next experiment, including a required rollback.
-Each experiment has a 12-active-hour limit. An earlier experiment end also starts the audit.
+Each experiment has a six-active-hour limit. An earlier experiment end also starts the audit.
+The limit counts active learning work, including data collection and development checks.
+Pause and shutdown retain the elapsed clock. Confirmation and full audits can take additional time.
+An idle paused supervisor accepts `continuous_learning.py set-hours --hours 6`; this preserves elapsed work and saved models.
 Unchanged accepted weights reuse a verified complete result without GPU generation.
 Interrupted audits retain finished tasks. Resume and login recovery continue them automatically.
 HumanEval reports trends and does not supply training targets or select checkpoints.
