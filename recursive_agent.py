@@ -90,7 +90,11 @@ class Sandbox:
         self.reader = self.writer = None
         name = 'local-rlm-' + uuid.uuid4().hex
         self.container = name  # Retain ownership even if Docker creation times out.
-        command = container_command(IMAGE)
+        if isinstance(context_payload, dict) and context_payload.get('language'):
+            from polyglot_runtime import container_command as native_command
+            command = native_command()
+        else:
+            command = container_command(IMAGE)
         command[2:2] = ['--name', name, '--label', 'local-coding-assistant.rlm=true']
         try:
             self.container = subprocess.check_output(command + ['sleep', '3600'], text=True, timeout=30).strip()
@@ -315,7 +319,7 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                          sampling_args={'temperature': 0, 'max_completion_tokens': 1024,
                          'extra_body': {'chat_template_kwargs': {'enable_thinking': False}}})
             result = runner.completion({'files': task['files'], 'editable': task['editable'],
-                                        'task': task['prompt']}, root_prompt=task['prompt'])
+                                        'task': task['prompt'], **({'language':task['language']} if task.get('language') else {})}, root_prompt=task['prompt'])
             row['answer'] = result.response
             row['patch'] = parse_patch(result.response, task)
     except Exception as error:
@@ -332,6 +336,9 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
 def grade(task, changes):
     """Functional checks, not a hostile-code verifier: imported Python shares the grader process."""
     changes = parse_patch(json.dumps(changes), task)
+    if task.get('language'):
+        from polyglot_runtime import grade as native_grade
+        return native_grade(task, changes)
     files = {**task['files'], **changes}
     marker = 'RLM_CHECKS_PASSED_' + uuid.uuid4().hex
     program = ('import json,pathlib,sys,traceback\nfiles=json.loads('+repr(json.dumps(files))+')\n'
@@ -357,7 +364,7 @@ def snapshot(root):
     files = {}
     for path in sorted(root.rglob('*')):
         relative = path.relative_to(root).as_posix()
-        if not valid_path(relative) or path.is_symlink() or path.suffix not in ('.py','.md'):
+        if not valid_path(relative) or path.is_symlink() or path.suffix not in ('.py','.md','.go','.ts','.tsx','.rs','.dart'):
             continue
         if any((root.joinpath(*Path(relative).parts[:n])).is_symlink() for n in range(1,len(Path(relative).parts))):
             continue
@@ -368,7 +375,7 @@ def snapshot(root):
             if len(files)>256 or sum(len(x.encode()) for x in files.values())>2*1024*1024:
                 raise ValueError('Repository snapshot exceeds 256 files or 2 MiB')
     if not files:
-        raise ValueError('No readable Python or Markdown files')
+        raise ValueError('No readable source or Markdown files')
     return files
 
 

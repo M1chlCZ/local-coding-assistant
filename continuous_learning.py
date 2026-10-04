@@ -99,6 +99,17 @@ class Controller:
     def attach(self,child):
         self.snapshot(persist=True);self.save(child=str(Path(child).resolve()),status='running',failures=0,retry_at=0)
 
+    def attach_continuation(self,child):
+        """Move the carried clock to a new source generation, without counting it twice."""
+        value=self.snapshot(persist=True);old=self.state['child'];child=str(Path(child).resolve())
+        new=read(Path(child)/'status.json')
+        if new['active_seconds']!=value['child_active_seconds'] or new.get('limit_seconds')!=self.child_state().get('limit_seconds'):
+            raise ValueError('Continuation must preserve active time and budget')
+        history=self.state.get('continuations',[])+[{'parent':old,'child':child,
+            'active_seconds_carried':new['active_seconds'],'prepared_at':time.time()}]
+        clocks=dict(self.state['active_by_child']);clocks[child]=clocks.pop(old)
+        self.save(child=child,active_by_child=clocks,continuations=history,status='running',failures=0,retry_at=0,polyglot=True)
+
     def failure(self,detail,now=None):
         now=time.time() if now is None else now
         failures=self.state['failures']+1
@@ -117,6 +128,9 @@ class Controller:
         child=self.child_state()
         if child.get('sources')!={name:sha256(ROOT/name) for name in learning.SOURCE_FILES}:
             raise ValueError('Session source changed; restore the bound trainer before resuming')
+        if child.get('polyglot'):
+            from polyglot_runtime import image
+            if image()!=child.get('compiler_image'):raise ValueError('Compiler image changed; review before continuing')
         binding=read(self.path/'binding.json')
         if binding and any(sha256(ROOT/name)!=digest for name,digest in binding.items()):
             raise ValueError('Continuous source manifest changed; review before continuing')
@@ -129,6 +143,36 @@ class Controller:
         adapter=Path(child['confirmation']['baseline_adapter'] if confirmation.get('regressions') else child['best_adapter'])
         digest=sha256(adapter/'adapter_model.safetensors')
         return adapter,self.path/'benchmarks'/digest
+
+    def audit_command(self):
+        adapter,output=self.benchmark_target()
+        polyglot=self.child_state().get('polyglot')
+        if polyglot:output=self.path/'polyglot-benchmarks'/output.name
+        runner='research/polyglot_benchmark.py' if polyglot else 'research/student_benchmark.py'
+        executable=str(ROOT/'.cache/data-env/bin/python') if polyglot else sys.executable
+        return [executable,str(ROOT/runner),'--adapter',str(adapter),'--output',str(output)],output
+
+    def record_polyglot_benchmark(self,output,reused):
+        from research.polyglot_benchmark import SOURCES,load_tasks,summarize
+        _,tasks=load_tasks();binding=read(output/'binding.json')
+        if binding['sources']!={n:sha256(ROOT/n) for n in SOURCES} or binding.get('smoke_limit'):
+            raise ValueError('Multilingual audit source changed or report is partial')
+        reports={m:{l:read(output/(m+'-'+l+'.json')) for l in binding['languages']} for m in ('base','adapter')}
+        summary=summarize(binding,tasks,reports)
+        if summary!=read(output/'summary.json'):raise ValueError('Multilingual benchmark summary changed')
+        adapter,_=self.benchmark_target()
+        if binding['adapter_sha256']!=sha256(adapter/'adapter_model.safetensors'):
+            raise ValueError('Multilingual audit belongs to different weights')
+        languages=summary['languages']
+        atomic_json(self.path/'benchmarks/latest.json',{
+            'benchmark':'HumanEval / MultiPL-E','languages':languages,'macro_pass_at_1':summary['macro_pass_at_1'],
+            'adapter_sha256':binding['adapter_sha256'],'experiment':Path(self.state['child']).name,
+            'reported_at':time.time(),'active_seconds':self.snapshot()['active_seconds'],'reused':reused,
+            'base_passed':sum(v['models']['base']['passed'] for v in languages.values()),
+            'adapter_passed':sum(v['models']['adapter']['passed'] for v in languages.values()),
+            'total':sum(v['models']['base']['total'] for v in languages.values()),
+            'gained':sum(len(v['gained']) for v in languages.values()),'lost':sum(len(v['lost']) for v in languages.values()),
+            'report':str(output/'summary.json'),'purpose':'Reporting only; no training or checkpoint selection'})
 
     def record_benchmark(self,output,reused):
         from research.student_benchmark import SOURCES,load_report,load_tasks,summarize
@@ -167,7 +211,7 @@ class Controller:
         return str(target)
 
     def pending_tasks(self):
-        for folder in sorted((self.path/'pool').glob('batch-*')):
+        for folder in sorted((self.path/('polyglot-pool' if self.state.get('polyglot') else 'pool')).glob('batch-*')):
             if int(folder.name[6:])>self.state.get('last_consumed_sequence',0) and (folder/'manifest.json').exists():
                 return folder/'tasks.json'
         return None
@@ -176,13 +220,17 @@ class Controller:
         import learning_session as learning
         parent=Path(self.state['child']);old=self.child_state();self.validate()
         if tasks_file.parent.name.startswith('batch-'):
-            from continuous_data import MANIFEST
+            if self.state.get('polyglot'):
+                from polyglot_data import MANIFEST
+            else:
+                from continuous_data import MANIFEST
             manifest=read(tasks_file.parent/'manifest.json')
             if manifest['source_manifest_sha256']!=sha256(MANIFEST) or manifest['tasks_sha256']!=sha256(tasks_file):
                 raise ValueError('Queued curriculum digest failed integrity verification')
         all_tasks=list(registry(tasks_file).values()) if read(tasks_file) else []
         train=[t for t in all_tasks if t['split']=='train'][:256]
-        confirm=[t for t in all_tasks if t['split']=='dev'][:20]
+        excluded={t['repository'] for t in read(parent/'development-tasks.json',[])}
+        confirm=[t for t in all_tasks if t['split']=='dev' and t['repository'] not in excluded][:20]
         if len(train)<16 or len(confirm)<20:
             self.save(last_consumed_sequence=int(tasks_file.parent.name[6:]) if tasks_file.parent.name.startswith('batch-') else self.state.get('last_consumed_sequence',0),detail='Validated window too small; advancing to another public window')
             return None
@@ -247,7 +295,7 @@ class Controller:
         for folder in (self.path/'models').glob('*'):
             if str(folder/'checkpoint') not in protected:shutil.rmtree(folder)
         # Source batches are already copied into child registries; retain two newest windows.
-        for folder in sorted((self.path/'pool').glob('batch-*'))[:-2]:shutil.rmtree(folder)
+        for folder in sorted((self.path/('polyglot-pool' if self.state.get('polyglot') else 'pool')).glob('batch-*'))[:-2]:shutil.rmtree(folder)
 
     def run_process(self,command,log,forward=True):
         # Existing Session ownership records protect model children across a supervisor crash.
@@ -328,17 +376,16 @@ class Controller:
                     self.save(status='running',detail='Completing reserved matched confirmation checks')
                     command=[sys.executable,str(ROOT/'continuous_confirmation.py'),'--controller',str(self.path)]
                     if not self.run_process(command,self.path/'confirmation.log',forward=False):continue
-                    adapter,output=self.benchmark_target()
+                    command,output=self.audit_command()
                     reused=(output/'summary.json').exists()
-                    self.save(benchmark_output=str(output),detail='Scheduled HumanEval comparison; complete reports required')
-                    command=[sys.executable,str(ROOT/'research/student_benchmark.py'),
-                             '--adapter',str(adapter),'--output',str(output)]
+                    self.save(benchmark_output=str(output),detail='Scheduled HumanEval / MultiPL-E comparison; complete reports required')
                     if not self.run_process(command,self.path/'benchmark.log',forward=False):continue
-                    self.record_benchmark(output,reused)
+                    if status.get('polyglot'):self.record_polyglot_benchmark(output,reused)
+                    else:self.record_benchmark(output,reused)
                     tasks=self.pending_tasks()
                     if tasks is None:
                         self.save(detail='Preparing fresh pinned public fixtures; no GPU needed')
-                        command=[str(ROOT/'.cache/data-env/bin/python'),str(ROOT/'continuous_data.py'),'--pool',str(self.path/'pool')]
+                        command=[str(ROOT/'.cache/data-env/bin/python'),str(ROOT/('polyglot_data.py' if self.state.get('polyglot') else 'continuous_data.py')),'--pool',str(self.path/('polyglot-pool' if self.state.get('polyglot') else 'pool'))]
                         if not self.run_process(command,self.path/'curriculum.log',forward=False):continue
                         tasks=self.pending_tasks()
                     if tasks is None:raise ValueError('Prepared curriculum is missing')

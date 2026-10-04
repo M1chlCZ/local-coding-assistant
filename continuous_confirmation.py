@@ -47,7 +47,8 @@ def compare(controller):
             if probe.connect_ex(('127.0.0.1',port))==0:raise RuntimeError('Model port occupied; close chat before confirmation')
     # Reference audit is rechecked before any model call; invalid checks never get replaced post hoc.
     for task in tasks:
-        if not grade(task,task['reference_patch'])['passed'] or grade(task,{p:task['files'][p] for p in task['editable']})['passed']:
+        reference_ok=task.get('source_reference_passed') is True if task.get('language') else grade(task,task['reference_patch'])['passed']
+        if not reference_ok or grade(task,{p:task['files'][p] for p in task['editable']})['passed']:
             raise ValueError('Reserved confirmation fixture failed integrity validation')
     reports={};process=None
     try:

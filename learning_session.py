@@ -20,7 +20,9 @@ SETTINGS = {'mode': 'rlm', 'depth': 2, 'instruction': ''}
 DEFAULT = ROOT/'.cache/learning/tuned'
 SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
                 'recursive_agent.py', 'rlm_worker.py', 'research/adapter_eval_server.py',
-                'launcher.py', 'wsl_server.py', 'research/repair_tasks.json')
+                'launcher.py', 'wsl_server.py', 'research/repair_tasks.json',
+                'polyglot_runtime.py', 'polyglot_data.py', 'polyglot_session.py',
+                'research/Polyglot.Dockerfile', 'research/codecontests-source.json')
 
 
 def development_tasks(extra=None):
@@ -109,6 +111,10 @@ class Session:
             raise ValueError('Original task registry changed; use a new session')
         if self.state.get('sources') != sources:
             raise ValueError('Session source changed; restore the original source or use a new session')
+        if self.state.get('polyglot'):
+            from polyglot_runtime import image
+            if image()!=self.state.get('compiler_image'):
+                raise ValueError('Compiler image changed; use a reviewed new session')
         extra = self.path/'development-tasks.json'
         if self.state.get('development_tasks_sha256') != (sha256(extra) if extra.exists() else None):
             raise ValueError('Development checks changed; use a new session')
@@ -227,6 +233,9 @@ class Session:
 
     def collect(self, folder):
         from recursive_agent import grade, solve
+        if self.state.get('polyglot'):
+            from polyglot_session import establish_baseline
+            if not establish_baseline(self, folder):return
         tasks_path = folder/'tasks.json'
         if not tasks_path.exists():
             old = [] if self.state['round'] == 1 else json.loads(
@@ -256,22 +265,27 @@ class Session:
             self.save(detail='Teacher task '+task['id'])
             if self.interrupted():
                 return
-            # Reference repairs validate fixtures, never supply a training answer.
-            reference = grade(task, task['reference_patch'])
-            if not reference['passed']:
-                feedback = reference.get('feedback', '')
-                if (task.get('provenance', {}).get('dataset')!='nvidia/OpenCodeInstruct'
-                        or not feedback.startswith('Traceback (most recent call last):')):
-                    raise ValueError('Reference failed: '+task['id'])
-                row = {key:task[key] for key in ('id','repository','split')}
-                row.update(mode='rlm', depth=2, passed=False, trace=[], quarantined=True,
-                           feedback=feedback, error='Public reference tests failed; excluded from training')
-            else:
-                if grade(task, {p: task['files'][p] for p in task['editable']})['passed']:
-                    raise ValueError('Broken task already passes: '+task['id'])
+            # Public source references validate fixtures; model outputs supply the training traces.
+            if task.get('language'):
+                if task.get('source_reference_passed') is not True:
+                    raise ValueError('Unvalidated multilingual fixture: '+task['id'])
                 row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
-                if row.get('patch'):
-                    row.update(grade(task, row['patch']))
+                if row.get('patch'):row.update(grade(task,row['patch']))
+            else:
+                reference = grade(task, task['reference_patch'])
+                if not reference['passed']:
+                    feedback = reference.get('feedback', '')
+                    if (task.get('provenance', {}).get('dataset')!='nvidia/OpenCodeInstruct'
+                            or not feedback.startswith('Traceback (most recent call last):')):
+                        raise ValueError('Reference failed: '+task['id'])
+                    row = {key:task[key] for key in ('id','repository','split')}
+                    row.update(mode='rlm', depth=2, passed=False, trace=[], quarantined=True,
+                               feedback=feedback, error='Public reference tests failed; excluded from training')
+                else:
+                    if grade(task, {p: task['files'][p] for p in task['editable']})['passed']:
+                        raise ValueError('Broken task already passes: '+task['id'])
+                    row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **LIMITS)
+                    if row.get('patch'):row.update(grade(task,row['patch']))
             report['tasks'].append(row)
             atomic_json(report_path, report)
             self.save(collected=len(report['tasks']), passed=sum(r['passed'] for r in report['tasks']))
@@ -305,7 +319,7 @@ class Session:
             reports = []
             digest = sha256(folder/'tasks.json')
             # Research keeps its original verified anchor rather than diluting it with recent rounds.
-            rounds = sorted({1, self.state['round']}) if self.state.get('research') else range(max(1, self.state['round']-3), self.state['round']+1)
+            rounds = sorted({1, *range(max(2,self.state['round']-4),self.state['round']+1)}) if self.state.get('polyglot') else sorted({1, self.state['round']}) if self.state.get('research') else range(max(1, self.state['round']-3), self.state['round']+1)
             for number in rounds:
                 original = self.path/f'round-{number:03d}/teacher.json'
                 value = json.loads(original.read_text())
@@ -437,6 +451,9 @@ class Session:
                   'evaluated':len(reports['adapter']['tasks']), 'complete':complete,
                   'early_rejected':reports['adapter'].get('early_rejected',False),
                   'warning': 'Small repeated development set; no general quality claim. Holdout unused.'}
+        if self.state.get('polyglot'):
+            from polyglot_session import language_scores
+            result['languages']=language_scores(tasks,reports['adapter'])
         atomic_json(folder/'result.json', result)
         self.state['completed_rounds'].append(result)
         if keep:

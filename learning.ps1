@@ -133,16 +133,24 @@ function Format-LearningProgress($Value) {
         if ($Value.status -eq 'paused') { $Lines += 'GPU released for gaming. Click Resume when ready.' }
         if ($Value.benchmark) {
             $Remaining = [Math]::Round($Value.benchmark.next_after_active_seconds/3600,2)
-            $Lines += "Next HumanEval audit: after this experiment; about $Remaining active hours remain (12-hour maximum)."
+            $Lines += "Next coding benchmark: after this experiment; about $Remaining active hours remain (12-hour maximum)."
             $Last = $Value.benchmark.last
             if ($Last) {
-                $Lines += "Last HumanEval: base $($Last.base_passed)/$($Last.total); adapter $($Last.adapter_passed)/$($Last.total); gained $($Last.gained); lost $($Last.lost)"
-                if ($Last.reused) { $Lines += 'HumanEval: unchanged weights; verified result reused.' }
+                $Lines += "Last coding benchmark: base $($Last.base_passed)/$($Last.total); adapter $($Last.adapter_passed)/$($Last.total); gained $($Last.gained); lost $($Last.lost)"
+                if ($Last.languages) {
+                    foreach ($Property in $Last.languages.PSObject.Properties) {
+                        $Score = $Property.Value.models
+                        $Lines += "$($Property.Name): base $($Score.base.passed)/$($Score.base.total); adapter $($Score.adapter.passed)/$($Score.adapter.total)"
+                    }
+                }
+                if ($Last.reused) { $Lines += 'Coding benchmark: unchanged weights; verified result reused.' }
             }
             $Audit = $Value.benchmark.progress
-            if ($Audit) { $Lines += "HumanEval: $($Audit.phase) $($Audit.completed)/$($Audit.total) ($($Audit.status))" }
+            if ($Audit) { $Lines += "Coding benchmark: $($Audit.language) $($Audit.phase) $($Audit.completed)/$($Audit.total) ($($Audit.status))" }
         }
     }
+    if ($Value.polyglot) { $Lines += 'Languages: Python, Go, TypeScript, Rust, Dart; mixed replay each round' }
+    if ($Value.polyglot -and -not $Value.polyglot_baseline_complete) { $Lines += "Initial multilingual checks: $($Value.evaluation.mode) $($Value.evaluation.completed)/$($Value.evaluation.total)" }
     $Tasks = @($Value.best_dev.tasks | Where-Object { $null -ne $_ })
     if ($Tasks.Count) {
         $Passed = @($Tasks | Where-Object { $_.passed -eq $true }).Count

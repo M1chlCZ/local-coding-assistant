@@ -7,6 +7,9 @@ See the [adapter recipe](adapter-training.md) for the local training path.
 The [Windows learning session](learning-session.md) adds tested repair examples, short training candidates, and quality-based stopping.
 The [reserved comparison](confirmation.md) records the latest 4B adapter checks and session recovery behavior.
 
+The [multilingual recipe](polyglot.md) adds compiler checks and scheduled HumanEval / MultiPL-E audits for five programming languages.
+It uses the existing CUDA student. Multilingual gains still require matched evaluation.
+
 Run PowerShell from the project folder on the PC.
 Use Python 3.14, Git, and a CUDA GPU for research.
 Allow several hundred GB of free disk space.

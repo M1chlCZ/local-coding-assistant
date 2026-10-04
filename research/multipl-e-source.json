@@ -1,0 +1,29 @@
+{
+  "dataset": "nuprl/MultiPL-E",
+  "revision": "28441b6024e71d4a1c1c0f6bf171c935cd5a43f2",
+  "url": "https://huggingface.co/datasets/nuprl/MultiPL-E",
+  "license": "MIT",
+  "attribution": "MultiPL-E authors; OpenAI HumanEval authors",
+  "files": {
+    "go": {
+      "file": "humaneval-go/test-00000-of-00001.parquet",
+      "sha256": "0ea500a7b7a05e80d42512d77a9a8362ba3372d1792a19cd5da79818aa0bb5a2",
+      "bytes": 78121
+    },
+    "typescript": {
+      "file": "humaneval-ts/test-00000-of-00001.parquet",
+      "sha256": "b9090cc4e5a0c06e671811f63d7c35737f8393f1b9d44685472d5a7b1877d136",
+      "bytes": 70294
+    },
+    "rust": {
+      "file": "humaneval-rs/test-00000-of-00001.parquet",
+      "sha256": "92dba15e4da4deb4dbae5e15ce1712c95ec5a63c3ead69886271470309d9d314",
+      "bytes": 75300
+    },
+    "dart": {
+      "file": "humaneval-dart/test-00000-of-00001.parquet",
+      "sha256": "a71b4ff5f86ae5cc1b8824bfafe2ce3edc2be94a0c1811ea45457e8cb1c4efa7",
+      "bytes": 75805
+    }
+  }
+}

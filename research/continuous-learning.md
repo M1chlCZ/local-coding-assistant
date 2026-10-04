@@ -117,3 +117,10 @@ powershell.exe -NoProfile -File .\test_learning_bootstrap.ps1
 
 These checks cover durable control, retry limits, historical accounting, fresh curriculum handoff, identity exclusions, recovery, retention, and Windows task settings.
 They do not simulate a physical reboot or establish model quality.
+
+## Other programming languages
+
+The [multilingual curriculum](polyglot.md) adds Go, TypeScript, Rust, and Dart.
+It rotates the main language and retains mixed replay. Every accepted update must preserve earlier development passes.
+Multilingual mode schedules complete HumanEval / MultiPL-E audits after each experiment.
+The Windows controls show each language when a complete result is available.

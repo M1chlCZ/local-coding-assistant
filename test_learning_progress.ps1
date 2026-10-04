@@ -23,7 +23,7 @@ $State|Add-Member -NotePropertyName benchmark -NotePropertyValue @{
     last=@{base_passed=118;adapter_passed=121;total=164;gained=14;lost=11;reused=$false};
     progress=@{status='running';phase='adapter';completed=42;total=164}}
 $Text=Format-LearningProgress $State
-foreach($Expected in @('Next HumanEval audit:','2 active hours','Last HumanEval: base 118/164; adapter 121/164','gained 14; lost 11','HumanEval: adapter 42/164')){
+foreach($Expected in @('Next coding benchmark:','2 active hours','Last coding benchmark: base 118/164; adapter 121/164','gained 14; lost 11','Coding benchmark:  adapter 42/164')){
     if(-not $Text.Contains($Expected)){throw ('Missing scheduled benchmark progress: '+$Expected)}
 }
 $State.benchmark.progress=$null;$State.benchmark.last.reused=$true
