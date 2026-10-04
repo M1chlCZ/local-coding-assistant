@@ -75,6 +75,9 @@ History-derived ideas need executable tests before training.
 
 ## Measured results
 
+The [benchmark guide](research/benchmarking.md) separates training checks, reserved repair tests, and direct coding benchmarks.
+The trained 4B student receives a matched full HumanEval comparison against its unchanged NF4 base.
+
 RTX 5070 Ti, Ryzen 9 9900X, 32 GB RAM, 8K context:
 
 | Model | Coding subset | Practical pilot | Median decode speed |
