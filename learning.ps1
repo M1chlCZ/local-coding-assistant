@@ -127,6 +127,17 @@ function Format-LearningProgress($Value) {
         $Lines[1] = "Total training hours: $Used; runs until Pause or Stop"
         $Lines += "$($Value.supervisor_detail)"
         if ($Value.status -eq 'paused') { $Lines += 'GPU released for gaming. Click Resume when ready.' }
+        if ($Value.benchmark) {
+            $Remaining = [Math]::Round($Value.benchmark.next_after_active_seconds/3600,2)
+            $Lines += "Next HumanEval audit: after this experiment; about $Remaining active hours remain (12-hour maximum)."
+            $Last = $Value.benchmark.last
+            if ($Last) {
+                $Lines += "Last HumanEval: base $($Last.base_passed)/$($Last.total); adapter $($Last.adapter_passed)/$($Last.total); gained $($Last.gained); lost $($Last.lost)"
+                if ($Last.reused) { $Lines += 'HumanEval: unchanged weights; verified result reused.' }
+            }
+            $Audit = $Value.benchmark.progress
+            if ($Audit) { $Lines += "HumanEval: $($Audit.phase) $($Audit.completed)/$($Audit.total) ($($Audit.status))" }
+        }
     }
     $Tasks = @($Value.best_dev.tasks | Where-Object { $null -ne $_ })
     if ($Tasks.Count) {

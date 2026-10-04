@@ -87,6 +87,12 @@ class Controller:
                'child_status':child.get('status'),'child_active_seconds':child.get('active_seconds'),
                'child_limit_seconds':child.get('limit_seconds'),'batches':self.state['batches'],
                'supervisor_detail':self.state['detail'],'retry_at':self.state['retry_at']}
+        value['benchmark']={
+            'schedule':'After each experiment, at most 12 active training hours; unchanged weights reuse verified results',
+            'next_after_active_seconds':max(0,child.get('limit_seconds',43200)-child.get('active_seconds',0)),
+            'last':read(self.path/'benchmarks/latest.json'),
+            'progress':read(Path(self.state['benchmark_output'])/'status.json',{'status':'starting'})
+                if self.state.get('auxiliary_active') and self.state['detail'].startswith('Scheduled HumanEval') else None}
         if persist:atomic_json(self.path/'status.json',value)
         return value
 
@@ -114,6 +120,36 @@ class Controller:
         binding=read(self.path/'binding.json')
         if binding and any(sha256(ROOT/name)!=digest for name,digest in binding.items()):
             raise ValueError('Continuous source manifest changed; review before continuing')
+
+    def benchmark_target(self):
+        child=self.child_state()
+        confirmation=read(self.path/'confirmations'/Path(self.state['child']).name/'summary.json',{})
+        if child.get('status')!='completed' or not confirmation.get('completed'):
+            raise ValueError('Scheduled audit requires a completed experiment and fresh confirmation')
+        adapter=Path(child['confirmation']['baseline_adapter'] if confirmation.get('regressions') else child['best_adapter'])
+        digest=sha256(adapter/'adapter_model.safetensors')
+        return adapter,self.path/'benchmarks'/digest
+
+    def record_benchmark(self,output,reused):
+        from research.student_benchmark import SOURCES,load_report,load_tasks,summarize
+        binding=read(output/'binding.json',{})
+        if (binding.get('adapter_sha256')!=output.name
+                or binding.get('sources')!={name:sha256(ROOT/name) for name in SOURCES}):
+            raise ValueError('Scheduled benchmark report failed source or adapter integrity checks')
+        _,tasks=load_tasks()
+        reports={name:load_report(output/f'{name}.json',binding,tasks) for name in ('base','adapter')}
+        summary=summarize(binding,tasks,reports)
+        if read(output/'summary.json')!=summary:
+            raise ValueError('Scheduled benchmark summary does not match complete task reports')
+        comparison=summary['adapter_vs_base'];models=summary['models']
+        atomic_json(self.path/'benchmarks/latest.json',{
+            'adapter_sha256':binding['adapter_sha256'],'experiment':Path(self.state['child']).name,
+            'reported_at':time.time(),'active_seconds':self.snapshot()['active_seconds'],'reused':reused,
+            'base_passed':models['base']['passed'],'adapter_passed':models['adapter']['passed'],
+            'total':len(tasks),'gained':len(comparison['gained']),'lost':len(comparison['lost']),
+            'base_median_seconds':models['base']['median_model_answer_seconds'],
+            'adapter_median_seconds':models['adapter']['median_model_answer_seconds'],
+            'report':str(output/'summary.json'),'purpose':'Reporting only; no training or checkpoint selection'})
 
     def stash_adapter(self,value):
         path=Path(value);binding=read(path.parent/'run.json')
@@ -262,7 +298,11 @@ class Controller:
 
     def run(self):
         self.path.mkdir(exist_ok=True)
-        lock=(self.path/'worker.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        with (self.path/'worker.lock').open('a') as lock:
+            fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            self.run_locked()
+
+    def run_locked(self):
         try:self.validate()
         except (OSError,ValueError) as error:self.failure(str(error))
         self.recover_process()
@@ -288,6 +328,13 @@ class Controller:
                     self.save(status='running',detail='Completing reserved matched confirmation checks')
                     command=[sys.executable,str(ROOT/'continuous_confirmation.py'),'--controller',str(self.path)]
                     if not self.run_process(command,self.path/'confirmation.log',forward=False):continue
+                    adapter,output=self.benchmark_target()
+                    reused=(output/'summary.json').exists()
+                    self.save(benchmark_output=str(output),detail='Scheduled HumanEval comparison; complete reports required')
+                    command=[sys.executable,str(ROOT/'research/student_benchmark.py'),
+                             '--adapter',str(adapter),'--output',str(output)]
+                    if not self.run_process(command,self.path/'benchmark.log',forward=False):continue
+                    self.record_benchmark(output,reused)
                     tasks=self.pending_tasks()
                     if tasks is None:
                         self.save(detail='Preparing fresh pinned public fixtures; no GPU needed')
@@ -331,6 +378,8 @@ def main():
             from continuous_data import initialize
             initialize(controller.path/'pool',row=args.start_row)
             names=('continuous_learning.py','continuous_data.py','continuous_confirmation.py','learning_bootstrap.py','research/opencode-source.json')
+            from research.student_benchmark import SOURCES
+            names+=SOURCES+('research/humaneval_manifest.json','research/HumanEval.jsonl.gz')
             atomic_json(controller.path/'binding.json',{n:sha256(ROOT/n) for n in names})
             print(json.dumps(controller.snapshot()));return
         controller=Controller(args.session)

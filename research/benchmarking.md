@@ -10,6 +10,31 @@ Training loss does not measure coding correctness.
 | Full HumanEval | Measure direct Python generation on 164 public tasks | Base: 118/164. Accepted adapter: 121/164 |
 | 20 fresh reserved repairs per experiment | Check the final adapter against the starting adapter and base | Automatic comparison after each experiment |
 
+## Automatic schedule
+
+Continuous mode owns this schedule on the PC.
+The Mac chat does not start each comparison.
+
+| When | Check | Result use |
+| --- | --- | --- |
+| After each training round | Development repairs | Accept only complete results with more passes and no lost tasks |
+| After each experiment, with a 12-active-hour limit | 20 fresh reserved repairs | Compare the base, starting adapter, and final adapter. Return to the starting adapter after a regression |
+| After that fresh comparison, before the next experiment | Full 164-task HumanEval comparison | Report coding outcomes and speed for the adapter that continues |
+
+HumanEval runs again only when the accepted weights change.
+Unchanged weights reuse a complete report with the same benchmark settings and source hashes.
+Interrupted comparisons retain completed tasks and continue after Resume or Windows login.
+Gaming Pause stops the comparison and releases its model server.
+The worker continues with fresh training data after the comparison finishes.
+
+The Windows panel shows the schedule, current benchmark progress, and last complete result.
+Its time estimate counts active experiment time. Pause and other benchmark work extend the calendar interval.
+An experiment can finish early because of its task or storage limit.
+
+HumanEval reports trends. It does not select checkpoints or supply training targets.
+Repeated use can bias research decisions, even without direct training on its tasks.
+The fresh reserved repairs remain the separate regression check.
+
 The [reserved comparison](confirmation.md) supports a small Python repair workflow.
 The later adapter did not improve its confirmation score.
 The repeated development score does not establish broad improvement.
@@ -75,8 +100,9 @@ Publish only a reviewed aggregate report.
 ## CPU checks
 
 ```bash
-python3 -m unittest test_student_benchmark
+python3 -m unittest test_student_benchmark test_scheduled_benchmark
 ```
 
 These checks reject incomplete comparisons and mismatched saved progress.
 They also detect individual regressions when the total score increases.
+The schedule checks cover audit ordering, rollback selection, resumable output, and durable Pause.

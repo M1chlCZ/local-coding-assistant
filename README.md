@@ -79,6 +79,8 @@ The [benchmark guide](research/benchmarking.md) separates training checks, reser
 Training uses a separate Qwen3-4B student.
 On all 164 HumanEval tasks, its unchanged NF4 base passed 118 and the accepted adapter passed 121.
 The adapter gained 14 tasks and lost 11, so the higher total does not establish an improvement without regressions.
+Continuous mode schedules fresh repair checks and a full HumanEval audit after each experiment, with a 12-active-hour limit.
+Unchanged accepted weights reuse verified results. The Windows controls show the schedule and last complete comparison.
 
 RTX 5070 Ti, Ryzen 9 9900X, 32 GB RAM, 8K context:
 

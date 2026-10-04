@@ -17,4 +17,15 @@ $State.phase='train';$State|Add-Member -NotePropertyName training -NotePropertyV
 if(-not (Format-LearningProgress $State).Contains('Training: 3/5')){throw 'Training steps are hidden.'}
 $State.phase='collect';$State|Add-Member -NotePropertyName collected -NotePropertyValue 2;$State|Add-Member -NotePropertyName passed -NotePropertyValue 1
 if(-not (Format-LearningProgress $State).Contains('Examples: 2 collected, 1 passed')){throw 'Collection progress is hidden.'}
-'PASS: Windows console shows task counts, training steps, retained score, research score, and time limit'
+$State|Add-Member -NotePropertyName continuous -NotePropertyValue $true
+$State|Add-Member -NotePropertyName benchmark -NotePropertyValue @{
+    next_after_active_seconds=7200;
+    last=@{base_passed=118;adapter_passed=121;total=164;gained=14;lost=11;reused=$false};
+    progress=@{status='running';phase='adapter';completed=42;total=164}}
+$Text=Format-LearningProgress $State
+foreach($Expected in @('Next HumanEval audit:','2 active hours','Last HumanEval: base 118/164; adapter 121/164','gained 14; lost 11','HumanEval: adapter 42/164')){
+    if(-not $Text.Contains($Expected)){throw ('Missing scheduled benchmark progress: '+$Expected)}
+}
+$State.benchmark.progress=$null;$State.benchmark.last.reused=$true
+if(-not (Format-LearningProgress $State).Contains('unchanged weights; verified result reused')){throw 'Cached benchmark is presented as a new measurement.'}
+'PASS: Windows console shows training, independent benchmark schedule, progress, complete scores, and reuse'

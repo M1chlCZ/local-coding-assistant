@@ -81,6 +81,14 @@ If the final adapter loses a previously passing confirmation task, the next expe
 Consumed confirmation tasks never enter training.
 Repeated development checks can overfit. Continuous updates do not guarantee continuous quality gains.
 
+After the fresh comparison, the supervisor runs the [full HumanEval audit](benchmarking.md#automatic-schedule).
+It evaluates the adapter selected for the next experiment, including a required rollback.
+Each experiment has a 12-active-hour limit. An earlier experiment end also starts the audit.
+Unchanged accepted weights reuse a verified complete result without GPU generation.
+Interrupted audits retain finished tasks. Resume and login recovery continue them automatically.
+HumanEval reports trends and does not supply training targets or select checkpoints.
+The Windows progress display shows the next audit, current task count, and last complete comparison.
+
 ## Storage and privacy
 
 State, data, reports, logs, and adapters stay under ignored `.cache/` folders.
@@ -94,7 +102,7 @@ Each experiment retains the 20 GiB storage ceiling.
 ## Validation
 
 ```bash
-.cache/rlm-env/bin/python -m unittest test_continuous_learning test_learning_bootstrap
+.cache/rlm-env/bin/python -m unittest test_continuous_learning test_learning_bootstrap test_scheduled_benchmark
 ```
 
 On Windows:
