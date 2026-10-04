@@ -17,6 +17,10 @@ $State.phase='train';$State|Add-Member -NotePropertyName training -NotePropertyV
 if(-not (Format-LearningProgress $State).Contains('Training: 3/5')){throw 'Training steps are hidden.'}
 $State.phase='collect';$State|Add-Member -NotePropertyName collected -NotePropertyValue 2;$State|Add-Member -NotePropertyName passed -NotePropertyValue 1
 if(-not (Format-LearningProgress $State).Contains('Examples: 2 collected, 1 passed')){throw 'Collection progress is hidden.'}
+$State|Add-Member -NotePropertyName recovered_examples -NotePropertyValue 1
+$State|Add-Member -NotePropertyName training_retry -NotePropertyValue @{attempt=2;max_attempts=2}
+$Text=Format-LearningProgress $State
+if(-not $Text.Contains('Corrections recovered: 1') -or -not $Text.Contains('Training attempt: 2/2')){throw 'Failure correction progress is hidden.'}
 $State|Add-Member -NotePropertyName continuous -NotePropertyValue $true
 $State|Add-Member -NotePropertyName child_limit_seconds -NotePropertyValue 21600
 $State|Add-Member -NotePropertyName benchmark -NotePropertyValue @{

@@ -161,7 +161,11 @@ function Format-LearningProgress($Value) {
         }
     }
     switch ($Value.phase) {
-        'collect' { $Lines += "Examples: $($Value.collected) collected, $($Value.passed) passed" }
+        'collect' {
+            $Lines += "Examples: $($Value.collected) collected, $($Value.passed) passed"
+            if ($null -ne $Value.recovered_examples) { $Lines += "Corrections recovered: $($Value.recovered_examples)" }
+            if ($Value.training_retry) { $Lines += "Training attempt: $($Value.training_retry.attempt)/$($Value.training_retry.max_attempts)" }
+        }
         'train' { $Lines += "Training: $($Value.training.step)/$($Value.training.max_steps)" }
         'evaluate' { $Lines += "Tests: $($Value.evaluation.completed)/$($Value.evaluation.total)  $($Value.evaluation.mode) $($Value.evaluation.checkpoint)" }
         'confirmation' { $Lines += "Fresh reserved checks: $($Value.confirmation_progress.mode) $($Value.confirmation_progress.completed)/$($Value.confirmation_progress.total)" }

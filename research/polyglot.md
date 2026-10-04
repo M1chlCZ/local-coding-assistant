@@ -23,6 +23,19 @@ The reference must pass the source tests in Docker before the problem is kept.
 The teacher sees the statement and public examples. Separate source tests grade its answers.
 Only successful teacher traces enter training.
 
+A failed training attempt receives one feedback retry.
+The retry sees the previous candidate and visible execution errors. Hidden grading output stays private.
+Time-limit feedback asks for fewer model calls and less repeated context.
+Each attempt allows at most three minutes, capped by the experiment's remaining active time.
+A correction enters training only after it passes the registered checks.
+The original failed response is retained privately and never becomes a positive training target.
+Two failed attempts remain excluded. Infrastructure failures use worker recovery instead of model feedback.
+
+The attempt journal survives Pause, shutdown, and restart.
+Resume grades a saved response or continues the pending retry without repeating completed model calls.
+The Windows display shows the current attempt and recovered corrections for the round.
+Development, confirmation, and standardized benchmark tasks never use this retry path.
+
 All language versions of one problem have the same train or development split.
 A problem ledger prevents exact reuse across downloaded windows.
 This does not establish independence from pretraining or other public datasets.

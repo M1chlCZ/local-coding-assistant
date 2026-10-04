@@ -64,6 +64,29 @@ class ContinuousTests(unittest.TestCase):
         for hours in (0,25,float('nan'),float('inf')):
             with self.assertRaises(ValueError):self.controller.set_hours(hours)
 
+    def test_only_completed_experiments_can_validate_archived_trainer_sources(self):
+        from unittest.mock import patch
+        from training_data import sha256
+        import learning_session as learning
+        import continuous_learning as continuous
+        runtime=self.root/'runtime';runtime.mkdir()
+        (runtime/'learning_session.py').write_text('new trainer')
+        (runtime/'training_feedback.py').write_text('new feedback')
+        archive=self.path/'source-updates'/'reviewed'/'source-generation';archive.mkdir(parents=True)
+        (archive/'learning_session.py').write_text('old trainer')
+        old={'learning_session.py':sha256(archive/'learning_session.py')}
+        self.status.update(status='completed',sources=old)
+        atomic_json(self.parent/'status.json',self.status)
+        self.controller.save(completed_source_generations={self.controller.state['child']:{'directory':str(archive),'sources':old}})
+        atomic_json(self.path/'binding.json',{n:sha256(runtime/n) for n in ('learning_session.py','training_feedback.py')})
+        with patch.object(continuous,'ROOT',runtime),patch.object(learning,'SOURCE_FILES',('learning_session.py','training_feedback.py')):
+            self.controller.validate()
+            self.status['status']='paused';atomic_json(self.parent/'status.json',self.status)
+            with self.assertRaisesRegex(ValueError,'source changed'):self.controller.validate()
+            self.status['status']='completed';atomic_json(self.parent/'status.json',self.status)
+            (archive/'learning_session.py').write_text('tampered')
+            with self.assertRaisesRegex(ValueError,'source changed'):self.controller.validate()
+
     def test_pause_is_durable_and_forwarded_before_acknowledgement(self):
         self.controller.control('pause')
         self.assertEqual(json.loads((self.parent/'command.json').read_text())['action'], 'pause')
@@ -170,10 +193,20 @@ class ContinuousTests(unittest.TestCase):
         atomic_json(self.parent/'status.json',self.status)
         tasks=[{'id':f'fresh-{i}','repository':f'fresh-{i}','split':'train' if i<32 else 'dev'} for i in range(52)]
         source=self.root/'fresh.json';atomic_json(source,tasks)
+        # A completed parent keeps its original source generation; fresh children use the reviewed trainer.
+        import shutil
+        archive=self.path/'source-updates'/'completed-parent'/'source-generation';archive.mkdir(parents=True)
+        old_sources=dict(self.status['sources']);old_sources.pop('training_feedback.py')
+        for name in old_sources:
+            target=archive/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(learning.ROOT/name,target)
+        self.status['sources']=old_sources;atomic_json(self.parent/'status.json',self.status)
+        self.controller.save(completed_source_generations={self.controller.state['child']:{'directory':str(archive),'sources':old_sources}})
+        atomic_json(self.path/'binding.json',{n:sha256(learning.ROOT/n) for n in learning.SOURCE_FILES})
         child=self.controller.prepare_child(source)
         state=json.loads((child/'status.json').read_text())
         self.assertEqual(state['active_seconds'],0)
         self.assertEqual(state['limit_seconds'],21600)
+        self.assertEqual(state['sources'],{n:sha256(learning.ROOT/n) for n in learning.SOURCE_FILES})
         self.assertEqual(self.controller.snapshot()['active_seconds'],27000)
         rows=json.loads((child/'round-003/tasks.json').read_text())
         self.assertEqual(len(rows),33)

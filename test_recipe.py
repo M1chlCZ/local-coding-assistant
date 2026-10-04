@@ -29,7 +29,7 @@ class RecipeTests(unittest.TestCase):
         calls=[]
         def solve(task,base,**settings):
             calls.append(settings)
-            return {'id':task['id'],'passed':True,'patch':{'solution.go':'verified'}}
+            return {'id':task['id'],'repository':task['repository'],'split':task['split'],'passed':True,'patch':{'solution.go':'verified'}}
         fake=types.SimpleNamespace(solve=solve,grade=lambda task,answer:{'passed':True})
         original=learning.LIMITS.copy()
         with tempfile.TemporaryDirectory() as tmp:
@@ -37,7 +37,8 @@ class RecipeTests(unittest.TestCase):
             self.addCleanup(worker.lock.close);self.addCleanup(worker.gpu_lock.close)
             worker.state.update(round=2,polyglot=True,polyglot_baseline_complete=True)
             folder=worker.path/'round-002';folder.mkdir()
-            task={'id':'fresh-go-r2','language':'go','source_reference_passed':True}
+            task={'id':'fresh-go-r2','repository':'fresh-go','split':'train','prompt':'Repair solution.go',
+                'language':'go','source_reference_passed':True}
             atomic_json(folder/'tasks.json',[task])
             with patch.dict('sys.modules',{'recursive_agent':fake}),patch.object(worker,'server',return_value=True),patch.object(worker,'interrupted',return_value=False):
                 worker.collect(folder)

@@ -13,6 +13,9 @@ The overall training clock carries forward. Continuous mode has no overall time 
 Complete the [WSL setup](wsl.md) and [training setup](adapter-training.md) first.
 Use an existing research session with an accepted adapter, a verified first-round training anchor, and a completed base evaluation.
 Do not change its bound trainer source files.
+A reviewed update can archive a completed experiment's original sources before installing a new trainer.
+The supervisor checks those archived hashes during audits; the next experiment binds the new sources.
+An active experiment always requires its original source files.
 
 In the Linux project folder, install the separate data reader:
 
@@ -72,6 +75,8 @@ These checks do not prove semantic novelty or general correctness.
 Each fresh experiment uses at most 256 training tasks in batches of 16.
 It replays the original verified anchor and reserves 20 separate confirmation tasks before training.
 The accepted adapter must improve the complete development result without losing earlier passes.
+Failed training examples receive one saved feedback retry. Only passing corrections enter training.
+Evaluation tasks keep their original attempt limits.
 Partial early-rejection reports never count as a complete score.
 An experimental adapter stays separate from the accepted adapter.
 

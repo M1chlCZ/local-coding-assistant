@@ -2,6 +2,7 @@
 import argparse
 import copy
 import fcntl
+import hashlib
 import json
 import os
 import signal
@@ -23,7 +24,8 @@ SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
                 'recursive_agent.py', 'rlm_worker.py', 'research/adapter_eval_server.py',
                 'launcher.py', 'wsl_server.py', 'research/repair_tasks.json',
                 'polyglot_runtime.py', 'polyglot_data.py', 'polyglot_session.py',
-                'research/Polyglot.Dockerfile', 'research/codecontests-source.json')
+                'research/Polyglot.Dockerfile', 'research/codecontests-source.json',
+                'training_feedback.py')
 
 
 def development_tasks(extra=None):
@@ -234,6 +236,7 @@ class Session:
 
     def collect(self, folder):
         from recursive_agent import grade, solve
+        from training_feedback import collect as collect_feedback
         if self.state.get('polyglot'):
             from polyglot_session import establish_baseline
             if not establish_baseline(self, folder):return
@@ -270,8 +273,7 @@ class Session:
             if task.get('language'):
                 if task.get('source_reference_passed') is not True:
                     raise ValueError('Unvalidated multilingual fixture: '+task['id'])
-                row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **TEACHER_LIMITS)
-                if row.get('patch'):row.update(grade(task,row['patch']))
+                row = None
             else:
                 reference = grade(task, task['reference_patch'])
                 if not reference['passed']:
@@ -285,11 +287,21 @@ class Session:
                 else:
                     if grade(task, {p: task['files'][p] for p in task['editable']})['passed']:
                         raise ValueError('Broken task already passes: '+task['id'])
-                    row = solve(task, 'http://127.0.0.1:8080', **SETTINGS, **TEACHER_LIMITS)
-                    if row.get('patch'):row.update(grade(task,row['patch']))
+                    row = None
+            if row is None:
+                def before_attempt(number):
+                    self.save(detail=f'Teacher {"retry" if number==2 else "task"} '+task['id'],
+                        training_retry={'attempt':number,'max_attempts':2,'task':task['id']})
+                attempt_file=folder/'attempts'/(hashlib.sha256(task['id'].encode()).hexdigest()+'.json')
+                row=collect_feedback(task,'http://127.0.0.1:8080',attempt_file,sha256(tasks_path),
+                    solve=solve,grade=grade,settings=SETTINGS,limits=TEACHER_LIMITS,
+                    interrupted=self.interrupted,before_attempt=before_attempt,
+                    remaining_seconds=lambda:self.state['limit_seconds']-self.state['active_seconds']-(time.monotonic()-self.clock))
+                if row is None:return
             report['tasks'].append(row)
             atomic_json(report_path, report)
-            self.save(collected=len(report['tasks']), passed=sum(r['passed'] for r in report['tasks']))
+            self.save(collected=len(report['tasks']), passed=sum(r['passed'] for r in report['tasks']),
+                recovered_examples=sum(r.get('retry_info',{}).get('recovered',False) for r in report['tasks']),training_retry=None)
             if self.interrupted():
                 return
         self.save(phase='export', detail='Teacher collection complete')
@@ -467,6 +479,7 @@ class Session:
         stop = should_stop_for_quality(self.state['completed_rounds'], self.state.get('research',False))
         self.save(round=self.state['round']+1, phase='collect',
                   status='completed' if stop else 'running', collected=0, passed=0, training=None, evaluation=None,
+                  training_retry=None,recovered_examples=0,
                   detail='Stopped after three rounds without development improvement'
                   if stop else 'Starting a new data collection round')
 

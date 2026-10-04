@@ -145,12 +145,20 @@ class Controller:
     def validate(self):
         import learning_session as learning
         child=self.child_state()
-        if child.get('sources')!={name:sha256(ROOT/name) for name in learning.SOURCE_FILES}:
+        sources={name:sha256(ROOT/name) for name in learning.SOURCE_FILES}
+        binding=read(self.path/'binding.json')
+        archived=self.state.get('completed_source_generations',{}).get(self.state['child'])
+        if child.get('status')=='completed' and archived:
+            directory=Path(archived['directory']).resolve()
+            if (not directory.is_relative_to(self.path/'source-updates') or archived['sources']!=child.get('sources')
+                    or not binding or any(binding.get(name)!=digest for name,digest in sources.items())
+                    or any(sha256(directory/name)!=digest for name,digest in archived['sources'].items())):
+                raise ValueError('Completed session source changed; restore the archived trainer')
+        elif child.get('sources')!=sources:
             raise ValueError('Session source changed; restore the bound trainer before resuming')
         if child.get('polyglot'):
             from polyglot_runtime import image
             if image()!=child.get('compiler_image'):raise ValueError('Compiler image changed; review before continuing')
-        binding=read(self.path/'binding.json')
         if binding and any(sha256(ROOT/name)!=digest for name,digest in binding.items()):
             raise ValueError('Continuous source manifest changed; review before continuing')
 
@@ -283,6 +291,7 @@ class Controller:
             if state.get(field):state[field]=self.stash_adapter(state[field])
         state.update(status='paused',phase='collect',round=2,active_seconds=0,
             limit_seconds=self.state.get('experiment_limit_seconds',EXPERIMENT_SECONDS),
+            sources={name:sha256(ROOT/name) for name in learning.SOURCE_FILES},training_retry=None,recovered_examples=0,
             completed_rounds=[],accepted_rounds=[],collected=0,passed=0,training=None,evaluation=None,
             rounds_without_repairs=0,pid=None,detail='Fresh continuous curriculum; accepted model preserved')
         atomic_json(child/'confirmation-tasks.json',confirm)
@@ -448,6 +457,8 @@ def main():
             names=('continuous_learning.py','continuous_data.py','continuous_confirmation.py','learning_bootstrap.py','research/opencode-source.json')
             from research.student_benchmark import SOURCES
             names+=SOURCES+('research/humaneval_manifest.json','research/HumanEval.jsonl.gz')
+            import learning_session as learning
+            names+=learning.SOURCE_FILES
             atomic_json(controller.path/'binding.json',{n:sha256(ROOT/n) for n in names})
             print(json.dumps(controller.snapshot()));return
         controller=Controller(args.session)

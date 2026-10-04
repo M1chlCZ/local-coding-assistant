@@ -10,6 +10,7 @@ The [reserved comparison](confirmation.md) records the latest 4B adapter checks 
 The [multilingual recipe](polyglot.md) adds compiler checks and scheduled HumanEval / MultiPL-E audits for five programming languages.
 It uses the existing CUDA student, six-hour experiments, and a conservative learning-rate trial.
 Teacher collection allows three minutes per task; quality checks keep the same limits.
+Failed training attempts receive one feedback retry; only verified corrections enter training.
 Multilingual gains still require matched evaluation.
 
 Run PowerShell from the project folder on the PC.
