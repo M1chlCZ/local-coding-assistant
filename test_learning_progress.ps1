@@ -38,4 +38,19 @@ $State|Add-Member -NotePropertyName confirmation_progress -NotePropertyValue @{m
 $Text=Format-LearningProgress $State
 if(-not $Text.Contains('Fresh reserved checks: base 12/20')){throw 'Fresh confirmation progress is hidden behind completed training.'}
 if($Text.Contains('Examples:')){throw 'Completed collection still appears active during confirmation.'}
+$State.phase='benchmark';$State|Add-Member -NotePropertyName child_status -NotePropertyValue 'completed'
+$State.benchmark.progress=@{status='running';phase='adapter';language='go';completed=1;total=2;
+    stage=4;stages=4;overall_completed=7;overall_total=8;last_result=@{task='g1';passed=$false}}
+$Text=Format-LearningProgress $State
+foreach($Expected in @('Training completed at round 3','Training clock is held during checks',
+    'Now: Benchmarking go with the adapted model; task 2/2','Benchmark stage: 4/4',
+    'Checks saved: 7/8','Last benchmark result: g1 - FAIL')){
+    if(-not $Text.Contains($Expected)){throw ('Missing live activity: '+$Expected)}
+}
+if($Text.Contains('Round: 3')){throw 'A completed training round still looks active.'}
+$State.status='pausing'
+if(-not (Format-LearningProgress $State).Contains('Now: pausing.')){throw 'Pause still looks like active benchmark work.'}
+$State.status='running';$State.benchmark.progress=$null
+$State.phase='collect';$State.child_status='running';$State.detail='Teacher task example-12'
+if(-not (Format-LearningProgress $State).Contains('Now: Teacher task example-12')){throw 'Current training task is hidden.'}
 'PASS: Windows console shows training, independent benchmark schedule, progress, complete scores, and reuse'

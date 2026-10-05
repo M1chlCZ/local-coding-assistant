@@ -127,8 +127,14 @@ function Format-LearningProgress($Value) {
     $Used = [Math]::Round($Value.active_seconds/3600,2)
     $Limit = [Math]::Round($Value.limit_seconds/3600,2)
     $Lines = @("State: $($Value.status)  Round: $($Value.round)  Phase: $($Value.phase)", "Active hours: $Used / $Limit")
+    $Now = $Value.detail
     if ($Value.continuous) {
         $Lines[1] = "Total training hours: $Used; runs until Pause or Stop"
+        if ($Value.child_status -eq 'completed') {
+            $Lines[0] = "State: $($Value.status)  Phase: $($Value.phase)"
+            $Lines += "Training completed at round $($Value.round). Training clock is held during checks."
+            $Lines += 'The next training experiment starts automatically after checks and data preparation.'
+        }
         $Lines += "$($Value.supervisor_detail)"
         if ($Value.status -eq 'paused') { $Lines += 'GPU released for gaming. Click Resume when ready.' }
         if ($Value.benchmark) {
@@ -147,7 +153,23 @@ function Format-LearningProgress($Value) {
                 if ($Last.reused) { $Lines += 'Coding benchmark: unchanged weights; verified result reused.' }
             }
             $Audit = $Value.benchmark.progress
-            if ($Audit) { $Lines += "Coding benchmark: $($Audit.language) $($Audit.phase) $($Audit.completed)/$($Audit.total) ($($Audit.status))" }
+            if ($Audit) {
+                $Lines += "Coding benchmark: $($Audit.language) $($Audit.phase) $($Audit.completed)/$($Audit.total) ($($Audit.status))"
+                if ($Audit.status -eq 'running' -and $Audit.phase -in @('base','adapter')) {
+                    $Model = if ($Audit.phase -eq 'adapter') { 'adapted model' } else { 'base model' }
+                    $TaskNumber = [Math]::Min($Audit.completed+1,$Audit.total)
+                    $Now = "Benchmarking $($Audit.language) with the $Model; task $TaskNumber/$($Audit.total)"
+                }
+                if ($Audit.stages) { $Lines += "Benchmark stage: $($Audit.stage)/$($Audit.stages)" }
+                if ($null -ne $Audit.overall_completed) {
+                    $Total = if ($Audit.overall_total) { "/$($Audit.overall_total)" } else { '' }
+                    $Lines += "Checks saved: $($Audit.overall_completed)$Total (completed checks, not a score)"
+                }
+                if ($Audit.last_result) {
+                    $Result = if ($Audit.last_result.passed) { 'PASS' } else { 'FAIL' }
+                    $Lines += "Last benchmark result: $($Audit.last_result.task) - $Result"
+                }
+            }
         }
     }
     if ($Value.polyglot) { $Lines += 'Languages: Python, Go, TypeScript, Rust, Dart; mixed replay each round' }
@@ -166,11 +188,18 @@ function Format-LearningProgress($Value) {
             if ($null -ne $Value.recovered_examples) { $Lines += "Corrections recovered: $($Value.recovered_examples)" }
             if ($Value.training_retry) { $Lines += "Training attempt: $($Value.training_retry.attempt)/$($Value.training_retry.max_attempts)" }
         }
-        'train' { $Lines += "Training: $($Value.training.step)/$($Value.training.max_steps)" }
+        'train' {
+            $Lines += "Training: $($Value.training.step)/$($Value.training.max_steps)"
+            $Now = "Training adapter; step $($Value.training.step)/$($Value.training.max_steps). $($Value.detail)"
+        }
         'evaluate' { $Lines += "Tests: $($Value.evaluation.completed)/$($Value.evaluation.total)  $($Value.evaluation.mode) $($Value.evaluation.checkpoint)" }
         'confirmation' { $Lines += "Fresh reserved checks: $($Value.confirmation_progress.mode) $($Value.confirmation_progress.completed)/$($Value.confirmation_progress.total)" }
     }
     $Lines += $Value.detail
+    if ($Value.status -in @('paused','pausing','stopped','stopping','waiting','blocked','failed')) {
+        $Now = "$($Value.status). $($Value.detail)"
+    }
+    $Lines = @($Lines[0], "Now: $Now") + $Lines[1..($Lines.Count-1)]
     return ($Lines -join "`r`n")
 }
 

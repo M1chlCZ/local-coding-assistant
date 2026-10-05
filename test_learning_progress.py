@@ -2,6 +2,9 @@
 import copy
 import importlib
 import importlib.util
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -55,6 +58,44 @@ class LearningProgressTests(unittest.TestCase):
         result = self.view(value, {'auxiliary_active': False, 'detail': reason})
         self.assertEqual(result['status'], 'blocked')
         self.assertEqual(result['detail'], reason)
+
+    def test_saved_benchmark_activity_is_read_only_and_counts_both_models(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path/'binding.json').write_text(json.dumps({'languages': ['python', 'go']}))
+            for name, rows in {'base-python': [{'id': 'p1'}, {'id': 'p2'}],
+                               'base-go': [{'id': 'g1'}, {'id': 'g2'}],
+                               'adapter-python': [{'id': 'p1'}, {'id': 'p2'}],
+                               'adapter-go': [{'id': 'g1', 'passed': False}]}.items():
+                (path/(name+'.json')).write_text(json.dumps(rows))
+            before = {p.name: p.read_bytes() for p in path.iterdir()}
+            module = importlib.import_module('learning_progress')
+            self.assertTrue(hasattr(module, 'benchmark_activity'), 'Saved benchmark activity is missing')
+            result = module.benchmark_activity(path, {'phase': 'adapter', 'language': 'go'})
+            self.assertEqual(result['stage'], 4)
+            self.assertEqual(result['stages'], 4)
+            self.assertEqual(result['overall_completed'], 7)
+            self.assertEqual(result['overall_total'], 8)
+            self.assertEqual(result['last_result'], {'task': 'g1', 'passed': False})
+            self.assertEqual({p.name: p.read_bytes() for p in path.iterdir()}, before)
+
+    def test_incomplete_base_reports_do_not_invent_an_overall_total(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path/'binding.json').write_text(json.dumps({'languages': ['python', 'go']}))
+            (path/'base-python.json').write_text(json.dumps([{'id': 'p1', 'passed': True}]))
+            module = importlib.import_module('learning_progress')
+            self.assertTrue(hasattr(module, 'benchmark_activity'), 'Saved benchmark activity is missing')
+            result = module.benchmark_activity(path, {'phase': 'base', 'language': 'python'})
+            self.assertEqual(result['stage'], 1)
+            self.assertEqual(result['overall_completed'], 1)
+            self.assertNotIn('overall_total', result)
+
+    def test_old_single_language_benchmark_still_displays_its_own_progress(self):
+        with tempfile.TemporaryDirectory() as directory:
+            module = importlib.import_module('learning_progress')
+            self.assertTrue(hasattr(module, 'benchmark_activity'), 'Saved benchmark activity is missing')
+            self.assertEqual(module.benchmark_activity(Path(directory), {'phase': 'base'}), {})
 
 
 if __name__ == '__main__':
