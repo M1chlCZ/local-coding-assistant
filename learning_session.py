@@ -25,7 +25,22 @@ SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
                 'launcher.py', 'wsl_server.py', 'research/repair_tasks.json',
                 'polyglot_runtime.py', 'polyglot_data.py', 'polyglot_session.py',
                 'research/Polyglot.Dockerfile', 'research/codecontests-source.json',
-                'training_feedback.py')
+                'training_feedback.py', 'code_recipe.py')
+
+
+def quality_solver(state):
+    if state.get('recipe') == 'balanced-code-v1':
+        from code_recipe import solve
+    else:
+        from recursive_agent import solve
+    return solve
+
+
+def quality_settings(state):
+    if state.get('recipe') == 'balanced-code-v1':
+        from code_recipe import SETTINGS as settings
+        return settings
+    return SETTINGS
 
 
 def development_tasks(extra=None):
@@ -203,12 +218,15 @@ class Session:
     def training_command(self, round_path):
         warm = self.state.get('research_adapter') if self.state.get('research') else None
         warm = warm or self.state['best_adapter']
-        steps = (5, 10, 20)[(self.state['round']-2)%3] if self.state.get('research') and warm else (20 if warm else 80)
+        direct = self.state.get('recipe') == 'balanced-code-v1'
+        if direct:
+            warm = None
+        steps = 20 if direct else (5, 10, 20)[(self.state['round']-2)%3] if self.state.get('research') and warm else (20 if warm else 80)
         command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'train_adapter.py'),
             '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
             '--model', MODEL, '--revision', REVISION, '--output', str(round_path/'adapter'),
             '--max-steps', str(steps), '--max-epochs', '1', '--learning-rate',
-            ('0.0000025' if self.state.get('polyglot') else '0.000005') if warm else '0.00005',
+            '0.00001' if direct else ('0.0000025' if self.state.get('polyglot') else '0.000005') if warm else '0.00005',
             '--max-length', '4096', '--save-steps', '5',
             '--pause-file', str(self.path/'pause-training')]
         if warm:
@@ -250,7 +268,7 @@ class Session:
         report_path = folder/'teacher.json'
         report = json.loads(report_path.read_text()) if report_path.exists() else {
             'schema_version': 1, 'split': 'train', 'tasks_sha256': sha256(tasks_path),
-            'settings': SETTINGS, 'limits': TEACHER_LIMITS, 'tasks': []}
+            'settings': quality_settings(self.state), 'limits': TEACHER_LIMITS, 'tasks': []}
         if not current:
             atomic_json(report_path, report)
             self.save(status='completed', completion_reason='curriculum_exhausted',
@@ -263,7 +281,7 @@ class Session:
                    '--model', self.state['teacher_model']]
         if not self.server(command, 8080, folder/'teacher.log'):
             return
-        if self.state['round']==1 and not self.teacher_baseline(folder):
+        if self.state['round']==1 and self.state.get('recipe') != 'balanced-code-v1' and not self.teacher_baseline(folder):
             return
         for task in current[len(report['tasks']):]:
             self.save(detail='Teacher task '+task['id'])
@@ -294,7 +312,7 @@ class Session:
                         training_retry={'attempt':number,'max_attempts':2,'task':task['id']})
                 attempt_file=folder/'attempts'/(hashlib.sha256(task['id'].encode()).hexdigest()+'.json')
                 row=collect_feedback(task,'http://127.0.0.1:8080',attempt_file,sha256(tasks_path),
-                    solve=solve,grade=grade,settings=SETTINGS,limits=TEACHER_LIMITS,
+                    solve=quality_solver(self.state),grade=grade,settings=quality_settings(self.state),limits=TEACHER_LIMITS,
                     interrupted=self.interrupted,before_attempt=before_attempt,
                     remaining_seconds=lambda:self.state['limit_seconds']-self.state['active_seconds']-(time.monotonic()-self.clock))
                 if row is None:return
@@ -342,7 +360,16 @@ class Session:
                 atomic_json(path, value)
                 reports.append(path)
             # Preserve the successful teacher's actions and their exact REPL feedback.
-            export(reports, folder/'tasks.json', dataset, repairs=False)
+            if self.state.get('recipe') == 'balanced-code-v1':
+                from code_recipe import export_code, UnbalancedData
+                try:
+                    export_code(list(reversed(reports)), folder/'tasks.json', dataset)
+                except UnbalancedData as error:
+                    self.save(round=self.state['round']+1, phase='collect', collected=0, passed=0,
+                              detail=str(error))
+                    return
+            else:
+                export(reports, folder/'tasks.json', dataset, repairs=False)
         rows = load_verified(dataset, folder/'tasks.json')
         previous = self.path/f"round-{self.state['round']-1:03d}"
         if self.state['round'] > 1 and (previous/'training.jsonl').exists():
@@ -393,6 +420,8 @@ class Session:
     def evaluate(self, folder):
         from evaluation import request
         from recursive_agent import solve, grade
+        solve = quality_solver(self.state)
+        settings = quality_settings(self.state)
         output = folder/'adapter'
         binding = json.loads((output/'run.json').read_text())
         checkpoints = sorted((p.parent for p in output.glob('checkpoint-*/complete.json')
@@ -413,7 +442,7 @@ class Session:
                 suffix = '-'+checkpoint.name if mode=='adapter' else ''
                 path = self.path/'dev-base.json' if mode=='base' else folder/f'dev-{mode}{suffix}.json'
                 report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
-                    'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': SETTINGS, 'limits': LIMITS,
+                    'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': settings, 'limits': LIMITS,
                     'development_tasks_sha256': self.state.get('development_tasks_sha256'),
                     'adapter_sha256': sha256(checkpoint/'adapter_model.safetensors') if mode=='adapter' else None}
                 request('http://127.0.0.1:8090', '/mode', {'mode': mode})
@@ -430,7 +459,7 @@ class Session:
                                           'completed':len(report['tasks']), 'total':len(tasks)})
                     if self.interrupted():
                         return
-                    row = solve(task, 'http://127.0.0.1:8090', **SETTINGS, **LIMITS)
+                    row = solve(task, 'http://127.0.0.1:8090', **settings, **LIMITS)
                     if row.get('patch'):
                         row.update(grade(task, row['patch']))
                     report['tasks'].append(row)
@@ -471,6 +500,8 @@ class Session:
         self.state['completed_rounds'].append(result)
         if keep:
             self.state['best_adapter'] = str(checkpoint)
+            if self.state.get('recipe') == 'balanced-code-v1':
+                self.state['baseline_equivalent'] = False
             self.state['best_dev'] = {'tasks': [{'id': r['id'], 'passed': r['passed']}
                                                for r in reports['adapter']['tasks']]}
             self.state['accepted_rounds'].append(self.state['round'])

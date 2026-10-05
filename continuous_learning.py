@@ -256,6 +256,10 @@ class Controller:
                 raise ValueError('Queued curriculum digest failed integrity verification')
         all_tasks=list(registry(tasks_file).values()) if read(tasks_file) else []
         train=[t for t in all_tasks if t['split']=='train'][:256]
+        direct = old.get('recipe') == 'balanced-code-v1'
+        if direct:
+            from code_recipe import balanced_order
+            train = balanced_order([t for t in all_tasks if t['split']=='train'], limit=250)
         excluded={t['repository'] for t in read(parent/'development-tasks.json',[])}
         confirm=[t for t in all_tasks if t['split']=='dev' and t['repository'] not in excluded][:20]
         if len(train)<16 or len(confirm)<20:
@@ -270,9 +274,11 @@ class Controller:
         shutil.copy2(parent/'dev-base.json',child/'dev-base.json')
         anchor=child/'round-001';anchor.mkdir()
         for name in ('tasks.json','teacher.json','training.jsonl','training.jsonl.manifest.json'):
-            shutil.copy2(parent/'round-001'/name,anchor/name)
+            if not direct or (parent/'round-001'/name).exists():
+                shutil.copy2(parent/'round-001'/name,anchor/name)
         cumulative=list(registry(anchor/'tasks.json').values())
-        batches=[train[i:i+16] for i in range(0,len(train),16)]
+        batch_size = 20 if direct else 16
+        batches=[train[i:i+batch_size] for i in range(0,len(train),batch_size)]
         for index,tasks in enumerate(batches+[[]],2):
             for original in tasks:
                 task=copy.deepcopy(original);task['id']+=f'-r{index}';task['repository']+=f'-r{index}';cumulative.append(task)

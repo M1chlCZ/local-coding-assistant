@@ -12,7 +12,7 @@ from pathlib import Path
 from continuous_learning import Controller, ROOT, read
 from evaluation import request
 from launcher import health
-from learning_session import SETTINGS, LIMITS
+from learning_session import SETTINGS, LIMITS, quality_solver, quality_settings
 from recursive_agent import grade, solve
 from train_adapter import atomic_json, verified_checkpoint
 from training_data import registry, sha256
@@ -21,6 +21,8 @@ from training_data import registry, sha256
 def compare(controller):
     controller.validate()
     state=controller.child_state();child=Path(controller.state['child'])
+    solve = quality_solver(state)
+    settings = quality_settings(state)
     reservation=state.get('confirmation',{})
     if reservation.get('consumed'):return
     if not reservation or not reservation.get('reserved_before_training'):
@@ -36,7 +38,7 @@ def compare(controller):
     for adapter in (baseline,current):verified_checkpoint(adapter,read(adapter.parent/'run.json'))
     output=controller.path/'confirmations'/child.name;output.mkdir(parents=True,exist_ok=True)
     binding={'tasks_sha256':sha256(tasks_path),'baseline_sha256':baseline_hash,
-             'current_sha256':sha256(current/'adapter_model.safetensors'),'settings':SETTINGS,'limits':LIMITS}
+             'current_sha256':sha256(current/'adapter_model.safetensors'),'settings':settings,'limits':LIMITS}
     previous=read(output/'binding.json')
     if previous and previous!=binding:raise ValueError('Confirmation binding changed')
     atomic_json(output/'binding.json',binding)
@@ -75,7 +77,7 @@ def compare(controller):
                 for task in tasks[len(report['tasks']):]:
                     atomic_json(output/'status.json',{'status':'running','mode':name,'completed':len(report['tasks']),
                         'total':len(tasks),'task':task['id']})
-                    row=solve(task,'http://127.0.0.1:8090',**SETTINGS,**LIMITS)
+                    row=solve(task,'http://127.0.0.1:8090',**settings,**LIMITS)
                     if row.get('patch'):row.update(grade(task,row['patch']))
                     report['tasks'].append(row);atomic_json(output/f'{name}.json',report)
                     print(name,task['id'],row.get('passed'),flush=True)

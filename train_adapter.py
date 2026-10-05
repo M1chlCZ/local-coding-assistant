@@ -127,6 +127,18 @@ def encode_row(tokenizer, row, max_length):
             'labels': [-100] * len(prefix) + tokens[len(prefix):]}
 
 
+def encode_dataset(tokenizer, rows, max_length, balanced=False):
+    encoded = [(row, value) for row in rows if (value := encode_row(tokenizer, row, max_length)) is not None]
+    if not balanced:
+        return [value for _, value in encoded], {}
+    languages = ('python', 'go', 'typescript', 'rust', 'dart')
+    groups = {l: [value for row, value in encoded if row.get('language') == l] for l in languages}
+    count = min(len(values) for values in groups.values())
+    if count < 1:
+        raise ValueError('Complete coding examples must fit the token limit in every language')
+    return [groups[l][i] for i in range(count) for l in languages], {l: count for l in languages}
+
+
 def main():
     argument_parser = parser()
     args = argument_parser.parse_args()
@@ -168,7 +180,8 @@ def main():
         if estimate > 4.5e9:
             raise ValueError('Initial adapter recipe is limited to dense models of roughly 4B parameters')
         tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision, trust_remote_code=False)
-        encoded = [value for row in rows if (value := encode_row(tokenizer, row, args.max_length)) is not None]
+        balanced = json.loads(manifest_path(args.dataset).read_text()).get('recipe') == 'balanced-code-v1'
+        encoded, language_counts = encode_dataset(tokenizer, rows, args.max_length, balanced=balanced)
         if not encoded:
             raise ValueError('No complete training rows fit the token limit')
         if args.warm_start:
@@ -235,7 +248,10 @@ def main():
         tokenizer.save_pretrained(args.output)
         metadata = {'schema_version': 1, 'model': args.model, 'revision': args.revision,
                     'dataset_sha256': sha256(args.dataset), 'manifest_sha256': sha256(manifest_path(args.dataset)),
-                    'tasks_sha256': sha256(args.tasks), 'rows': len(encoded), 'skipped_overlength': len(rows) - len(encoded),
+                    'tasks_sha256': sha256(args.tasks), 'rows': len(encoded),
+                    'skipped_overlength': len(rows) - len(encoded) if not balanced else None,
+                    'skipped_overlength_or_balance': len(rows) - len(encoded),
+                    'language_rows_after_token_filter': language_counts,
                     'versions': versions, 'max_steps': effective_steps, 'step_ceiling': args.max_steps,
                     'max_epochs': args.max_epochs, 'learning_rate': args.learning_rate, 'max_length': args.max_length,
                     'rank': args.rank, 'seed': args.seed, 'gpu': torch.cuda.get_device_name(0),

@@ -63,8 +63,11 @@ Double-click `learning.cmd` for Windows Start, Pause, Resume, and Stop controls.
 Checkpoints retain the optimizer and current step.
 [Continuous mode](research/continuous-learning.md) prepares fresh checked public tasks and runs until Pause or Stop.
 The [multilingual curriculum](research/polyglot.md) rotates Python, Go, TypeScript, Rust, and Dart with mixed replay and separate language scores.
+The latest full audit scored 473/790 for the base model and 433/790 for the RLM adapter.
+The revised [balanced code trial](research/polyglot.md#balanced-code-trial) starts each candidate from the base model and trains equal language samples.
+It trains verified source answers instead of REPL actions. No quality improvement is established for this new recipe yet.
 It recovers after Windows login when previously running. Pause releases the GPU for gaming and remains saved across logins.
-The tuned session uses 30 repair tasks, visible tests, and short training candidates.
+The earlier tuned session uses 30 repair tasks, visible tests, and short training candidates.
 Candidates receive 15 development checks before acceptance. Three rounds without improvement stop the session.
 The [training evidence](research/rlm-training-evidence.md) compares published RLM methods, available weights, and history-derived data.
 The [public-data pilot](research/public-data.md) prepares checked Python repairs from NVIDIA OpenCodeInstruct.

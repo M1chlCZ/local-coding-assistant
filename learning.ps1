@@ -128,6 +128,9 @@ function Format-LearningProgress($Value) {
     $Limit = [Math]::Round($Value.limit_seconds/3600,2)
     $Lines = @("State: $($Value.status)  Round: $($Value.round)  Phase: $($Value.phase)", "Active hours: $Used / $Limit")
     $Now = $Value.detail
+    if ($Value.recipe -eq 'balanced-code-v1') {
+        $Lines += 'Recipe: balanced code answers; each candidate starts from the base model.'
+    }
     if ($Value.continuous) {
         $Lines[1] = "Total training hours: $Used; runs until Pause or Stop"
         if ($Value.child_status -eq 'completed') {

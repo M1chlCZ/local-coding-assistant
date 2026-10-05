@@ -24,6 +24,8 @@ def establish_baseline(session,folder):
     import learning_session as learning
     from evaluation import request
     from recursive_agent import grade,solve
+    solve = learning.quality_solver(session.state)
+    settings = learning.quality_settings(session.state)
     adapter=Path(session.state['best_adapter'])
     tasks=learning.development_tasks(session.path/'development-tasks.json')
     command=[str(learning.ROOT/'.cache/train-env/bin/python'),str(learning.ROOT/'research/adapter_eval_server.py'),'--adapter',str(adapter)]
@@ -34,17 +36,21 @@ def establish_baseline(session,folder):
             file=session.path/('dev-base.json' if mode=='base' else 'dev-starting-adapter.json')
             binding={'adapter_sha256':sha256(adapter/'adapter_model.safetensors') if mode=='adapter' else None,
                      'development_tasks_sha256':sha256(session.path/'development-tasks.json'),
-                     'sources':session.state['sources'],'settings':learning.SETTINGS,'limits':learning.LIMITS}
+                     'sources':session.state['sources'],'settings':settings,'limits':learning.LIMITS}
             report=json.loads(file.read_text()) if file.exists() else {**binding,'split':'dev','tasks':[]}
             if any(report.get(k)!=v for k,v in binding.items()):raise ValueError('Multilingual baseline binding changed')
             if [r['id'] for r in report['tasks']]!=[t['id'] for t in tasks[:len(report['tasks'])]]:
                 raise ValueError('Multilingual baseline progress changed')
             request('http://127.0.0.1:8090','/mode',{'mode':mode})
+            if mode == 'adapter' and session.state.get('baseline_equivalent'):
+                report = {**binding, 'split': 'dev', 'tasks': reports['base']['tasks'],
+                          'evaluated_as': 'Verified zero-delta adapter; base outputs reused'}
+                atomic_json(file, report)
             for task in tasks[len(report['tasks']):]:
                 session.save(detail='Initial multilingual baseline '+mode+': '+task['id'],
                     evaluation={'mode':mode,'completed':len(report['tasks']),'total':len(tasks)})
                 if session.interrupted():return False
-                row=solve(task,'http://127.0.0.1:8090',**learning.SETTINGS,**learning.LIMITS)
+                row=solve(task,'http://127.0.0.1:8090',**settings,**learning.LIMITS)
                 if row.get('patch'):row.update(grade(task,row['patch']))
                 report['tasks'].append(row);atomic_json(file,report)
             reports[mode]=report

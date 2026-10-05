@@ -1,5 +1,38 @@
 # Multilingual learning
 
+## Balanced code trial
+
+The `balanced-code-v1` recipe trains complete source answers from the pinned base model.
+It does not warm-start from the earlier RLM adapter or train on its Python-only REPL anchor.
+Each full round collects four public training examples per language.
+A failed example gets one retry with visible feedback. Only answers that pass all registered checks enter training.
+The dataset contains equal numbers of answers for Python, Go, TypeScript, Rust, and Dart.
+Token filtering keeps this balance and drops complete examples that exceed 4,096 tokens.
+Training uses rank-8 CUDA QLoRA, a `1e-5` learning rate, one data pass, and at most 20 optimizer steps.
+Only assistant source tokens receive a training loss.
+
+Development and fresh confirmation checks use direct source requests with one attempt and no feedback retry.
+The old RLM scores are separate measurements. The new baseline uses a zero-delta adapter that matches the base model.
+Every accepted candidate must improve its complete development score without losing an earlier passing task.
+The RLM remains an optional agent harness. This recipe does not establish RLM agent quality.
+
+Preparing an existing worker requires Pause, an idle worker, and an archived source generation.
+Keep unused confirmation tasks reserved before training. Then prepare the separate branch in the training environment:
+
+```bash
+.cache/train-env/bin/python code_recipe.py --controller .cache/learning/continuous --previous-source .cache/learning/continuous/source-updates/REVIEWED-UPDATE/source-generation
+```
+
+Each new experiment permits six active hours. The original experiment, checkpoints, and global clock remain intact.
+Windows Resume starts the prepared branch. Pause and Stop keep their existing behavior.
+The full standardized benchmark remains a report-only audit after each experiment.
+Do not train on its problems or use its failed tasks as correction targets.
+
+The previous full audit scored 473/790 for the base model and 433/790 for the RLM adapter.
+It did not establish a general coding improvement. The revised recipe is an unproven experiment.
+
+## Earlier RLM recipe
+
 The optional curriculum covers Python, Go, TypeScript, Rust, and Dart.
 It uses the same local Qwen3-4B student and CUDA QLoRA training.
 The larger local model creates repair traces through the RLM's Python REPL.
