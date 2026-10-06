@@ -8,9 +8,9 @@ from pathlib import Path
 
 def validate_batch(data):
     conversations=data.get('conversations')
-    # ponytail: four prompts fit the profiled 16 GB setup; profile before raising this ceiling.
-    if not isinstance(conversations,list) or not 1<=len(conversations)<=4:
-        raise ValueError('Use one to four independent conversations')
+    # ponytail: sixteen prompts is the profiled ceiling; split long batches before allocating their cache.
+    if not isinstance(conversations,list) or not 1<=len(conversations)<=16:
+        raise ValueError('Use one to sixteen independent conversations')
     for messages in conversations:
         if not isinstance(messages,list) or not messages or any(
                 not isinstance(m,dict) or m.get('role') not in ('system','user','assistant')
@@ -38,9 +38,14 @@ def generate(model,tokenizer,data,use_adapter):
     import torch
     conversations,maximum=validate_batch(data)
     inputs=tokenizer.apply_chat_template(conversations,tokenize=True,add_generation_prompt=True,
-        enable_thinking=False,padding=True,return_tensors='pt',return_dict=True).to('cuda')
+        enable_thinking=False,padding=True,return_tensors='pt',return_dict=True)
     padded=inputs['input_ids'].shape[-1]
     if padded+maximum>8192:raise ValueError('Token budget exceeded')
+    if len(conversations)*(padded+maximum)>32768:
+        middle=len(conversations)//2
+        return (generate(model,tokenizer,{**data,'conversations':conversations[:middle]},use_adapter)
+                +generate(model,tokenizer,{**data,'conversations':conversations[middle:]},use_adapter))
+    inputs=inputs.to('cuda')
     with (contextlib.nullcontext() if use_adapter else model.disable_adapter()),torch.inference_mode():
         out=model.generate(**inputs,do_sample=False,max_new_tokens=maximum,pad_token_id=tokenizer.eos_token_id)
     return [completion(tokenizer,tokens[padded:],int(mask.sum()),maximum,model.generation_config.eos_token_id)

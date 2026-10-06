@@ -65,7 +65,7 @@ def solve_batch(tasks, base, mode='direct', depth=1, instruction='', calls=1, ou
     url = urlparse(base)
     if url.scheme != 'http' or url.hostname not in ('127.0.0.1', 'localhost') or url.username or url.password:
         raise ValueError('Direct coding uses the local model API')
-    if mode != 'direct' or seconds <= 0 or calls < 1 or not 1<=len(tasks)<=4:
+    if mode != 'direct' or seconds <= 0 or calls < 1 or not 1<=len(tasks)<=16:
         raise ValueError('Invalid direct coding budget')
     started = time.monotonic()
     prompts = [messages(task) for task in tasks]

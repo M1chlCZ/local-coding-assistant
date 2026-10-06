@@ -20,10 +20,40 @@ class InferenceBatchTests(unittest.TestCase):
         conversations=[[{'role':'user','content':str(i)}] for i in range(2)]
         values,maximum=module.validate_batch({'conversations':conversations,'max_tokens':512})
         self.assertEqual(values,conversations);self.assertEqual(maximum,512)
-        for data in ({'conversations':[]},{'conversations':conversations*3},
+        module.validate_batch({'conversations':conversations*8})
+        for data in ({'conversations':[]},{'conversations':conversations*9},
                      {'conversations':[[{'role':'user','content':None}]]},
                      {'conversations':conversations,'max_tokens':0}):
             with self.assertRaises(ValueError):module.validate_batch(data)
+
+    def test_long_batches_split_before_cuda_and_keep_answer_order(self):
+        import contextlib
+        import sys
+        from types import SimpleNamespace
+        module=self.bridge();calls=[]
+        class Inputs(dict):
+            def to(self,device):
+                self.assert_safe=len(self['attention_mask'])*(5000+1024)<=32768
+                if not self.assert_safe:raise AssertionError('Oversized batch reached CUDA')
+                return self
+        class Tokenizer:
+            eos_token_id=99
+            def apply_chat_template(self,conversations,**kwargs):
+                return Inputs(input_ids=SimpleNamespace(shape=(len(conversations),5000),
+                    values=[int(c[0]['content']) for c in conversations]),
+                    attention_mask=[SimpleNamespace(sum=lambda:5000) for c in conversations])
+            def decode(self,tokens,**kwargs):return str(tokens[0])
+        class Model:
+            generation_config=SimpleNamespace(eos_token_id=99)
+            def disable_adapter(self):return contextlib.nullcontext()
+            def generate(self,input_ids,**kwargs):
+                calls.append(len(input_ids.values))
+                return SimpleNamespace(tolist=lambda:[[0]*5000+[i,99] for i in input_ids.values])
+        conversations=[[{'role':'user','content':str(i)}] for i in range(16)]
+        with patch.dict(sys.modules,{'torch':SimpleNamespace(inference_mode=contextlib.nullcontext)}):
+            responses=module.generate(Model(),Tokenizer(),{'conversations':conversations},False)
+        self.assertEqual(calls,[4,4,4,4])
+        self.assertEqual([r['choices'][0]['message']['content'] for r in responses],list(map(str,range(16))))
 
     def test_completion_does_not_count_other_answers_padding(self):
         module=self.bridge()
@@ -118,11 +148,11 @@ class InferenceBatchTests(unittest.TestCase):
             tasks=[{'id':str(i),'repository':'problem-'+str(i),'split':'train' if i<20 else 'dev',
                     'language':('python','go','typescript','rust','dart')[i%5]} for i in range(40)]
             atomic_json(root/'next.json',tasks);completed=(parent/'status.json').read_bytes()
-            controller=Controller.create(root/'controller',parent);controller.save(generation_batch_size=4)
+            controller=Controller.create(root/'controller',parent);controller.save(generation_batch_size=16)
             with patch.object(controller,'stash_adapter',side_effect=lambda path:str(path)):
                 child=controller.prepare_child(root/'next.json')
             state=json.loads((child/'status.json').read_text())
-            self.assertEqual(state['generation_batch_size'],4)
+            self.assertEqual(state['generation_batch_size'],16)
             self.assertFalse(state['polyglot_baseline_complete'])
             self.assertEqual(state['best_dev'],{'tasks':[]})
             self.assertEqual(json.loads((child/'previous-serial-baseline.json').read_text()),previous)

@@ -102,7 +102,7 @@ def summarize(binding,tasks,reports):
 
 
 def run(adapter,output,limit=None,batch_size=1):
-    if batch_size not in (1,2,4):raise ValueError('Use a checked batch size of 1, 2 or 4')
+    if batch_size not in (1,2,4,8,16):raise ValueError('Use a checked batch size of 1, 2, 4, 8 or 16')
     metadata,tasks=load_tasks()
     if limit:
         tasks={l:ts[:limit] for l,ts in tasks.items()}
@@ -176,6 +176,6 @@ def run(adapter,output,limit=None,batch_size=1):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--adapter',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True);parser.add_argument('--smoke-limit',type=int,choices=range(1,11))
-    parser.add_argument('--batch-size',type=int,choices=(1,2,4),default=1)
+    parser.add_argument('--batch-size',type=int,choices=(1,2,4,8,16),default=1)
     args=parser.parse_args();signal.signal(signal.SIGTERM,lambda *_:sys.exit(143))
     run(args.adapter,args.output,args.smoke_limit,args.batch_size)

@@ -45,7 +45,7 @@ def quality_settings(state):
 
 def quality_batch_size(state):
     size=state.get('generation_batch_size',1) if state.get('recipe')=='balanced-code-v1' else 1
-    if type(size) is not int or size not in (1,2,4):raise ValueError('Use a checked batch size of 1, 2 or 4')
+    if type(size) is not int or size not in (1,2,4,8,16):raise ValueError('Use a checked batch size of 1, 2, 4, 8 or 16')
     return size
 
 

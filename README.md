@@ -66,7 +66,8 @@ The [multilingual curriculum](research/polyglot.md) rotates Python, Go, TypeScri
 The latest full audit scored 473/790 for the base model and 433/790 for the RLM adapter.
 The revised [balanced code trial](research/polyglot.md#balanced-code-trial) starts each candidate from the base model and trains equal language samples.
 It trains verified source answers instead of REPL actions. No quality improvement is established for this new recipe yet.
-Direct checks can batch up to four independent prompts on one CUDA model and run two compiler checks in parallel.
+Direct checks can batch up to sixteen independent prompts on one CUDA model and run two compiler checks in parallel.
+Long prompts split into smaller GPU batches under a 32,768-token budget, including padding and output.
 Changing the batch size starts a fresh matched development baseline. An audit already in progress keeps its original settings.
 It recovers after Windows login when previously running. Pause releases the GPU for gaming and remains saved across logins.
 The earlier tuned session uses 30 repair tasks, visible tests, and short training candidates.

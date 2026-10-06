@@ -184,7 +184,7 @@ class Controller:
             return [executable,str(archive/runner),'--adapter',str(adapter),'--output',str(prior)],prior
         command=[executable,str(ROOT/runner),'--adapter',str(adapter)]
         size=self.state.get('generation_batch_size',1) if polyglot else 1
-        if type(size) is not int or size not in (1,2,4):raise ValueError('Use a checked generation batch size')
+        if type(size) is not int or size not in (1,2,4,8,16):raise ValueError('Use a checked generation batch size')
         if size>1:
             from research.polyglot_benchmark import SOURCES
             digest=hashlib.sha256(json.dumps({n:sha256(ROOT/n) for n in SOURCES},sort_keys=True).encode()).hexdigest()[:12]

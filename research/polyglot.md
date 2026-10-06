@@ -11,12 +11,14 @@ Token filtering keeps this balance and drops complete examples that exceed 4,096
 Training uses rank-8 CUDA QLoRA, a `1e-5` learning rate, one data pass, and at most 20 optimizer steps.
 Only assistant source tokens receive a training loss.
 
-Direct development and confirmation checks support GPU batches of one, two, or four independent prompts.
+Direct development and confirmation checks support GPU batches of 1, 2, 4, 8, or 16 independent prompts.
+The server splits long batches before CUDA allocation. Each GPU batch allows 32,768 padded input and output tokens in total.
+Each prompt keeps its 8,192-token limit, including output.
 At most two compiler checks run in parallel. Teacher collection and model training keep one GPU owner.
 Pause releases the model for gaming. Resume keeps complete saved batches and task order.
 Set the controller's `generation_batch_size` while the reviewed worker is idle; use the same size for both models.
 A changed size gets a fresh matched baseline in the next experiment. Do not mix serial and batched quality scores.
-The full audit also supports `--batch-size 2` or `--batch-size 4`, with a separate source-bound cache.
+The full audit also supports `--batch-size 2`, `4`, `8`, or `16`, with a separate source-bound cache.
 Shared generation time is counted once per batch when reporting throughput.
 
 Development and fresh confirmation checks use direct source requests with one attempt and no feedback retry.

@@ -83,7 +83,7 @@ def chat(base, messages, tools=None, max_tokens=768, thinking=False, timeout=600
 
 
 def chat_batch(base, conversations, max_tokens=1024, timeout=600):
-    if not conversations or len(conversations)>4:raise ValueError('Use one to four conversations')
+    if not conversations or len(conversations)>16:raise ValueError('Use one to sixteen conversations')
     started=time.monotonic()
     if len(conversations)==1:
         response,elapsed=chat(base,conversations[0],max_tokens=max_tokens,timeout=timeout)
