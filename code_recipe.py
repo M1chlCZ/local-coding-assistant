@@ -8,8 +8,8 @@ import re
 import shutil
 import time
 import urllib.error
-import urllib.request
 from urllib.parse import urlparse
+import uuid
 
 from polyglot_runtime import LANGUAGES, check_program
 from recursive_agent import grade
@@ -57,40 +57,43 @@ def source(answer):
 
 
 def solve(task, base, mode='direct', depth=1, instruction='', calls=1, output_tokens=1024, seconds=120):
+    return solve_batch([task],base,mode,depth,instruction,calls,output_tokens,seconds)[0]
+
+
+def solve_batch(tasks, base, mode='direct', depth=1, instruction='', calls=1, output_tokens=1024, seconds=120):
+    from evaluation import chat_batch
     url = urlparse(base)
     if url.scheme != 'http' or url.hostname not in ('127.0.0.1', 'localhost') or url.username or url.password:
         raise ValueError('Direct coding uses the local model API')
-    if mode != 'direct' or seconds <= 0 or calls < 1:
+    if mode != 'direct' or seconds <= 0 or calls < 1 or not 1<=len(tasks)<=4:
         raise ValueError('Invalid direct coding budget')
     started = time.monotonic()
-    prompt = messages(task)
-    row = {k: task[k] for k in ('id', 'repository', 'split')}
-    row.update(mode='direct', depth=1, passed=False, calls=1, input_tokens=0, output_tokens=0, trace=[])
+    prompts = [messages(task) for task in tasks]
+    rows = [{**{k:task[k] for k in ('id','repository','split')},'mode':'direct','depth':1,
+             'passed':False,'calls':1,'input_tokens':0,'output_tokens':0,'trace':[]} for task in tasks]
     try:
-        request = urllib.request.Request(base.rstrip('/')+'/v1/chat/completions',
-            data=json.dumps({'model': 'local-coding-assistant', 'messages': prompt, 'temperature': 0,
-                'max_tokens': min(1024, output_tokens), 'chat_template_kwargs': {'enable_thinking': False}}).encode(),
-            headers={'Content-Type': 'application/json'})
-        with urllib.request.urlopen(request, timeout=seconds) as response:
-            value = json.load(response)
-        answer = value['choices'][0]['message']['content']
-        code = source(answer)
-        row.update(answer=answer, patch={task['editable'][0]: code},
-            input_tokens=value['usage']['prompt_tokens'], output_tokens=value['usage']['completion_tokens'])
-        row['trace'] = [{'kind': 'root', 'messages': prompt, 'response': answer,
-                        'input_tokens': row['input_tokens'], 'output_tokens': row['output_tokens']}]
-        if task['split'] == 'train' and task.get('language'):
-            visible = check_program(task['language'], code, visible_cases(task))
-            row['visible_feedback'] = visible.get('feedback', '') if not visible['passed'] else ''
+        responses,elapsed = chat_batch(base.rstrip('/'),prompts,max_tokens=min(1024,output_tokens),timeout=seconds)
+        batch_id=uuid.uuid4().hex
+        for task,prompt,row,value in zip(tasks,prompts,rows,responses):
+            answer=value['choices'][0]['message']['content'];code=source(answer)
+            row.update(answer=answer,patch={task['editable'][0]:code},input_tokens=value['usage']['prompt_tokens'],
+                       output_tokens=value['usage']['completion_tokens'])
+            row['trace']=[{'kind':'root','messages':prompt,'response':answer,
+                          'input_tokens':row['input_tokens'],'output_tokens':row['output_tokens']}]
+            if len(tasks)>1:
+                row.update(generation_batch_id=batch_id,generation_batch_size=len(tasks),generation_batch_seconds=elapsed)
+            if task['split']=='train' and task.get('language'):
+                visible=check_program(task['language'],code,visible_cases(task))
+                row['visible_feedback']=visible.get('feedback','') if not visible['passed'] else ''
     except urllib.error.URLError as error:
         if isinstance(error.reason, (TimeoutError, OSError)) and 'timed out' in str(error.reason):
-            row['error'] = 'TimeoutError: Direct code generation timed out'
+            for row in rows:row['error']='TimeoutError: Direct code generation timed out'
         else:
             raise RuntimeError('Direct coding model API unavailable') from error
     except (TimeoutError, ValueError, KeyError) as error:
-        row['error'] = type(error).__name__+': '+str(error)
-    row['elapsed_s'] = round(time.monotonic()-started, 3)
-    return row
+        for row in rows:row['error']=type(error).__name__+': '+str(error);row.pop('patch',None)
+    for row in rows:row['elapsed_s']=round(time.monotonic()-started,3)
+    return rows
 
 
 def balanced_order(tasks, limit=None):

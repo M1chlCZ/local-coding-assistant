@@ -37,6 +37,7 @@ def establish_baseline(session,folder):
             binding={'adapter_sha256':sha256(adapter/'adapter_model.safetensors') if mode=='adapter' else None,
                      'development_tasks_sha256':sha256(session.path/'development-tasks.json'),
                      'sources':session.state['sources'],'settings':settings,'limits':learning.LIMITS}
+            if learning.quality_batch_size(session.state)>1:binding['generation_batch_size']=learning.quality_batch_size(session.state)
             report=json.loads(file.read_text()) if file.exists() else {**binding,'split':'dev','tasks':[]}
             if any(report.get(k)!=v for k,v in binding.items()):raise ValueError('Multilingual baseline binding changed')
             if [r['id'] for r in report['tasks']]!=[t['id'] for t in tasks[:len(report['tasks'])]]:
@@ -46,13 +47,14 @@ def establish_baseline(session,folder):
                 report = {**binding, 'split': 'dev', 'tasks': reports['base']['tasks'],
                           'evaluated_as': 'Verified zero-delta adapter; base outputs reused'}
                 atomic_json(file, report)
-            for task in tasks[len(report['tasks']):]:
-                session.save(detail='Initial multilingual baseline '+mode+': '+task['id'],
+            size=learning.quality_batch_size(session.state)
+            for offset in range(len(report['tasks']),len(tasks),size):
+                chunk=tasks[offset:offset+size]
+                session.save(detail='Initial multilingual baseline '+mode+': '+chunk[0]['id'],
                     evaluation={'mode':mode,'completed':len(report['tasks']),'total':len(tasks)})
                 if session.interrupted():return False
-                row=solve(task,'http://127.0.0.1:8090',**settings,**learning.LIMITS)
-                if row.get('patch'):row.update(grade(task,row['patch']))
-                report['tasks'].append(row);atomic_json(file,report)
+                report['tasks'].extend(learning.quality_rows(session.state,chunk,'http://127.0.0.1:8090'))
+                atomic_json(file,report)
             reports[mode]=report
         previous={'tasks':[{'id':r['id'],'passed':r['passed']} for r in reports['adapter']['tasks']]}
         # Preserve established Python successes rather than silently resetting the selection floor.

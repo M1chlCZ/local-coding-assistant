@@ -130,6 +130,9 @@ function Format-LearningProgress($Value) {
     $Now = $Value.detail
     if ($Value.recipe -eq 'balanced-code-v1') {
         $Lines += 'Recipe: balanced code answers; each candidate starts from the base model.'
+        if ($Value.generation_batch_size -gt 1) {
+            $Lines += "GPU generation: $($Value.generation_batch_size) independent prompts; up to 2 compiler checks in parallel."
+        }
     }
     if ($Value.continuous) {
         $Lines[1] = "Total training hours: $Used; runs until Pause or Stop"

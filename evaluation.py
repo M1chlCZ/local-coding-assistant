@@ -65,21 +65,34 @@ def parse_tools(message):
     return calls
 
 
-def request(base, route, payload=None):
+def request(base, route, payload=None, timeout=600):
     req = urllib.request.Request(base + route, data=None if payload is None else json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=600) as response:
+    with urllib.request.urlopen(req, timeout=timeout) as response:
         return json.load(response)
 
 
-def chat(base, messages, tools=None, max_tokens=768, thinking=False):
+def chat(base, messages, tools=None, max_tokens=768, thinking=False, timeout=600):
     payload = {"model": "local-coding-assistant", "messages": messages, "temperature": 0,
                "max_tokens": max_tokens, "chat_template_kwargs": {"enable_thinking": thinking}}
     if tools:
         payload["tools"] = tools
     started = time.monotonic()
-    result = request(base, "/v1/chat/completions", payload)
+    result = request(base, "/v1/chat/completions", payload, timeout=timeout)
     return result, round(time.monotonic() - started, 3)
+
+
+def chat_batch(base, conversations, max_tokens=1024, timeout=600):
+    if not conversations or len(conversations)>4:raise ValueError('Use one to four conversations')
+    started=time.monotonic()
+    if len(conversations)==1:
+        response,elapsed=chat(base,conversations[0],max_tokens=max_tokens,timeout=timeout)
+        return [response],elapsed
+    result=request(base,'/batch',{'conversations':conversations,'max_tokens':max_tokens},timeout=timeout)
+    responses=result.get('responses')
+    if not isinstance(responses,list) or len(responses)!=len(conversations):
+        raise RuntimeError('Batch response count changed')
+    return responses,round(time.monotonic()-started,3)
 
 
 def bounded_run(command, program, timeout=20):

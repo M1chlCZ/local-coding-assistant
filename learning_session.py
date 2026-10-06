@@ -43,6 +43,29 @@ def quality_settings(state):
     return SETTINGS
 
 
+def quality_batch_size(state):
+    size=state.get('generation_batch_size',1) if state.get('recipe')=='balanced-code-v1' else 1
+    if type(size) is not int or size not in (1,2,4):raise ValueError('Use a checked batch size of 1, 2 or 4')
+    return size
+
+
+def quality_rows(state,tasks,base):
+    from recursive_agent import grade
+    if quality_batch_size(state)>1:
+        from code_recipe import solve_batch
+        rows=solve_batch(tasks,base,**quality_settings(state),**LIMITS)
+    else:
+        rows=[quality_solver(state)(task,base,**quality_settings(state),**LIMITS) for task in tasks]
+    if len(rows)!=len(tasks) or any(row['id']!=task['id'] for task,row in zip(tasks,rows)):
+        raise ValueError('Quality batch task order changed')
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(2,len(tasks))) as pool:
+        futures=[pool.submit(grade,task,row['patch']) if row.get('patch') else None for task,row in zip(tasks,rows)]
+        for row,future in zip(rows,futures):
+            if future:row.update(future.result())
+    return rows
+
+
 def development_tasks(extra=None):
     originals = json.loads((ROOT/'research/rlm_tasks.json').read_text())
     added = json.loads((ROOT/'research/repair_tasks.json').read_text())
@@ -445,8 +468,14 @@ class Session:
                     'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': settings, 'limits': LIMITS,
                     'development_tasks_sha256': self.state.get('development_tasks_sha256'),
                     'adapter_sha256': sha256(checkpoint/'adapter_model.safetensors') if mode=='adapter' else None}
+                if quality_batch_size(self.state)>1:
+                    if report.get('generation_batch_size',quality_batch_size(self.state))!=quality_batch_size(self.state):
+                        raise ValueError('Development generation batch size changed')
+                    report['generation_batch_size']=quality_batch_size(self.state)
                 request('http://127.0.0.1:8090', '/mode', {'mode': mode})
-                for task in tasks[len(report['tasks']):]:
+                size=quality_batch_size(self.state)
+                for offset in range(len(report['tasks']),len(tasks),size):
+                    chunk=tasks[offset:offset+size]
                     research_best = (self.state.get('research_score', 0), self.state.get('research_regressions', 0)) if self.state.get('research') else None
                     if (mode=='adapter' and self.state.get('fast_reject')
                             and cannot_improve(report['tasks'], reports['base'], previous, research_best)):
@@ -454,15 +483,12 @@ class Session:
                         report['rejection_reason'] = 'No completion can meet promotion or research retention rules'
                         atomic_json(path, report)
                         break
-                    self.save(detail=f'Development check {checkpoint.name} {mode}: '+task['id'],
+                    self.save(detail=f'Development check {checkpoint.name} {mode}: '+chunk[0]['id'],
                               evaluation={'checkpoint':checkpoint.name, 'mode':mode,
                                           'completed':len(report['tasks']), 'total':len(tasks)})
                     if self.interrupted():
                         return
-                    row = solve(task, 'http://127.0.0.1:8090', **settings, **LIMITS)
-                    if row.get('patch'):
-                        row.update(grade(task, row['patch']))
-                    report['tasks'].append(row)
+                    report['tasks'].extend(quality_rows(self.state,chunk,'http://127.0.0.1:8090'))
                     atomic_json(path, report)
                     self.save(evaluation={'checkpoint':checkpoint.name, 'mode':mode,
                                           'completed':len(report['tasks']), 'total':len(tasks)})

@@ -12,7 +12,7 @@ from pathlib import Path
 from continuous_learning import Controller, ROOT, read
 from evaluation import request
 from launcher import health
-from learning_session import SETTINGS, LIMITS, quality_solver, quality_settings
+from learning_session import SETTINGS, LIMITS, quality_solver, quality_settings, quality_batch_size, quality_rows
 from recursive_agent import grade, solve
 from train_adapter import atomic_json, verified_checkpoint
 from training_data import registry, sha256
@@ -39,6 +39,7 @@ def compare(controller):
     output=controller.path/'confirmations'/child.name;output.mkdir(parents=True,exist_ok=True)
     binding={'tasks_sha256':sha256(tasks_path),'baseline_sha256':baseline_hash,
              'current_sha256':sha256(current/'adapter_model.safetensors'),'settings':settings,'limits':LIMITS}
+    if quality_batch_size(state)>1:binding['generation_batch_size']=quality_batch_size(state)
     previous=read(output/'binding.json')
     if previous and previous!=binding:raise ValueError('Confirmation binding changed')
     atomic_json(output/'binding.json',binding)
@@ -74,13 +75,14 @@ def compare(controller):
                     if process.poll() is not None or time.monotonic()>deadline:raise RuntimeError('Confirmation server failed to start')
                     time.sleep(1)
                 request('http://127.0.0.1:8090','/mode',{'mode':'base' if name=='base' else 'adapter'})
-                for task in tasks[len(report['tasks']):]:
+                size=quality_batch_size(state)
+                for offset in range(len(report['tasks']),len(tasks),size):
+                    chunk=tasks[offset:offset+size]
                     atomic_json(output/'status.json',{'status':'running','mode':name,'completed':len(report['tasks']),
-                        'total':len(tasks),'task':task['id']})
-                    row=solve(task,'http://127.0.0.1:8090',**settings,**LIMITS)
-                    if row.get('patch'):row.update(grade(task,row['patch']))
-                    report['tasks'].append(row);atomic_json(output/f'{name}.json',report)
-                    print(name,task['id'],row.get('passed'),flush=True)
+                        'total':len(tasks),'task':chunk[0]['id']})
+                    rows=quality_rows(state,chunk,'http://127.0.0.1:8090')
+                    report['tasks'].extend(rows);atomic_json(output/f'{name}.json',report)
+                    for row in rows:print(name,row['id'],row.get('passed'),flush=True)
                 process.terminate();process.wait(timeout=30);process=None
             reports[name]=report
         flags={name:{r['id']:r.get('passed') is True for r in report['tasks']} for name,report in reports.items()}

@@ -2,6 +2,7 @@
 import argparse
 import copy
 import fcntl
+import hashlib
 import json
 import math
 import os
@@ -177,12 +178,36 @@ class Controller:
         if polyglot:output=self.path/'polyglot-benchmarks'/output.name
         runner='research/polyglot_benchmark.py' if polyglot else 'research/student_benchmark.py'
         executable=str(ROOT/'.cache/data-env/bin/python') if polyglot else sys.executable
-        return [executable,str(ROOT/runner),'--adapter',str(adapter),'--output',str(output)],output
+        prior=Path(self.state.get('benchmark_output') or output)
+        archive=self.archived_audit(prior)
+        if archive and read(prior/'binding.json')['adapter_sha256']==sha256(adapter/'adapter_model.safetensors'):
+            return [executable,str(archive/runner),'--adapter',str(adapter),'--output',str(prior)],prior
+        command=[executable,str(ROOT/runner),'--adapter',str(adapter)]
+        size=self.state.get('generation_batch_size',1) if polyglot else 1
+        if type(size) is not int or size not in (1,2,4):raise ValueError('Use a checked generation batch size')
+        if size>1:
+            from research.polyglot_benchmark import SOURCES
+            digest=hashlib.sha256(json.dumps({n:sha256(ROOT/n) for n in SOURCES},sort_keys=True).encode()).hexdigest()[:12]
+            output=output.with_name(output.name+f'-batch{size}-'+digest)
+            command+=['--output',str(output),'--batch-size',str(size)]
+        else:command+=['--output',str(output)]
+        return command,output
+
+    def archived_audit(self,output):
+        archive=self.state.get('completed_source_generations',{}).get(self.state['child'],{})
+        binding=read(Path(output)/'binding.json',{})
+        if not archive.get('benchmark_sources') or binding.get('sources')!=archive['benchmark_sources']:return None
+        directory=Path(archive['directory']).resolve()
+        if (not directory.is_relative_to(self.path/'source-updates') or not Path(output).resolve().is_relative_to(self.path)
+                or any(sha256(directory/name)!=digest for name,digest in archive['benchmark_sources'].items())):
+            raise ValueError('Archived audit source changed')
+        return directory
 
     def record_polyglot_benchmark(self,output,reused):
         from research.polyglot_benchmark import SOURCES,load_tasks,summarize
         _,tasks=load_tasks();binding=read(output/'binding.json')
-        if binding['sources']!={n:sha256(ROOT/n) for n in SOURCES} or binding.get('smoke_limit'):
+        if ((binding['sources']!={n:sha256(ROOT/n) for n in SOURCES} and not self.archived_audit(output))
+                or binding.get('smoke_limit')):
             raise ValueError('Multilingual audit source changed or report is partial')
         reports={m:{l:read(output/(m+'-'+l+'.json')) for l in binding['languages']} for m in ('base','adapter')}
         summary=summarize(binding,tasks,reports)
@@ -205,7 +230,7 @@ class Controller:
         from research.student_benchmark import SOURCES,load_report,load_tasks,summarize
         binding=read(output/'binding.json',{})
         if (binding.get('adapter_sha256')!=output.name
-                or binding.get('sources')!={name:sha256(ROOT/name) for name in SOURCES}):
+                or (binding.get('sources')!={name:sha256(ROOT/name) for name in SOURCES} and not self.archived_audit(output))):
             raise ValueError('Scheduled benchmark report failed source or adapter integrity checks')
         _,tasks=load_tasks()
         reports={name:load_report(output/f'{name}.json',binding,tasks) for name in ('base','adapter')}
@@ -300,6 +325,14 @@ class Controller:
             sources={name:sha256(ROOT/name) for name in learning.SOURCE_FILES},training_retry=None,recovered_examples=0,
             completed_rounds=[],accepted_rounds=[],collected=0,passed=0,training=None,evaluation=None,
             rounds_without_repairs=0,pid=None,detail='Fresh continuous curriculum; accepted model preserved')
+        if direct:
+            size=self.state.get('generation_batch_size',old.get('generation_batch_size',1))
+            if size!=old.get('generation_batch_size',1):
+                # Batched floating-point paths need a fresh matched baseline, never a mixed comparison.
+                (child/'dev-base.json').rename(child/'previous-serial-baseline.json')
+                state.update(generation_batch_size=size,polyglot_baseline_complete=False,best_dev={'tasks':[]},
+                    research_score=0,research_regressions=0,language_baseline=None,
+                    detail='New inference batch size; establishing its matched baseline')
         atomic_json(child/'confirmation-tasks.json',confirm)
         state['confirmation']={'consumed':False,'tasks':len(confirm),'reserved_before_training':True,
             'registry_sha256':sha256(child/'confirmation-tasks.json'),

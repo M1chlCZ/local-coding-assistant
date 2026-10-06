@@ -11,6 +11,14 @@ Token filtering keeps this balance and drops complete examples that exceed 4,096
 Training uses rank-8 CUDA QLoRA, a `1e-5` learning rate, one data pass, and at most 20 optimizer steps.
 Only assistant source tokens receive a training loss.
 
+Direct development and confirmation checks support GPU batches of one, two, or four independent prompts.
+At most two compiler checks run in parallel. Teacher collection and model training keep one GPU owner.
+Pause releases the model for gaming. Resume keeps complete saved batches and task order.
+Set the controller's `generation_batch_size` while the reviewed worker is idle; use the same size for both models.
+A changed size gets a fresh matched baseline in the next experiment. Do not mix serial and batched quality scores.
+The full audit also supports `--batch-size 2` or `--batch-size 4`, with a separate source-bound cache.
+Shared generation time is counted once per batch when reporting throughput.
+
 Development and fresh confirmation checks use direct source requests with one attempt and no feedback retry.
 The old RLM scores are separate measurements. The new baseline uses a zero-delta adapter that matches the base model.
 Every accepted candidate must improve its complete development score without losing an earlier passing task.
