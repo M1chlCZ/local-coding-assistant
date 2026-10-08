@@ -6,10 +6,18 @@ The `balanced-code-v1` recipe trains complete source answers from the pinned bas
 It does not warm-start from the earlier RLM adapter or train on its Python-only REPL anchor.
 Each full round collects four public training examples per language.
 A failed example gets one retry with visible feedback. Only answers that pass all registered checks enter training.
-The dataset contains equal numbers of answers for Python, Go, TypeScript, Rust, and Dart.
-Token filtering keeps this balance and drops complete examples that exceed 4,096 tokens.
-Training uses rank-8 CUDA QLoRA, a `1e-5` learning rate, one data pass, and at most 20 optimizer steps.
+The dataset keeps up to 256 verified answers per language. A scarce language does not discard useful answers from other languages.
+Token filtering drops complete examples that exceed 4,096 tokens. Language loss weights give each language equal total training weight.
+Training uses rank-8 CUDA QLoRA and a `1e-5` learning rate. The original trial permits at most 20 optimizer steps.
 Only assistant source tokens receive a training loss.
+
+Reviewed research sessions can enable `recipe_trials` in their saved state before training starts.
+Each dataset then receives three matched trials: 20 steps from the base, one pass from the base, and one pass from the accepted adapter.
+The full-pass trials permit at most 500 steps. Their warm-start adapter stays fixed while the trials run.
+Each trial uses the same data, learning rate, and inference settings. Only its final checkpoint receives the complete development comparison.
+The results record gains and losses against the starting accepted adapter. Partial trials do not establish an improvement.
+Verified replay survives new curriculum batches. Old replay tasks are not collected again as fresh teacher requests.
+The accepted checkpoint still requires more passes and no lost tasks. Confirmation and full audits remain separate from training.
 
 Direct development and confirmation checks support GPU batches of 1, 2, 4, 8, or 16 independent prompts.
 The server splits long batches before CUDA allocation. Each GPU batch allows 32,768 padded input and output tokens in total.

@@ -5,6 +5,24 @@ from pathlib import Path
 from unittest.mock import patch
 
 class PolyglotTests(unittest.TestCase):
+    def test_go_test_imports_are_present_when_answer_has_its_own_package(self):
+        from research.polyglot_benchmark import program
+        task={'prompt':'package main\nimport ("testing";"fmt")\nfunc answer() int {',
+              'tests':'func TestAnswer(t *testing.T) { t.Error(fmt.Sprint(answer())) }'}
+        for code in ('package main\nfunc answer() int {return 1}',
+                     'package main\nimport "fmt"\nfunc answer() int {fmt.Println();return 1}'):
+            source=program('go',task,code)
+            self.assertEqual(source.count('"testing"'),1)
+            self.assertEqual(source.count('"fmt"'),1)
+            self.assertIn(code.split('\n',1)[1],source)
+
+    def test_go_harness_does_not_supply_missing_algorithm_imports(self):
+        from research.polyglot_benchmark import program
+        task={'prompt':'package main\nimport ("testing";"fmt";"sort")\nfunc answer() int {',
+              'tests':'func TestAnswer(t *testing.T) { t.Error(fmt.Sprint(answer())) }'}
+        source=program('go',task,'package main\nfunc answer() int {sort.Ints(nil);return 1}')
+        self.assertNotIn('"sort"',source)
+
     def test_native_runner_rejects_wrong_answer_and_empty_output(self):
         from polyglot_runtime import runner_source
         task={'language':'go','filename':'solution.go','cases':[{'input':'2 3\n','output':'5\n'}]}

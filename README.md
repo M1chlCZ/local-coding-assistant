@@ -64,7 +64,7 @@ Checkpoints retain the optimizer and current step.
 [Continuous mode](research/continuous-learning.md) prepares fresh checked public tasks and runs until Pause or Stop.
 The [multilingual curriculum](research/polyglot.md) rotates Python, Go, TypeScript, Rust, and Dart with mixed replay and separate language scores.
 The latest full audit scored 473/790 for the base model and 433/790 for the RLM adapter.
-The revised [balanced code trial](research/polyglot.md#balanced-code-trial) starts each candidate from the base model and trains equal language samples.
+The revised [balanced code trial](research/polyglot.md#balanced-code-trial) preserves verified language examples and compares fresh training with continued adapter training.
 It trains verified source answers instead of REPL actions. No quality improvement is established for this new recipe yet.
 Direct checks can batch up to sixteen independent prompts on one CUDA model and run two compiler checks in parallel.
 Long prompts split into smaller GPU batches under a 32,768-token budget, including padding and output.

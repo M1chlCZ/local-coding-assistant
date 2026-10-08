@@ -64,6 +64,13 @@ def program(language,task,content):
         imports=re.search(r'(?s)\A(.*?import\s*\(.*?\)\n)',task['prompt'])
         if not re.search(r'(?m)^package\s+',code):
             code=(imports.group(1) if imports else 'package main\nimport("testing";"fmt")\n')+code
+        declarations='\n'.join(re.findall(r'(?m)^\s*import\s*(?:\([^)]*\)|[^\n]*)',code))
+        # Restore libraries used by the appended tests, never missing algorithm imports.
+        missing=[name for name in ('testing','fmt') if re.search(r'\b'+name+r'\.',tests)
+                 and '"'+name+'"' not in declarations]
+        if missing:
+            code=re.sub(r'(?m)^(package\s+\w+[^\n]*\n)',
+                lambda m:m[0]+'import ('+';'.join(json.dumps(n) for n in missing)+')\n',code,count=1)
     return code+'\n'+tests
 
 

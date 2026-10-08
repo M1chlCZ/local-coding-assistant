@@ -13,6 +13,9 @@ Teacher collection allows three minutes per task; quality checks keep the same l
 Failed training attempts receive one feedback retry; only verified corrections enter training.
 Multilingual gains still require matched evaluation.
 
+The [matched recipe trials](polyglot.md#balanced-code-trial) compare short training, a complete data pass, and continued adapter training with verified replay.
+These trials keep the accepted checkpoint until a candidate passes the quality gate. More training does not guarantee better code.
+
 Run PowerShell from the project folder on the PC.
 Use Python 3.14, Git, and a CUDA GPU for research.
 Allow several hundred GB of free disk space.

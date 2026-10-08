@@ -238,6 +238,14 @@ class Session:
             time.sleep(1)
         return True
 
+    def training_output(self, round_path, index=None):
+        if self.state.get('recipe_trials'):
+            if not self.state.get('research'):
+                raise ValueError('Matched recipe trials require a research session')
+            index=self.state.get('trial_index',0) if index is None else index
+            return round_path/('adapter-short','adapter-full','adapter-replay')[index]
+        return round_path/'adapter'
+
     def training_command(self, round_path):
         warm = self.state.get('research_adapter') if self.state.get('research') else None
         warm = warm or self.state['best_adapter']
@@ -245,9 +253,13 @@ class Session:
         if direct:
             warm = None
         steps = 20 if direct else (5, 10, 20)[(self.state['round']-2)%3] if self.state.get('research') and warm else (20 if warm else 80)
+        if direct and self.state.get('recipe_trials'):
+            index=self.state.get('trial_index',0)
+            steps=20 if index==0 else 500
+            warm=self.state['trial_origin_adapter'] if index==2 else None
         command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'train_adapter.py'),
             '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
-            '--model', MODEL, '--revision', REVISION, '--output', str(round_path/'adapter'),
+            '--model', MODEL, '--revision', REVISION, '--output', str(self.training_output(round_path)),
             '--max-steps', str(steps), '--max-epochs', '1', '--learning-rate',
             '0.00001' if direct else ('0.0000025' if self.state.get('polyglot') else '0.000005') if warm else '0.00005',
             '--max-length', '4096', '--save-steps', '5',
@@ -287,7 +299,8 @@ class Session:
                 (self.path/f"round-{self.state['round']-1:03d}/tasks.json").read_text())
             atomic_json(tasks_path, old + round_tasks(self.state['round']))
         tasks = json.loads(tasks_path.read_text())
-        current = [t for t in tasks if t['id'].endswith(f"-r{self.state['round']}")]
+        replay = registry(self.path/'round-001/tasks.json') if self.state.get('recipe_trials') and self.state['round']>1 else {}
+        current = [t for t in tasks if t['id'].endswith(f"-r{self.state['round']}") and t['id'] not in replay]
         report_path = folder/'teacher.json'
         report = json.loads(report_path.read_text()) if report_path.exists() else {
             'schema_version': 1, 'split': 'train', 'tasks_sha256': sha256(tasks_path),
@@ -348,6 +361,8 @@ class Session:
         self.save(phase='export', detail='Teacher collection complete')
 
     def dataset(self, folder):
+        if self.state.get('recipe_trials'):
+            self.stop_child()
         report_path = folder/'teacher.json'
         report = json.loads(report_path.read_text()) if report_path.exists() else None
         if report is None or not report['tasks']:
@@ -373,7 +388,7 @@ class Session:
             reports = []
             digest = sha256(folder/'tasks.json')
             # Research keeps its original verified anchor rather than diluting it with recent rounds.
-            rounds = sorted({1, *range(max(2,self.state['round']-4),self.state['round']+1)}) if self.state.get('polyglot') else sorted({1, self.state['round']}) if self.state.get('research') else range(max(1, self.state['round']-3), self.state['round']+1)
+            rounds = range(1,self.state['round']+1) if self.state.get('recipe_trials') else sorted({1, *range(max(2,self.state['round']-4),self.state['round']+1)}) if self.state.get('polyglot') else sorted({1, self.state['round']}) if self.state.get('research') else range(max(1, self.state['round']-3), self.state['round']+1)
             for number in rounds:
                 original = self.path/f'round-{number:03d}/teacher.json'
                 value = json.loads(original.read_text())
@@ -385,8 +400,15 @@ class Session:
             # Preserve the successful teacher's actions and their exact REPL feedback.
             if self.state.get('recipe') == 'balanced-code-v1':
                 from code_recipe import export_code, UnbalancedData
+                def progress(done,total):
+                    self.save(detail=f'Regrading verified replay: {done}/{total}')
+                    if self.interrupted():
+                        raise InterruptedError('Replay preparation paused')
                 try:
-                    export_code(list(reversed(reports)), folder/'tasks.json', dataset)
+                    export_code(list(reversed(reports)), folder/'tasks.json', dataset,
+                                progress=progress if self.state.get('recipe_trials') else None)
+                except InterruptedError:
+                    return
                 except UnbalancedData as error:
                     self.save(round=self.state['round']+1, phase='collect', collected=0, passed=0,
                               detail=str(error))
@@ -402,10 +424,13 @@ class Session:
             if current_messages <= old_messages:
                 self.save(status='completed', detail='No new verified examples; stopped before duplicate training')
                 return
+        if self.state.get('recipe_trials'):
+            self.state.update(trial_index=0,trial_origin_adapter=self.state['best_adapter'],
+                trial_origin_dev=copy.deepcopy(self.state['best_dev']))
         self.save(phase='train', detail='Dataset fixed for checkpoint resume')
 
     def train(self, folder):
-        output = folder/'adapter'
+        output = self.training_output(folder)
         if (output/'training.json').exists() and json.loads((output/'training.json').read_text())['status']=='completed':
             self.save(phase='evaluate')
             return
@@ -424,7 +449,7 @@ class Session:
         pause.unlink(missing_ok=True)
         self.spawn(command, folder/'training.log')
         while self.child.poll() is None:
-            self.save(detail='CUDA adapter training')
+            self.save(detail='CUDA adapter training: '+output.name)
             if self.interrupted():
                 pause.touch()
                 self.save(detail='Saving checkpoint before pause or stop')
@@ -445,12 +470,14 @@ class Session:
         from recursive_agent import solve, grade
         solve = quality_solver(self.state)
         settings = quality_settings(self.state)
-        output = folder/'adapter'
+        output = self.training_output(folder)
         binding = json.loads((output/'run.json').read_text())
         checkpoints = sorted((p.parent for p in output.glob('checkpoint-*/complete.json')
                               if p.parent.name[11:].isdigit()), key=lambda p:int(p.name[11:]))
         if not checkpoints:
             raise ValueError('No complete candidate checkpoint exists')
+        if self.state.get('recipe_trials'):
+            checkpoints=checkpoints[-1:]
         tasks = development_tasks(self.path/'development-tasks.json') if self.state.get('development_tasks_sha256') else development_tasks()
         previous = self.state.get('best_dev')
         best_candidate = None
@@ -458,11 +485,11 @@ class Session:
             verified_checkpoint(checkpoint, binding)
             command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'research/adapter_eval_server.py'),
                        '--adapter', str(checkpoint)]
-            if not self.server(command, 8090, folder/f'evaluation-{checkpoint.name}.log'):
+            if not self.server(command, 8090, folder/f'evaluation-{output.name}-{checkpoint.name}.log'):
                 return
             reports = {}
             for mode in ('base', 'adapter'):
-                suffix = '-'+checkpoint.name if mode=='adapter' else ''
+                suffix = '-'+(output.name+'-' if self.state.get('recipe_trials') else '')+checkpoint.name if mode=='adapter' else ''
                 path = self.path/'dev-base.json' if mode=='base' else folder/f'dev-{mode}{suffix}.json'
                 report = json.loads(path.read_text()) if path.exists() else {'tasks': [], 'split': 'dev',
                     'tasks_sha256': sha256(ROOT/'research/rlm_tasks.json'), 'settings': settings, 'limits': LIMITS,
@@ -477,7 +504,7 @@ class Session:
                 for offset in range(len(report['tasks']),len(tasks),size):
                     chunk=tasks[offset:offset+size]
                     research_best = (self.state.get('research_score', 0), self.state.get('research_regressions', 0)) if self.state.get('research') else None
-                    if (mode=='adapter' and self.state.get('fast_reject')
+                    if (mode=='adapter' and self.state.get('fast_reject') and not self.state.get('recipe_trials')
                             and cannot_improve(report['tasks'], reports['base'], previous, research_best)):
                         report['early_rejected'] = True
                         report['rejection_reason'] = 'No completion can meet promotion or research retention rules'
@@ -522,6 +549,13 @@ class Session:
         if self.state.get('polyglot'):
             from polyglot_session import language_scores
             result['languages']=language_scores(tasks,reports['adapter'])
+        if self.state.get('recipe_trials'):
+            origin={r['id']:r['passed'] for r in self.state['trial_origin_dev']['tasks']}
+            result.update(trial=output.name,dataset_sha256=binding['dataset_sha256'],
+                warm_start_sha256=binding.get('warm_start_sha256'),
+                gained_from_origin=[r['id'] for r in reports['adapter']['tasks'] if r['passed'] and not origin[r['id']]],
+                lost_from_origin=[r['id'] for r in reports['adapter']['tasks'] if not r['passed'] and origin[r['id']]])
+            atomic_json(folder/('result-'+output.name+'.json'),result)
         atomic_json(folder/'result.json', result)
         self.state['completed_rounds'].append(result)
         if keep:
@@ -530,10 +564,15 @@ class Session:
                 self.state['baseline_equivalent'] = False
             self.state['best_dev'] = {'tasks': [{'id': r['id'], 'passed': r['passed']}
                                                for r in reports['adapter']['tasks']]}
-            self.state['accepted_rounds'].append(self.state['round'])
+            if self.state['round'] not in self.state['accepted_rounds']:
+                self.state['accepted_rounds'].append(self.state['round'])
             if self.state.get('research'):
                 self.state.update(research_adapter=str(checkpoint), research_score=passed, research_regressions=0)
         stop = should_stop_for_quality(self.state['completed_rounds'], self.state.get('research',False))
+        if self.state.get('recipe_trials') and self.state.get('trial_index',0)<2:
+            self.save(trial_index=self.state.get('trial_index',0)+1,phase='train',training=None,evaluation=None,
+                      detail='Next matched recipe trial on the same verified dataset')
+            return
         self.save(round=self.state['round']+1, phase='collect',
                   status='completed' if stop else 'running', collected=0, passed=0, training=None, evaluation=None,
                   training_retry=None,recovered_examples=0,

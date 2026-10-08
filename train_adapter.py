@@ -133,10 +133,12 @@ def encode_dataset(tokenizer, rows, max_length, balanced=False):
         return [value for _, value in encoded], {}
     languages = ('python', 'go', 'typescript', 'rust', 'dart')
     groups = {l: [value for row, value in encoded if row.get('language') == l] for l in languages}
-    count = min(len(values) for values in groups.values())
-    if count < 1:
+    counts = {l:len(values) for l,values in groups.items()}
+    if min(counts.values()) < 1:
         raise ValueError('Complete coding examples must fit the token limit in every language')
-    return [groups[l][i] for i in range(count) for l in languages], {l: count for l in languages}
+    total=sum(counts.values())
+    return [{**value,'language_weight':total/(len(languages)*counts[row['language']])}
+            for row,value in encoded], counts
 
 
 def main():
@@ -211,14 +213,23 @@ def main():
             raise ValueError('Tokenizer requires an EOS or pad token')
         def collate(batch):
             length = max(len(row['input_ids']) for row in batch)
-            return {key: torch.tensor([row[key] + [padding] * (length - len(row[key])) for row in batch])
+            inputs = {key: torch.tensor([row[key] + [padding] * (length - len(row[key])) for row in batch])
                     for key, padding in [('input_ids', tokenizer.pad_token_id), ('attention_mask', 0), ('labels', -100)]}
+            if balanced:
+                inputs['language_weight']=torch.tensor([row['language_weight'] for row in batch])
+            return inputs
         settings = TrainingArguments(output_dir=str(args.output), max_steps=effective_steps,
             per_device_train_batch_size=1, gradient_accumulation_steps=4, learning_rate=args.learning_rate,
             gradient_checkpointing=True, bf16=dtype == torch.bfloat16, fp16=dtype == torch.float16,
             optim='adamw_torch', logging_steps=1, save_strategy='steps', save_steps=args.save_steps,
             save_total_limit=3, report_to='none',
-            push_to_hub=False, seed=args.seed, dataloader_num_workers=0)
+            push_to_hub=False, seed=args.seed, dataloader_num_workers=0, remove_unused_columns=not balanced)
+        class LanguageTrainer(Trainer):
+            def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+                weight=inputs.pop('language_weight')
+                loss,outputs=super().compute_loss(model,inputs,return_outputs=True)
+                loss=loss*weight.mean()
+                return (loss,outputs) if return_outputs else loss
         class Checkpoints(TrainerCallback):
             def on_step_end(self, training_args, state, control, **kwargs):
                 paused = bool(args.pause_file and args.pause_file.exists())
@@ -234,8 +245,10 @@ def main():
                 complete_checkpoint(args.output/f'checkpoint-{state.global_step}', binding)
                 return control
 
-        trainer = Trainer(model=model, args=settings, train_dataset=encoded, data_collator=collate,
+        trainer = (LanguageTrainer if balanced else Trainer)(model=model, args=settings, train_dataset=encoded, data_collator=collate,
                           callbacks=[Checkpoints()])
+        if balanced:
+            trainer.model_accepts_loss_kwargs=False
         saved_state = TrainerState.load_from_json(str(checkpoint/'trainer_state.json')) if checkpoint else None
         recovered_complete = bool(saved_state and saved_state.global_step >= effective_steps)
         if recovered_complete:

@@ -298,9 +298,13 @@ class Controller:
             shutil.copy2(parent/'development-tasks.json',child/'development-tasks.json')
         shutil.copy2(parent/'dev-base.json',child/'dev-base.json')
         anchor=child/'round-001';anchor.mkdir()
-        for name in ('tasks.json','teacher.json','training.jsonl','training.jsonl.manifest.json'):
-            if not direct or (parent/'round-001'/name).exists():
-                shutil.copy2(parent/'round-001'/name,anchor/name)
+        if direct and old.get('recipe_trials'):
+            from code_recipe import replay_anchor
+            replay_anchor([parent],anchor)
+        else:
+            for name in ('tasks.json','teacher.json','training.jsonl','training.jsonl.manifest.json'):
+                if not direct or (parent/'round-001'/name).exists():
+                    shutil.copy2(parent/'round-001'/name,anchor/name)
         cumulative=list(registry(anchor/'tasks.json').values())
         batch_size = 20 if direct else 16
         batches=[train[i:i+batch_size] for i in range(0,len(train),batch_size)]
@@ -316,7 +320,8 @@ class Controller:
             state['best_dev']=old['confirmation'].get('baseline_dev') or self.state['adopted_baseline']
             state['research_score']=sum(r['passed'] for r in state['best_dev']['tasks'])
             state['research_regressions']=0
-        for key in ('completion_reason','candidate_best','continuation','confirmation','consumed_confirmation','recovery'):
+        for key in ('completion_reason','candidate_best','continuation','confirmation','consumed_confirmation','recovery',
+                    'trial_index','trial_origin_adapter','trial_origin_dev'):
             state.pop(key,None)
         for field in ('best_adapter','research_adapter'):
             if state.get(field):state[field]=self.stash_adapter(state[field])

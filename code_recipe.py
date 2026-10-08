@@ -14,7 +14,7 @@ import uuid
 from polyglot_runtime import LANGUAGES, check_program
 from recursive_agent import grade
 from train_adapter import atomic_json, complete_checkpoint, verified_checkpoint
-from training_data import manifest_path, messages_valid, read_json, registry, sha256
+from training_data import MAX_FILE_BYTES, manifest_path, messages_valid, read_json, registry, sha256
 
 RECIPE = 'balanced-code-v1'
 SETTINGS = {'mode': 'direct', 'depth': 1, 'instruction': ''}
@@ -104,22 +104,24 @@ def balanced_order(tasks, limit=None):
     return [queues[language].popleft() for _ in range(count) for language in LANGUAGES]
 
 
-def export_code(reports, tasks_path, output, cap=32):
-    """Regrade source answers and give each language equal training weight."""
+def export_code(reports, tasks_path, output, cap=256, progress=None):
+    """Regrade source answers; keep each language's verified replay independently."""
     output = Path(output)
     if output.exists() or manifest_path(output).exists():
         raise FileExistsError('Choose a new balanced dataset file')
     known = registry(tasks_path)
     digest = sha256(tasks_path)
     candidates = {l: [] for l in LANGUAGES}
-    seen, sources = set(), []
+    seen, seen_messages, sources = set(), set(), []
     for path in reports:
         report = read_json(path)
         if (report.get('schema_version') != 1 or report.get('split') != 'train'
                 or report.get('tasks_sha256') != digest):
             raise ValueError('Direct targets require matching registered training reports')
         sources.append({'name': Path(path).name, 'sha256': sha256(path)})
-        for row in report['tasks']:
+        for index,row in enumerate(report['tasks'],1):
+            if progress:
+                progress(index,len(report['tasks']))
             task = known.get(row.get('id'))
             if task is None or any(row.get(k) != task[k] for k in ('repository', 'split')):
                 raise ValueError('Coding answer does not match its registry')
@@ -132,21 +134,56 @@ def export_code(reports, tasks_path, output, cap=32):
             code = row['patch'][task['editable'][0]]
             conversation = messages(task)+[{'role': 'assistant', 'content': code}]
             messages_valid(conversation)
+            identity=json.dumps(conversation,sort_keys=True,ensure_ascii=False)
+            if identity in seen_messages:
+                continue
+            seen_messages.add(identity)
             candidates[language].append({'messages': conversation, 'task_id': task['id'], 'language': language,
                 'repository': task['repository'], 'tasks_sha256': digest, 'example_kind': 'verified_complete_source'})
             seen.add(task['id'])
-    count = min(cap, *(len(rows) for rows in candidates.values()))
-    if count < 1:
+    counts = {language:min(cap,len(rows)) for language,rows in candidates.items()}
+    if min(counts.values()) < 1:
         raise UnbalancedData('Collect verified source answers for all five languages before training')
-    rows = [candidates[l][i] for i in range(count) for l in LANGUAGES]
+    rows = [candidates[l][i] for i in range(max(counts.values())) for l in LANGUAGES if i<counts[l]]
+    content=''.join(json.dumps(row, ensure_ascii=False)+'\n' for row in rows)
+    if len(content.encode('utf-8'))>MAX_FILE_BYTES:
+        raise ValueError('Coding replay exceeds the dataset file limit')
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(''.join(json.dumps(row, ensure_ascii=False)+'\n' for row in rows))
+    output.write_text(content)
     manifest = {'schema_version': 1, 'split': 'train', 'tasks_sha256': digest, 'dataset_sha256': sha256(output),
-        'rows': len(rows), 'sources': sources, 'languages': {l: count for l in LANGUAGES},
+        'rows': len(rows), 'sources': sources, 'languages': counts,
         'example_kind': 'verified_complete_source', 'recipe': RECIPE,
         'trust': 'Locally regraded source answers; public benchmark and pretraining overlap is unknown.'}
     atomic_json(manifest_path(output), manifest)
     return manifest
+
+
+def replay_anchor(parents, anchor, cap=256):
+    """Carry bounded verified teacher answers before completed children are pruned."""
+    known, answers, sources = {}, {}, []
+    for path in (p for parent in parents for p in sorted(Path(parent).glob('round-*/teacher.json'))):
+        tasks=registry(path.parent/'tasks.json');report=read_json(path)
+        if (report.get('schema_version')!=1 or report.get('split')!='train'
+                or report.get('tasks_sha256')!=sha256(path.parent/'tasks.json')):
+            raise ValueError('Replay report or task registry changed')
+        sources.append({'report_sha256':sha256(path),'tasks_sha256':report['tasks_sha256']})
+        for row in report['tasks']:
+            task=tasks.get(row.get('id'))
+            if not task or any(row.get(k)!=task[k] for k in ('repository','split')):
+                raise ValueError('Replay answer does not match its training registry')
+            if task['split']!='train' or task.get('language') not in LANGUAGES or row.get('mode')!='direct' or not row.get('passed'):
+                continue
+            if task['id'] in known and known[task['id']]!=task:
+                raise ValueError('Replay task identity changed')
+            known[task['id']]=task;answers[task['id']]=row
+    selected=[]
+    for language in LANGUAGES:
+        selected.extend([key for key,task in known.items() if task['language']==language][-cap:])
+    anchor=Path(anchor)
+    atomic_json(anchor/'tasks.json',[known[key] for key in selected])
+    atomic_json(anchor/'teacher.json',{'schema_version':1,'split':'train',
+        'tasks_sha256':sha256(anchor/'tasks.json'),'tasks':[answers[key] for key in selected],
+        'replay_sources':sources})
 
 
 def zero_delta_adapter(template, output):
