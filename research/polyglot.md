@@ -4,7 +4,7 @@
 
 The `balanced-code-v1` recipe trains complete source answers from the pinned base model.
 It does not warm-start from the earlier RLM adapter or train on its Python-only REPL anchor.
-Each full round collects four public training examples per language.
+New continuous curricula collect up to 100 fresh training tasks per round, with 20 tasks per language.
 A failed example gets one retry with visible feedback. Only answers that pass all registered checks enter training.
 The dataset keeps up to 256 verified answers per language. A scarce language does not discard useful answers from other languages.
 Token filtering drops complete examples that exceed 4,096 tokens. Language loss weights give each language equal total training weight.
@@ -18,6 +18,35 @@ Each trial uses the same data, learning rate, and inference settings. Only its f
 The results record gains and losses against the starting accepted adapter. Partial trials do not establish an improvement.
 Verified replay survives new curriculum batches. Old replay tasks are not collected again as fresh teacher requests.
 The accepted checkpoint still requires more passes and no lost tasks. Confirmation and full audits remain separate from training.
+
+### Student correction trial
+
+A reviewed continuation can enable `teaching_trial` together with `recipe_trials`.
+The student attempts up to 40 existing training problems, with equal coverage across five languages.
+The teacher gets one correction attempt for each student failure. It sees the failed answer and visible feedback.
+Only corrections that pass all registered checks can replace a training answer. Hidden grading feedback stays private.
+
+Two trials start from the same accepted adapter. Both use one data pass, the same learning rate, and the same seed.
+The control uses original teacher answers. The correction trial replaces eligible answers with checked student corrections.
+Both datasets contain the same tasks in the same order. A target above 4,096 tokens removes that task from both datasets.
+Unchanged targets remain in both datasets as replay. With no distinct corrections after filtering, the worker skips training.
+
+Each final checkpoint receives all development checks. The existing promotion rule, reserved confirmation checks, and standardized audit remain active.
+The experiment preserves the remaining session time and Windows Pause, Resume, and Stop controls.
+Saved attempts and partial dataset recovery support restart. The next curriculum uses the existing recipe until results support a permanent change.
+This trial does not establish better coding quality.
+
+The adapter server permits a separate diagnostic with `--output-limit 2048`. Its default remains 1,024 output tokens.
+Matched length diagnostics change the answer budget for both models. They do not change weights or establish a training improvement.
+Diagnostic problems never enter training.
+
+### Research basis
+
+[SelfCodeAlign](https://arxiv.org/abs/2410.24198) reports gains from diverse tasks and executable answer checks, with 74,000 training pairs in its main experiment.
+The local loop uses these principles with a much smaller corpus. Larger fresh batches reduce repeated training on a small set of examples.
+[Hugging Face reports](https://huggingface.co/spaces/HuggingFaceH4/on-policy-distillation/blob/f07c96044c74af182c57500250bdfedf2e23b0ff/app/src/content/article.mdx) a Qwen3-4B coding gain after Codeforces fine-tuning, alongside reduced instruction-following accuracy.
+Those results use different weights, data, training settings, and hardware. Our local correction trial does not reproduce their token-level distillation method.
+Replay and separate checks help detect regressions. Neither a lower training loss nor more saved checkpoints proves better coding.
 
 Direct development and confirmation checks support GPU batches of 1, 2, 4, 8, or 16 independent prompts.
 The server splits long batches before CUDA allocation. Each GPU batch allows 32,768 padded input and output tokens in total.

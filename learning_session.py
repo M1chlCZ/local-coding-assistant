@@ -25,7 +25,7 @@ SOURCE_FILES = ('learning_session.py', 'train_adapter.py', 'training_data.py',
                 'launcher.py', 'wsl_server.py', 'research/repair_tasks.json',
                 'polyglot_runtime.py', 'polyglot_data.py', 'polyglot_session.py',
                 'research/Polyglot.Dockerfile', 'research/codecontests-source.json',
-                'training_feedback.py', 'code_recipe.py')
+                'training_feedback.py', 'code_recipe.py', 'teaching_trial.py')
 
 
 def quality_solver(state):
@@ -238,12 +238,15 @@ class Session:
             time.sleep(1)
         return True
 
+    def trial_names(self):
+        return ('adapter-control','adapter-correction') if self.state.get('teaching_trial') else ('adapter-short','adapter-full','adapter-replay')
+
     def training_output(self, round_path, index=None):
         if self.state.get('recipe_trials'):
             if not self.state.get('research'):
                 raise ValueError('Matched recipe trials require a research session')
             index=self.state.get('trial_index',0) if index is None else index
-            return round_path/('adapter-short','adapter-full','adapter-replay')[index]
+            return round_path/self.trial_names()[index]
         return round_path/'adapter'
 
     def training_command(self, round_path):
@@ -257,8 +260,14 @@ class Session:
             index=self.state.get('trial_index',0)
             steps=20 if index==0 else 500
             warm=self.state['trial_origin_adapter'] if index==2 else None
+        dataset=round_path/'training.jsonl'
+        if self.state.get('teaching_trial'):
+            if not direct or not self.state.get('recipe_trials'):
+                raise ValueError('Teaching trials require the matched direct coding recipe')
+            steps=500;warm=self.state['trial_origin_adapter']
+            dataset=round_path/('training-'+self.training_output(round_path).name.removeprefix('adapter-')+'.jsonl')
         command = [str(ROOT/'.cache/train-env/bin/python'), str(ROOT/'train_adapter.py'),
-            '--dataset', str(round_path/'training.jsonl'), '--tasks', str(round_path/'tasks.json'),
+            '--dataset', str(dataset), '--tasks', str(round_path/'tasks.json'),
             '--model', MODEL, '--revision', REVISION, '--output', str(self.training_output(round_path)),
             '--max-steps', str(steps), '--max-epochs', '1', '--learning-rate',
             '0.00001' if direct else ('0.0000025' if self.state.get('polyglot') else '0.000005') if warm else '0.00005',
@@ -288,6 +297,9 @@ class Session:
         return True
 
     def collect(self, folder):
+        if self.state.get('teaching_trial'):
+            from teaching_trial import collect
+            return collect(self,folder)
         from recursive_agent import grade, solve
         from training_feedback import collect as collect_feedback
         if self.state.get('polyglot'):
@@ -361,6 +373,9 @@ class Session:
         self.save(phase='export', detail='Teacher collection complete')
 
     def dataset(self, folder):
+        if self.state.get('teaching_trial'):
+            from teaching_trial import dataset
+            return dataset(self,folder)
         if self.state.get('recipe_trials'):
             self.stop_child()
         report_path = folder/'teacher.json'
@@ -569,9 +584,13 @@ class Session:
             if self.state.get('research'):
                 self.state.update(research_adapter=str(checkpoint), research_score=passed, research_regressions=0)
         stop = should_stop_for_quality(self.state['completed_rounds'], self.state.get('research',False))
-        if self.state.get('recipe_trials') and self.state.get('trial_index',0)<2:
+        if self.state.get('recipe_trials') and self.state.get('trial_index',0)<len(self.trial_names())-1:
             self.save(trial_index=self.state.get('trial_index',0)+1,phase='train',training=None,evaluation=None,
                       detail='Next matched recipe trial on the same verified dataset')
+            return
+        if self.state.get('teaching_trial'):
+            self.save(status='completed',completion_reason='teaching_trial_completed',
+                      detail='Both teaching methods checked; fresh confirmation and audit follow')
             return
         self.save(round=self.state['round']+1, phase='collect',
                   status='completed' if stop else 'running', collected=0, passed=0, training=None, evaluation=None,

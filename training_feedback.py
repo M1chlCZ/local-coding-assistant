@@ -42,13 +42,18 @@ def feedback(task,row):
         '\nRepair the source, run the visible tests, and return the complete requested JSON patch.')[:4096]
 
 
-def collect(task,base,path,registry_sha256,*,solve,grade,settings,limits,interrupted,remaining_seconds,before_attempt):
+def collect(task,base,path,registry_sha256,*,solve,grade,settings,limits,interrupted,remaining_seconds,before_attempt,initial_row=None):
     if task.get('split')!='train':raise ValueError('Feedback retries require registered training tasks')
     path=Path(path)
     binding={'task_id':task['id'],'task_sha256':hashlib.sha256(json.dumps(task,sort_keys=True).encode()).hexdigest(),
         'registry_sha256':registry_sha256,'policy_sha256':sha256(Path(__file__)),
         'settings':settings,'limits':limits,'max_attempts':MAX_ATTEMPTS}
-    record=json.loads(path.read_text()) if path.exists() else {'binding':binding,'attempts':[]}
+    if initial_row is not None:
+        if any(initial_row.get(k)!=task[k] for k in ('id','repository','split')):
+            raise ValueError('Student answer does not match its training task')
+        binding['initial_row_sha256']=hashlib.sha256(json.dumps(initial_row,sort_keys=True).encode()).hexdigest()
+    record=json.loads(path.read_text()) if path.exists() else {'binding':binding,'attempts':
+        [{'row':copy.deepcopy(initial_row),'graded':False}] if initial_row is not None else []}
     if record.get('binding')!=binding:raise ValueError('Training retry binding changed')
     attempts=record['attempts']
     if not isinstance(attempts,list) or len(attempts)>MAX_ATTEMPTS:raise ValueError('Invalid training attempt record')

@@ -140,6 +140,37 @@ class ContinuousTests(unittest.TestCase):
         self.assertEqual(self.controller.state['status'],'blocked')
         self.assertFalse(self.controller.should_launch(now=100000))
 
+    def test_temporary_network_failure_keeps_retrying_but_respects_controls(self):
+        for attempt in range(12):
+            self.controller.failure('curl: (6) Could not resolve host',now=100)
+            self.controller=Controller(self.path)
+            self.assertEqual(self.controller.state['status'],'waiting')
+            self.assertLessEqual(self.controller.state['retry_at'],1000)
+        self.assertTrue(self.controller.should_launch(now=1001))
+        for action in ('pause','stop'):
+            self.controller.control(action)
+            self.assertFalse(Controller(self.path).should_launch(now=1001))
+        self.controller.failure('TimeoutError: checkpoint digest changed',now=100)
+        self.assertEqual(self.controller.state['status'],'blocked')
+
+    def test_process_failure_reports_only_a_bounded_current_run_tail(self):
+        from continuous_learning import process_failure
+        log=self.root/'worker.log';log.write_bytes(b'old integrity failure\n')
+        offset=log.stat().st_size
+        with log.open('ab') as f:f.write(b'x'*10000+b'\ncurl: (28) Operation timed out\n')
+        detail=process_failure(log,offset,1)
+        self.assertIn('curl: (28)',detail);self.assertNotIn('integrity',detail)
+        self.assertLess(len(detail),8500)
+        self.controller.failure(detail,now=100)
+        self.assertEqual(self.controller.state['status'],'waiting')
+
+    def test_unknown_timeout_is_not_an_unlimited_network_retry(self):
+        for _ in range(8):self.controller.failure('subprocess.TimeoutExpired: child timed out after 30 seconds',now=100)
+        self.assertEqual(self.controller.state['status'],'blocked')
+        self.controller.control('resume')
+        for _ in range(8):self.controller.failure('urllib.error.URLError: request timed out',now=100)
+        self.assertEqual(self.controller.state['status'],'waiting')
+
     def test_worker_lock_detects_liveness_without_pid_reuse(self):
         import fcntl
         with (self.parent/'worker.lock').open('a') as lock:

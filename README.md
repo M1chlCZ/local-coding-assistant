@@ -66,6 +66,7 @@ The [multilingual curriculum](research/polyglot.md) rotates Python, Go, TypeScri
 The latest full audit scored 473/790 for the base model and 433/790 for the RLM adapter.
 The revised [balanced code trial](research/polyglot.md#balanced-code-trial) preserves verified language examples and compares fresh training with continued adapter training.
 It trains verified source answers instead of REPL actions. No quality improvement is established for this new recipe yet.
+The optional [student correction trial](research/polyglot.md#student-correction-trial) compares teacher answers with checked corrections to student mistakes.
 Direct checks can batch up to sixteen independent prompts on one CUDA model and run two compiler checks in parallel.
 Long prompts split into smaller GPU batches under a 32,768-token budget, including padding and output.
 Changing the batch size starts a fresh matched development baseline. An audit already in progress keeps its original settings.

@@ -57,10 +57,13 @@ If the worker itself still sees an unavailable drive, it exits so Windows can st
 It does not spend repeated training attempts inside a filesystem view without the model drive.
 See the [dedicated WSL settings](wsl.md#2-install-docker) to disable Windows PATH translation warnings.
 
-Temporary failures use increasing retry delays, with six consecutive attempts at most.
+Temporary network failures use increasing retry delays, capped at 15 minutes. These retries continue while the saved command permits running.
+The PC stays awake during automatic retry waits. Pause and Stop release that request.
+Each subprocess failure retains a bounded log excerpt from its current run, so download errors keep their cause.
 Integrity failures block immediately. The status explains the required action.
-Windows can retry a failed supervisor process three times.
-A source change, exhausted approved source, or persistent failure can require attention.
+Other repeated failures block after six consecutive attempts.
+Windows can retry an unexpectedly failed supervisor process up to 999 times, with a one-minute delay.
+A source change, exhausted approved source, or unknown persistent failure can require attention.
 
 ## Data and quality
 
@@ -135,3 +138,7 @@ The [multilingual curriculum](polyglot.md) adds Go, TypeScript, Rust, and Dart.
 It rotates the main language and retains mixed replay. Every accepted update must preserve earlier development passes.
 Multilingual mode schedules complete HumanEval / MultiPL-E audits after each experiment.
 The Windows controls show each language when a complete result is available.
+New direct-code curricula collect up to 100 fresh tasks before the matched training trials, with equal coverage across five languages.
+The optional student correction comparison runs once. Later curricula continue locally with fresh data and the accepted checkpoint.
+The Mac and its LAN connection are not required. The PC must remain powered on with the user logged in.
+Internet access supplies new public source shards. Already cached fixtures and models remain local.

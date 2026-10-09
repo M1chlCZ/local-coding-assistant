@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -23,6 +24,13 @@ EXPERIMENT_SECONDS = 6 * 3600
 
 def read(path, default=None):
     return json.loads(Path(path).read_text()) if Path(path).exists() else default
+
+
+def process_failure(log,offset,code):
+    with Path(log).open('rb') as stream:
+        stream.seek(max(offset,Path(log).stat().st_size-8192))
+        tail=stream.read(8192).decode('utf-8',errors='replace').strip()
+    return f'Local worker exited {code}; inspect {log}\n{tail}'
 
 
 def child_busy(path):
@@ -135,8 +143,13 @@ class Controller:
         failures=self.state['failures']+1
         fatal=any(word in detail.lower() for word in ('integrity','digest','source changed','registry changed',
                   'checks changed','manifest changed','different data','different training','exhausted'))
-        self.save(failures=failures,status='blocked' if fatal or failures>=6 else 'waiting',
-                  retry_at=now+min(900,30*2**(failures-1)),detail=detail)
+        temporary=bool(re.search(r'curl: \((?:5|6|7|18|28|35|52|55|56)\)|'
+            r'temporary failure in name resolution|connection (?:reset|refused|aborted)|network is unreachable|'
+            r'(?:http error |requested url returned error: )(?:408|429|502|503|504)',detail,re.I))
+        temporary=temporary or ('timed out' in detail.lower() and any(name in detail for name in
+            ('urllib','http.client','requests.exceptions','httpx.')))
+        self.save(failures=failures,status='blocked' if fatal or (failures>=6 and not temporary) else 'waiting',
+                  retry_at=now+min(900,30*2**min(failures-1,5)),detail=detail)
 
     def should_launch(self,now=None):
         now=time.time() if now is None else now
@@ -181,7 +194,10 @@ class Controller:
         prior=Path(self.state.get('benchmark_output') or output)
         archive=self.archived_audit(prior)
         if archive and read(prior/'binding.json')['adapter_sha256']==sha256(adapter/'adapter_model.safetensors'):
-            return [executable,str(archive/runner),'--adapter',str(adapter),'--output',str(prior)],prior
+            command=[executable,str(archive/runner),'--adapter',str(adapter),'--output',str(prior)]
+            size=read(prior/'binding.json').get('generation_batch_size',1)
+            if polyglot and size>1:command+=['--batch-size',str(size)]
+            return command,prior
         command=[executable,str(ROOT/runner),'--adapter',str(adapter)]
         size=self.state.get('generation_batch_size',1) if polyglot else 1
         if type(size) is not int or size not in (1,2,4,8,16):raise ValueError('Use a checked generation batch size')
@@ -306,7 +322,7 @@ class Controller:
                 if not direct or (parent/'round-001'/name).exists():
                     shutil.copy2(parent/'round-001'/name,anchor/name)
         cumulative=list(registry(anchor/'tasks.json').values())
-        batch_size = 20 if direct else 16
+        batch_size = (100 if old.get('recipe_trials') else 20) if direct else 16
         batches=[train[i:i+batch_size] for i in range(0,len(train),batch_size)]
         for index,tasks in enumerate(batches+[[]],2):
             for original in tasks:
@@ -321,7 +337,7 @@ class Controller:
             state['research_score']=sum(r['passed'] for r in state['best_dev']['tasks'])
             state['research_regressions']=0
         for key in ('completion_reason','candidate_best','continuation','confirmation','consumed_confirmation','recovery',
-                    'trial_index','trial_origin_adapter','trial_origin_dev'):
+                    'trial_index','trial_origin_adapter','trial_origin_dev','teaching_trial','teaching_pairs','teaching_examples'):
             state.pop(key,None)
         for field in ('best_adapter','research_adapter'):
             if state.get(field):state[field]=self.stash_adapter(state[field])
@@ -375,6 +391,7 @@ class Controller:
         self.save(auxiliary_active=not forward)
         try:
             with Path(log).open('ab') as stream:
+                offset=stream.tell()
                 process=subprocess.Popen(command,cwd=ROOT,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True,
                                          env={**os.environ,'LCA_CONTINUOUS_OWNER':str(self.path)})
         except OSError:
@@ -392,7 +409,7 @@ class Controller:
                         os.killpg(process.pid,signal.SIGTERM);process.wait(timeout=30)
                         return False
                 self.snapshot(persist=True);time.sleep(2)
-            if process.returncode:raise RuntimeError(f'Local worker exited {process.returncode}; inspect {log}')
+            if process.returncode:raise RuntimeError(process_failure(log,offset,process.returncode))
             return True
         finally:
             self.save(auxiliary_active=False)

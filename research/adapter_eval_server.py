@@ -6,7 +6,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 
-def validate_batch(data):
+def validate_batch(data,output_limit=1024):
+    if type(output_limit) is not int or output_limit not in (1024,2048):
+        raise ValueError('Use a checked output limit of 1024 or 2048 tokens')
     conversations=data.get('conversations')
     # ponytail: sixteen prompts is the profiled ceiling; split long batches before allocating their cache.
     if not isinstance(conversations,list) or not 1<=len(conversations)<=16:
@@ -17,8 +19,8 @@ def validate_batch(data):
                 or not isinstance(m.get('content'),str) for m in messages):
             raise ValueError('Conversations require text role/content messages')
     maximum=data.get('max_completion_tokens',data.get('max_tokens',1024))
-    if type(maximum) is not int or not 1<=maximum<=1024:
-        raise ValueError('Use an output budget between 1 and 1024 tokens')
+    if type(maximum) is not int or not 1<=maximum<=output_limit:
+        raise ValueError(f'Use an output budget between 1 and {output_limit} tokens')
     return conversations,maximum
 
 
@@ -34,17 +36,17 @@ def completion(tokenizer,tokens,prompt_tokens,maximum,eos_tokens=None):
         'usage':{'prompt_tokens':prompt_tokens,'completion_tokens':count,'total_tokens':prompt_tokens+count}}
 
 
-def generate(model,tokenizer,data,use_adapter):
+def generate(model,tokenizer,data,use_adapter,output_limit=1024):
     import torch
-    conversations,maximum=validate_batch(data)
+    conversations,maximum=validate_batch(data,output_limit)
     inputs=tokenizer.apply_chat_template(conversations,tokenize=True,add_generation_prompt=True,
         enable_thinking=False,padding=True,return_tensors='pt',return_dict=True)
     padded=inputs['input_ids'].shape[-1]
     if padded+maximum>8192:raise ValueError('Token budget exceeded')
     if len(conversations)*(padded+maximum)>32768:
         middle=len(conversations)//2
-        return (generate(model,tokenizer,{**data,'conversations':conversations[:middle]},use_adapter)
-                +generate(model,tokenizer,{**data,'conversations':conversations[middle:]},use_adapter))
+        return (generate(model,tokenizer,{**data,'conversations':conversations[:middle]},use_adapter,output_limit)
+                +generate(model,tokenizer,{**data,'conversations':conversations[middle:]},use_adapter,output_limit))
     inputs=inputs.to('cuda')
     with (contextlib.nullcontext() if use_adapter else model.disable_adapter()),torch.inference_mode():
         out=model.generate(**inputs,do_sample=False,max_new_tokens=maximum,pad_token_id=tokenizer.eos_token_id)
@@ -58,6 +60,7 @@ def main():
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, set_seed
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--adapter',type=Path,default=Path('.cache/adapters/local-round1'))
+    parser.add_argument('--output-limit',type=int,choices=(1024,2048),default=1024)
     args=parser.parse_args()
     set_seed(42)
     model_id='Qwen/Qwen3-4B';revision='1cfa9a7208912126459214e8b04321603b3df60c'
@@ -91,7 +94,7 @@ def main():
                 if self.path not in ('/batch','/v1/chat/completions'):
                     self.send_json({'error':'Unknown path'},404);return
                 batch={**data,'conversations':[data.get('messages')]} if self.path!='/batch' else data
-                responses=generate(model,tokenizer,batch,use_adapter)
+                responses=generate(model,tokenizer,batch,use_adapter,args.output_limit)
                 self.send_json({'responses':responses} if self.path=='/batch' else responses[0])
             except (ValueError,TypeError) as error:self.send_json({'error':str(error)},400)
     print('EVAL_READY http://127.0.0.1:8090',flush=True)

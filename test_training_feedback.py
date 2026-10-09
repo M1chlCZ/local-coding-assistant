@@ -62,6 +62,19 @@ class FeedbackTests(unittest.TestCase):
             'tasks_sha256':sha256(self.registry),'tasks':[row]})
         with self.assertRaisesRegex(ValueError,'No successful'):export([report],self.registry,self.root/'failed.jsonl')
 
+    def test_saved_student_failure_gets_one_teacher_correction_and_resumes(self):
+        student={'id':self.task['id'],'repository':self.task['repository'],'split':'train',
+                 'mode':'direct','patch':{'solution.py':'broken'},'visible_feedback':'compile failure'}
+        self.outcomes=['correct']
+        row=self.collect(initial_row=student)
+        self.assertTrue(row['passed']);self.assertEqual(len(self.calls),1)
+        self.assertIn('broken',self.calls[0][0]['prompt'])
+        self.assertNotIn('HIDDEN_FEEDBACK_CANARY',self.calls[0][0]['prompt'])
+        self.assertEqual(self.collect(initial_row=student),row)
+        with self.assertRaisesRegex(ValueError,'binding'):
+            self.collect(initial_row={**student,'patch':{'solution.py':'changed'}})
+        self.assertEqual(len(self.calls),1)
+
     def test_pause_after_failure_resumes_second_attempt_without_repeating_first(self):
         def grade(task,patch):
             self.pause=True

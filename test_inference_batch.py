@@ -9,6 +9,14 @@ from unittest.mock import patch
 
 
 class InferenceBatchTests(unittest.TestCase):
+    def test_long_output_requires_explicit_server_opt_in(self):
+        module=self.bridge()
+        data={'conversations':[[{'role':'user','content':'code'}]],'max_tokens':2048}
+        with self.assertRaises(ValueError):module.validate_batch(data)
+        self.assertEqual(module.validate_batch(data,output_limit=2048)[1],2048)
+        for limit in (0,2049,True):
+            with self.assertRaises(ValueError):module.validate_batch(data,output_limit=limit)
+
     def bridge(self):
         source=ast.parse(Path('research/adapter_eval_server.py').read_text())
         self.assertTrue(any(isinstance(n,ast.FunctionDef) and n.name=='main' for n in source.body),
@@ -107,12 +115,13 @@ class InferenceBatchTests(unittest.TestCase):
             archive=controller.path/'source-updates'/'old';(archive/'research').mkdir(parents=True)
             (archive/'research/polyglot_benchmark.py').write_text('original audit')
             sources={'research/polyglot_benchmark.py':sha256(archive/'research/polyglot_benchmark.py')}
-            atomic_json(serial/'binding.json',{'adapter_sha256':sha256(adapter/'adapter_model.safetensors'),'sources':sources})
+            atomic_json(serial/'binding.json',{'adapter_sha256':sha256(adapter/'adapter_model.safetensors'),'sources':sources,'generation_batch_size':4})
             controller.state.update(generation_batch_size=2,benchmark_output=str(serial),
                 completed_source_generations={controller.state['child']:{'directory':str(archive),'benchmark_sources':sources}})
             command,output=controller.audit_command()
             self.assertEqual(output,serial,'An in-progress audit must not restart under changed settings')
             self.assertEqual(Path(command[1]),archive/'research/polyglot_benchmark.py')
+            self.assertEqual(command[command.index('--batch-size')+1],'4')
             (archive/'research/polyglot_benchmark.py').write_text('changed')
             with self.assertRaises(ValueError):controller.audit_command()
             controller.state.pop('completed_source_generations')
@@ -140,18 +149,25 @@ class InferenceBatchTests(unittest.TestCase):
             (adapter/'adapter_model.safetensors').write_text('retained weights')
             previous={'tasks':[{'id':'old-pass','passed':True}]}
             atomic_json(parent/'status.json',{'status':'completed','active_seconds':123,'round':10,
-                'recipe':'balanced-code-v1','polyglot_baseline_complete':True,'best_dev':previous,
+                'recipe':'balanced-code-v1','recipe_trials':True,'polyglot_baseline_complete':True,'best_dev':previous,
                 'best_adapter':str(adapter),'research_adapter':str(adapter),
                 'sources':{n:sha256(learning.ROOT/n) for n in learning.SOURCE_FILES}})
             atomic_json(parent/'dev-base.json',previous);anchor=parent/'round-001';anchor.mkdir()
-            atomic_json(anchor/'tasks.json',[{'id':'anchor','repository':'anchor','split':'train'}])
-            tasks=[{'id':str(i),'repository':'problem-'+str(i),'split':'train' if i<20 else 'dev',
-                    'language':('python','go','typescript','rust','dart')[i%5]} for i in range(40)]
+            anchor_task={'id':'anchor','repository':'anchor','split':'train','language':'python'}
+            atomic_json(anchor/'tasks.json',[anchor_task])
+            atomic_json(anchor/'teacher.json',{'schema_version':1,'split':'train','tasks_sha256':sha256(anchor/'tasks.json'),
+                'tasks':[{**anchor_task,'mode':'direct','passed':True,'patch':{'solution.py':'valid'}}]})
+            tasks=[{'id':str(i),'repository':'problem-'+str(i),'split':'train' if i<120 else 'dev',
+                    'language':('python','go','typescript','rust','dart')[i%5]} for i in range(140)]
             atomic_json(root/'next.json',tasks);completed=(parent/'status.json').read_bytes()
             controller=Controller.create(root/'controller',parent);controller.save(generation_batch_size=16)
             with patch.object(controller,'stash_adapter',side_effect=lambda path:str(path)):
                 child=controller.prepare_child(root/'next.json')
             state=json.loads((child/'status.json').read_text())
+            fresh=json.loads((child/'round-002/tasks.json').read_text())[1:]
+            self.assertEqual(len(fresh),100)
+            self.assertEqual({lang:sum(t['language']==lang for t in fresh) for lang in ('python','go','typescript','rust','dart')},
+                             {lang:20 for lang in ('python','go','typescript','rust','dart')})
             self.assertEqual(state['generation_batch_size'],16)
             self.assertFalse(state['polyglot_baseline_complete'])
             self.assertEqual(state['best_dev'],{'tasks':[]})

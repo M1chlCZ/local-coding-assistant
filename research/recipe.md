@@ -15,6 +15,7 @@ Multilingual gains still require matched evaluation.
 
 The [matched recipe trials](polyglot.md#balanced-code-trial) compare short training, a complete data pass, and continued adapter training with verified replay.
 These trials keep the accepted checkpoint until a candidate passes the quality gate. More training does not guarantee better code.
+The optional [student correction trial](polyglot.md#student-correction-trial) compares teaching methods from the same accepted adapter.
 
 Run PowerShell from the project folder on the PC.
 Use Python 3.14, Git, and a CUDA GPU for research.

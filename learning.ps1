@@ -31,12 +31,17 @@ function Get-SessionSwitches([switch]$Linux) {
 function Get-WorkerSettings {
     $Options = @{ ExecutionTimeLimit=[TimeSpan]::Zero; AllowStartIfOnBatteries=$true;
         DontStopIfGoingOnBatteries=$true; MultipleInstances='IgnoreNew' }
-    if ($Continuous) { $Options.RestartCount=3; $Options.RestartInterval=[TimeSpan]::FromMinutes(1) }
+    if ($Continuous) { $Options.RestartCount=999; $Options.RestartInterval=[TimeSpan]::FromMinutes(1) }
     return New-ScheduledTaskSettingsSet @Options
 }
 
 function Get-WorkerTrigger([string]$Owner) {
     if ($Continuous) { return New-ScheduledTaskTrigger -AtLogOn -User $Owner }
+}
+
+function Test-LearningAwake($Snapshot) {
+    if ($Snapshot.status -in @('pausing','stopping')) { return $true }
+    return ($Snapshot.desired -notin @('pause','stop') -and $Snapshot.status -notin @('paused','blocked','stopped'))
 }
 
 function Get-BootProbeResult([int]$ExitCode,[string]$Output) {
@@ -100,7 +105,7 @@ public static class LearningPower {
         while (-not $WorkerProcess.HasExited) {
             try {
                 $Snapshot = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript 'status' '--session' $Session | ConvertFrom-Json
-                $Paused = $Snapshot.status -in @('paused','blocked','waiting','stopped')
+                $Paused = -not (Test-LearningAwake $Snapshot)
             } catch { $Paused = $false }
             # Keep the PC awake during work; pause restores normal idle sleep. Display sleep stays allowed.
             $Flags = if ($Paused) { [uint32]2147483648 } else { [uint32]2147483649 }
