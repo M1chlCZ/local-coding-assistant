@@ -9,6 +9,14 @@ Setup downloads the model and runtime from their upstream repositories.
 Our pruned Qwen3.6 derivative remains available through the [experiment recipe](research/recipe.md).
 Its weights are not published yet.
 
+## Windows training app
+
+[Training Studio](desktop/README.md) is a native C# desktop app for WSL CUDA fine-tuning.
+It shows live activity, GPU use, checkpoints, and matched coding results.
+Use Start, Pause for gaming, Resume, and Stop from the app.
+The first release supports the Qwen3.5-4B Go/TypeScript recipe and requires a prepared WSL backend.
+Dataset and model files stay private. See [releases](https://github.com/M1chlCZ/local-coding-assistant/releases) for the Windows download.
+
 ## Run on Windows
 
 Requirements: Windows x64, Python 3.10+, a recent NVIDIA driver, approximately 32 GB RAM, and 20 GB free disk.

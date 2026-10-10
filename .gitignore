@@ -8,3 +8,7 @@ __pycache__/
 plans/
 research/calib.jsonl
 private-data/
+
+# Native desktop build output
+desktop/**/bin/
+desktop/**/obj/
