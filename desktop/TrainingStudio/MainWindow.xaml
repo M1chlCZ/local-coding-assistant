@@ -97,6 +97,28 @@
      <TextBlock Text="With automatic learning off, there are no login or timer starts: use Start / Resume yourself. Changing these settings does not pause or stop work already running." Foreground="#526174"/>
     </StackPanel></Border>
    </TabItem>
+   <TabItem Header="GPU power" x:Name="PowerTab">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource Card}" Margin="0,20,6,0"><StackPanel>
+     <TextBlock Text="Choose the training power limit" Style="{StaticResource Heading}"/>
+     <TextBlock Text="Lower limits can reduce power use, heat and fan noise. This caps GPU watts; it is not a percentage of GPU utilization." Foreground="#526174" Margin="0,0,0,16"/>
+     <ComboBox x:Name="PowerDevices" SelectionChanged="PowerDevice_Changed" MinWidth="360" HorizontalAlignment="Left" AutomationProperties.Name="GPU to limit"/>
+     <TextBlock x:Name="PowerCurrent" Margin="0,16,0,8"/>
+     <TextBlock x:Name="PowerRange" Foreground="#526174"/>
+     <TextBlock x:Name="PowerPreview" FontSize="28" FontWeight="SemiBold" Margin="0,24,0,8"/>
+     <Slider x:Name="PowerSlider" Minimum="85" Maximum="100" Value="100" TickFrequency="5" SmallChange="5" LargeChange="5" IsSnapToTickEnabled="True" TickPlacement="BottomRight" ValueChanged="PowerSlider_Changed" IsEnabled="False" MaxWidth="680" HorizontalAlignment="Stretch" AutomationProperties.Name="Training GPU power percent"/>
+     <WrapPanel x:Name="PowerPresets" Margin="0,16,0,20"/>
+     <WrapPanel>
+      <Button x:Name="PowerEnable" Content="Enable power control…" Click="PowerEnable_Click" IsEnabled="False"/>
+      <Button x:Name="PowerApply" Content="Apply training limit" Click="PowerApply_Click" IsEnabled="False"/>
+      <Button x:Name="PowerRestore" Content="Restore 100%" Click="PowerRestore_Click" IsEnabled="False"/>
+     </WrapPanel>
+     <TextBlock x:Name="PowerFeedback" Margin="0,18,0,10"/>
+     <TextBlock x:Name="PowerSaved" Foreground="#526174" Margin="0,0,0,18"/>
+     <TextBlock Text="Pause restores 100% immediately while the checkpoint saves. Resume reapplies the saved training limit. Stop and completion also restore 100%, even with this window closed." Foreground="#526174" Margin="0,0,0,12"/>
+     <TextBlock Text="The limit affects all apps using this GPU, including games. Use Pause for gaming and wait until the GPU is released. Moving the slider only previews a change; select Apply to save it for this experiment." Foreground="#526174" Margin="0,0,0,12"/>
+     <TextBlock Text="One-time administrator permission enables only the supported NVIDIA presets. The app and learning worker continue with normal user permissions." Foreground="#526174"/>
+    </StackPanel></Border></ScrollViewer>
+   </TabItem>
    <TabItem Header="Connection">
     <ScrollViewer VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource Card}" Margin="0,20,6,0"><StackPanel MaxWidth="720" HorizontalAlignment="Left">
      <TextBlock Text="Your local WSL backend" Style="{StaticResource Heading}"/>

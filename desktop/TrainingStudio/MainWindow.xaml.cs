@@ -14,7 +14,7 @@ public partial class MainWindow : Window
 {
     Backend? backend;
     JsonNode? latest;
-    bool busy, loading;
+    bool busy, loading, powerBusy, powerLoading;
     readonly DispatcherTimer timer = new() { Interval=TimeSpan.FromSeconds(5) };
     public TaskCompletionSource<bool> Ready { get; } = new();
     string? Session => SessionPicker.SelectedItem as string;
@@ -25,8 +25,8 @@ public partial class MainWindow : Window
         catch(Exception ex) { Notice.Text="Saved connection could not be read: "+ex.Message; }
         try { var options=StartupOptions.Load(); AutoLearning.IsChecked=options.ResumeLearningOnLogin; AutoStudio.IsChecked=options.OpenStudioOnLogin; StartupSummary.Text=StartupDescription(options); }
         catch(Exception ex) { Notice.Text="Startup preferences could not be read: "+ex.Message; }
-        Loaded += async (_,_) => { await Safe(async()=>{if(!string.IsNullOrWhiteSpace(ProjectRoot.Text)) await Connect(); else Tabs.SelectedIndex=5;}); Ready.TrySetResult(latest is not null); timer.Start(); };
-        timer.Tick += async (_,_) => {if(!busy && backend is not null && Session is not null) await Safe(Refresh,false);};
+        Loaded += async (_,_) => { await Safe(async()=>{if(!string.IsNullOrWhiteSpace(ProjectRoot.Text)) await Connect(); else Tabs.SelectedIndex=6;}); await RefreshPower(true); Ready.TrySetResult(latest is not null); timer.Start(); };
+        timer.Tick += async (_,_) => {if(!busy && backend is not null && Session is not null) await Safe(Refresh,false); if(PowerTab.IsSelected && !powerBusy) await RefreshPower(false);};
         Closed += (_,_)=>timer.Stop();
     }
     async Task Safe(Func<Task> work, bool announce=true)
@@ -125,6 +125,76 @@ public partial class MainWindow : Window
         }
         ChartHint.Text=models is null?"Waiting for complete matched results. See current task progress above.":"Completed test results. Review language regressions before choosing a checkpoint.";
     }
+    PowerGpu? SelectedGpu=>PowerDevices.SelectedItem as PowerGpu;
+    async Task RefreshPower(bool reset)
+    {
+        if(powerBusy)return;
+        powerBusy=true;
+        try
+        {
+            var devices=await GpuPower.Read();
+            var selected=SelectedGpu?.Uuid;
+            powerLoading=true;
+            PowerDevices.ItemsSource=devices;
+            PowerDevices.SelectedItem=devices.FirstOrDefault(g=>g.Uuid==selected)??devices.FirstOrDefault();
+            powerLoading=false;
+            var gpu=SelectedGpu;
+            bool supported=gpu?.Supported==true;
+            PowerSlider.IsEnabled=supported; PowerEnable.IsEnabled=supported;
+            PowerApply.IsEnabled=PowerRestore.IsEnabled=supported && backend is not null && Session is not null;
+            if(gpu is null)throw new IOException("No NVIDIA GPU was found.");
+            PowerCurrent.Text=supported?$"Applied now: {gpu.Limit:0.##} W ({100*gpu.Limit/gpu.Default:0.#}%) · Current draw: {gpu.Draw:0.#} W":"This GPU does not expose adjustable power limits.";
+            PowerRange.Text=supported?$"Hardware range: {gpu.Minimum:0.##}–{gpu.Maximum:0.##} W. Training presets: {gpu.MinimumPercent}–100% of the {gpu.Default:0.##} W default.":"Power controls are unavailable; training controls still work.";
+            var saved=GpuPower.Load();
+            bool matches=saved?.Profile==backend?.Profile && saved?.Session==Session && saved?.Uuid==gpu.Uuid;
+            PowerSaved.Text=matches?$"Saved for {Session}: {saved!.Percent}%. Idle and paused: 100%.":"No training power limit saved for this experiment and GPU.";
+            PowerSlider.Minimum=gpu.MinimumPercent;
+            if(reset)
+            {
+                PowerSlider.Value=matches?saved!.Percent:100;
+                PowerPresets.Children.Clear();
+                if(supported)for(int percent=100;percent>=gpu.MinimumPercent;percent-=5)
+                {
+                    int value=percent;
+                    var button=new Button{Content=percent+"%"};
+                    button.Click+=(_,_)=>PowerSlider.Value=value;
+                    PowerPresets.Children.Add(button);
+                }
+            }
+            PowerSlider_Changed(this,null!);
+        }
+        catch(Exception ex) { PowerFeedback.Text=ex.Message; PowerSlider.IsEnabled=PowerEnable.IsEnabled=PowerApply.IsEnabled=PowerRestore.IsEnabled=false; }
+        finally { powerLoading=false;powerBusy=false; }
+    }
+    async void PowerDevice_Changed(object sender,SelectionChangedEventArgs e){if(!powerLoading)await RefreshPower(true);}
+    void PowerSlider_Changed(object sender,RoutedPropertyChangedEventArgs<double> e)
+    {
+        if(PowerPreview is null || SelectedGpu is not {Supported:true} gpu)return;
+        int percent=(int)PowerSlider.Value;
+        PowerPreview.Text=$"{percent}% · {gpu.Watts(percent):0.##} W training limit";
+    }
+    async Task PowerAction(Func<Task> action)
+    {
+        if(powerBusy)return;
+        powerBusy=true; PowerEnable.IsEnabled=PowerApply.IsEnabled=PowerRestore.IsEnabled=false;
+        try { await action(); }
+        catch(System.ComponentModel.Win32Exception ex) when(ex.NativeErrorCode==1223) { PowerFeedback.Text="Permission request cancelled. The saved limit is unchanged."; }
+        catch(Exception ex) { PowerFeedback.Text=ex.Message; }
+        finally {powerBusy=false;await RefreshPower(false);}
+    }
+    async void PowerEnable_Click(object sender,RoutedEventArgs e)=>await PowerAction(async()=>
+    {
+        await GpuPower.Enable(SelectedGpu!.Uuid);
+        PowerFeedback.Text="Power control enabled. Choose a percentage and select Apply.";
+    });
+    async void PowerApply_Click(object sender,RoutedEventArgs e)=>await SavePower();
+    async void PowerRestore_Click(object sender,RoutedEventArgs e){PowerSlider.Value=100;await SavePower();}
+    async Task SavePower()=>await PowerAction(async()=>
+    {
+        if(backend is null || Session is null || SelectedGpu is null)throw new IOException("Connect and select an experiment first.");
+        await GpuPower.Save(backend,Session,SelectedGpu.Uuid,(int)PowerSlider.Value);
+        PowerFeedback.Text="Saved. The applied limit is confirmed below the GPU selector. Paused work stays at 100%.";
+    });
     static string StartupDescription(StartupOptions options) =>
         (options.ResumeLearningOnLogin?"Learning: resumes after login. ":"Learning: start manually. ")+
         (options.OpenStudioOnLogin?"Studio: opens after login.":"Studio: open it yourself.");
@@ -135,17 +205,17 @@ public partial class MainWindow : Window
     });
     async void Connect_Click(object s,RoutedEventArgs e)=>await Safe(Connect);
     async void Detect_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{Distro.ItemsSource=await Backend.Distributions();});
-    async void Session_Changed(object s,SelectionChangedEventArgs e){if(!loading) await Safe(Refresh);}
+    async void Session_Changed(object s,SelectionChangedEventArgs e){if(!loading) { await Safe(Refresh); await RefreshPower(true); }}
     async void Resume_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{
         var state=await backend!.Call(new{action="resume",session=Session});
         if(state["worker_alive"]?.GetValue<bool>()!=true) await backend.EnsureWorker(Session!);
         await Refresh();
     });
-    async void Pause_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{await backend!.Call(new{action="pause",session=Session});await Refresh();});
+    async void Pause_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{await backend!.Call(new{action="pause",session=Session});await GpuPower.Sync(backend,Session!,restore:true);await Refresh();});
     async void Stop_Click(object s,RoutedEventArgs e)
     {
         if(MessageBox.Show(this,"End this experiment? Its checkpoints and results remain saved. Stop is final; choose Pause if you want to resume later.","Stop experiment",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
-        await Safe(async()=>{await backend!.Call(new{action="stop",session=Session});await Refresh();});
+        await Safe(async()=>{await backend!.Call(new{action="stop",session=Session});await GpuPower.Sync(backend,Session!,restore:true);await Refresh();});
     }
     async void ValidateData_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{
         if(backend is null)throw new InvalidOperationException("Connect to WSL first.");

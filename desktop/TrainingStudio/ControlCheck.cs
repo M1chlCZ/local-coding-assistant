@@ -7,6 +7,7 @@ internal static class ControlCheck
 {
     public static void ValidateInputs()
     {
+        GpuPowerCheck.Validate();
         if(Backend.ReadableError("{\"error\":\"Readable error\"}")!="Readable error") throw new IOException("JSON error parser failed");
         if(Backend.ReadableError("#< CLIXML\n<Objs><S S=\"Error\">Failed_x000D__x000A_</S></Objs>")!="Failed") throw new IOException("PowerShell error parser failed");
         foreach(var invalid in new[]{"../escape","a/b","","x\n"})

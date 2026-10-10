@@ -165,7 +165,8 @@ public sealed class Backend(Profile profile)
         var profile=JsonSerializer.Deserialize<Profile>(File.ReadAllText(config)) ?? throw new IOException("Invalid connection profile");
         var backend=new Backend(profile);
         var state=await backend.Call(new{action="status",session});
-        if(new[]{"completed","stopped","budget_exhausted"}.Contains(state["status"]?.ToString()) || state["worker_alive"]?.GetValue<bool>()==true) return;
+        if(new[]{"completed","stopped","budget_exhausted"}.Contains(state["status"]?.ToString())) { await GpuPower.Sync(backend,session,restore:true); return; }
+        if(state["worker_alive"]?.GetValue<bool>()==true)return;
         Directory.CreateDirectory(Profile.Home);
         var log=Path.Combine(Profile.Home,"workers",Path.GetFileNameWithoutExtension(config)+".log");
         using var process=Process.Start(backend.Wsl(profile.Python,"focused_experiment.py","run","--session",".cache/learning/"+session)) ?? throw new IOException("Could not start WSL worker");
@@ -184,6 +185,7 @@ public sealed class Backend(Profile profile)
                     state=await backend.Call(new{action="status",session});
                     bool active=new[]{"pausing","stopping"}.Contains(state["status"]?.ToString()) || (new[]{"running","waiting"}.Contains(state["status"]?.ToString()) && state["desired"]?.ToString()=="resume");
                     SetThreadExecutionState(active ? 0x80000001 : 0x80000000);
+                    await GpuPower.Sync(backend,session);
                 }
                 catch(Exception ex) { lock(LogGate) File.AppendAllText(log,ex.Message+Environment.NewLine); }
                 await Task.WhenAny(process.WaitForExitAsync(), Task.Delay(10000));
@@ -191,7 +193,11 @@ public sealed class Backend(Profile profile)
             await Task.WhenAll(stdout,stderr);
             if(process.ExitCode!=0) throw new IOException("WSL worker exited " + process.ExitCode + ". See " + log);
         }
-        finally { SetThreadExecutionState(0x80000000); }
+        finally
+        {
+            SetThreadExecutionState(0x80000000);
+            await GpuPower.Sync(backend,session,restore:true);
+        }
     }
     static readonly object LogGate=new();
 }

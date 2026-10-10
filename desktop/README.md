@@ -56,6 +56,41 @@ these preferences does not stop work already running; use **Pause for gaming** f
 Settings stay in `%LOCALAPPDATA%\TrainingStudio\startup.json`.
 The controls apply to Studio workers, not legacy PowerShell tasks or unrelated apps.
 
+## GPU power
+
+Open **GPU power**, select the NVIDIA GPU, and choose **Enable power control** once.
+Windows asks for administrator permission for this setup. Then use the slider or
+5% preset buttons and select **Apply training limit**. The percentage uses the GPU's
+default wattage, not current utilization. The driver supplies the minimum; presets
+above 100% or below that minimum are unavailable.
+
+Studio shows both the pending choice and the actual limit read back from NVIDIA.
+It saves the selected limit for the current connection and experiment on this PC.
+Changing the slider alone does not change power. **Restore 100%** also saves 100%
+as the training setting.
+
+- **Pause** restores 100% while the checkpoint saves. Wait for **paused** before gaming.
+- **Resume** reapplies the saved limit when the worker becomes active, within its
+  ten-second status interval.
+- Stop, failure and completion restore 100%. This also works with the dashboard closed.
+
+The limit affects the whole GPU, including other apps. A force-killed Windows worker
+cannot run its cleanup; use **Restore 100%** if its limit remains after a crash.
+Driver resets can clear a limit; the running worker checks it again. GPU power setup
+and the saved percentage do not start learning or change your login preferences.
+Only one experiment/GPU power setting is managed per Windows user at a time.
+
+The one-time setup creates fixed, manually triggered NVIDIA preset tasks in
+`\TrainingStudioPower\`. Their administrator-owned permissions allow the normal
+user to read and run them, but not change their elevated commands. Each command
+uses the Windows driver tool at its system path. No elevated learning worker or
+long-running PowerShell console is needed. Unsupported GPUs show a clear message.
+This setup requires a Windows administrator account; it does not support entering
+a different administrator's credentials for a standard account.
+
+NVIDIA documents the supported power ranges and privileges in its
+[nvidia-smi reference](https://docs.nvidia.com/deploy/nvidia-smi/index.html).
+
 ## Create an experiment
 
 Open **New experiment**. This release supports **Qwen3.5-4B BF16 LoRA** on a 16 GB NVIDIA GPU.
@@ -108,7 +143,8 @@ The installer refuses to overwrite the same version while it is running.
 Do not update Python source files bound to an active experiment.
 
 To uninstall, pause experiments first, remove the `TrainingStudio-…` and `TrainingStudioUI` scheduled tasks you created,
-then delete the app folder and shortcuts. Keep the WSL experiment folders to retain results.
+then delete the app folder and shortcuts. If GPU power control was enabled, restore 100%
+and remove the fixed tasks in `\TrainingStudioPower\` with administrator permission. Keep the WSL experiment folders to retain results.
 
 ## Build and test
 
@@ -130,3 +166,7 @@ its live connected dashboard for a local UI smoke check; it does not start or st
 On a prepared Windows profile with an installed worker, `--check-startup <output>` checks
 all four startup combinations and restores the original preferences. It briefly changes
 scheduled triggers without starting or stopping learning.
+
+The native `--self-check` covers GPU range validation and pause/stop/failure decisions.
+`--check-gpu-power <running-session> <output>` briefly checks supported 85–100% presets
+on real hardware, then restores the original saved setting (100% if unset).

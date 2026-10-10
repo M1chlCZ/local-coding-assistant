@@ -6,6 +6,18 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if(e.Args.Length==3 && e.Args[0]=="--check-gpu-power")
+        {
+            try { await GpuPowerCheck.Hardware(e.Args[1],e.Args[2]); Shutdown(0); }
+            catch(Exception ex) { File.WriteAllText(e.Args[2]+".error",ex.ToString()); Shutdown(1); }
+            return;
+        }
+        if(e.Args.Length==2 && e.Args[0]=="--enable-gpu-power")
+        {
+            try { await GpuPower.Install(e.Args[1]); Shutdown(0); }
+            catch(Exception ex) { MessageBox.Show(ex.Message,"GPU power setup"); Shutdown(1); }
+            return;
+        }
         if(e.Args.Length==2 && e.Args[0]=="--self-check")
         {
             try { ControlCheck.ValidateInputs(); File.WriteAllText(e.Args[1],"Passed"); Shutdown(0); }
