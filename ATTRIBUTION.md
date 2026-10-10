@@ -20,3 +20,6 @@ The 32 selected Tulu rows all identify [FLAN v2 converted](https://huggingface.c
 
 
 Recent comparison manifests reference Xiaomi MiMo V2.6 Distill Qwen 9B (MIT metadata, GGUF by mradermacher) and Qwen3.8-27B (Apache-2.0, GGUF by Unsloth, pinned license copy in `research/qwen38.LICENSE`). The MiMo checkpoint is an SFT of Qwen3.5-9B and its pinned repository lacks a LICENSE file. This repository does not redistribute either model. The hashes identify the upstream downloads, not models trained by this project.
+
+- [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B): Apache-2.0 base model for the text-only BF16 LoRA experiment. The source pin is in `qwen35_train.py`. This repository does not include its weights.
+- [SWE-rebench V2](https://huggingface.co/datasets/nebius/SWE-rebench-V2), Ibragim Badertdinov, Maksim Nekrashevich, Anton Shevtsov, and Alexander Golubev (2026), [arXiv:2602.23866](https://arxiv.org/abs/2602.23866): CC-BY-4.0 dataset. The importer selects and reformats Go/TypeScript repairs. Each private row retains its repository, commit, source license, and dataset revision. Source code keeps its original license. Raw rows and images are excluded from Git.

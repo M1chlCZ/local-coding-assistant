@@ -1,5 +1,6 @@
 """Keep worker state distinct from finished experiment and benchmark progress."""
 import copy
+import fcntl
 import importlib
 import importlib.util
 import json
@@ -9,6 +10,46 @@ import unittest
 
 
 class LearningProgressTests(unittest.TestCase):
+    def test_unlocked_worker_does_not_display_stale_running_status(self):
+        module = importlib.import_module('learning_progress')
+        self.assertTrue(hasattr(module, 'worker_health'), 'Worker liveness is not checked')
+        value = {**self.value, 'desired': 'resume'}
+        result = module.worker_health(value, False)
+        self.assertEqual(result['status'], 'interrupted')
+        self.assertEqual(result['saved_status'], 'running')
+        self.assertEqual(result['desired'], 'resume')
+        self.assertFalse(result['worker_alive'])
+        self.assertIn('Resume', result['detail'])
+        self.assertEqual(value['status'], 'running')
+
+    def test_pause_and_stop_remain_saved_when_worker_is_absent(self):
+        module = importlib.import_module('learning_progress')
+        self.assertTrue(hasattr(module, 'worker_health'), 'Worker liveness is not checked')
+        for action in ('pause', 'stop'):
+            result = module.worker_health({**self.value, 'desired': action}, False)
+            self.assertEqual(result['desired'], action)
+            self.assertIn(action, result['detail'].lower())
+            self.assertNotIn('Click Resume', result['detail'])
+
+    def test_live_and_finished_states_are_preserved(self):
+        module = importlib.import_module('learning_progress')
+        self.assertTrue(hasattr(module, 'worker_health'), 'Worker liveness is not checked')
+        self.assertEqual(module.worker_health(self.value, True)['status'], 'running')
+        for status in ('completed', 'paused', 'stopped', 'blocked', 'failed'):
+            self.assertEqual(module.worker_health({**self.value, 'status': status}, False)['status'], status)
+
+    def test_liveness_checks_real_worker_lock_without_creating_files(self):
+        module = importlib.import_module('learning_progress')
+        self.assertTrue(hasattr(module, 'worker_alive'), 'Worker lock inspection is missing')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            self.assertFalse(module.worker_alive(path))
+            self.assertEqual(list(path.iterdir()), [])
+            with (path/'worker.lock').open('w') as owner:
+                fcntl.flock(owner, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                self.assertTrue(module.worker_alive(path))
+            self.assertFalse(module.worker_alive(path))
+
     def view(self, value, state, confirmation=None):
         self.assertIsNotNone(importlib.util.find_spec('learning_progress'),
                              'Read-only continuous progress view is missing')

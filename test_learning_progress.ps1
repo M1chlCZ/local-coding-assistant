@@ -53,4 +53,18 @@ if(-not (Format-LearningProgress $State).Contains('Now: pausing.')){throw 'Pause
 $State.status='running';$State.benchmark.progress=$null
 $State.phase='collect';$State.child_status='running';$State.detail='Teacher task example-12'
 if(-not (Format-LearningProgress $State).Contains('Now: Teacher task example-12')){throw 'Current training task is hidden.'}
+$State=[pscustomobject]@{focused=$true;status='running';phase='qwen35-baseline';detail='Checking Go';active_seconds=28800;
+    training_seconds=1800;limit_seconds=21600;stage_index=1;stage_total=6;round=2;
+    stage_progress=@{phase='go';completed=17;total=50}}
+$Text=Format-LearningProgress $State
+foreach($Expected in @('Stage: 2/6','Total active hours: 8','Training hours: 0.5 / 6','Stage checks: 17/50')){
+    if(-not $Text.Contains($Expected)){throw ('Missing finite comparison progress: '+$Expected)}
+}
+if($Text.Contains('Active hours: 8 / 6')){throw 'Benchmark time is presented as using the training budget'}
+$State.phase='qwen35-train';$State|Add-Member -NotePropertyName training -NotePropertyValue @{step=3;max_steps=40}
+if(-not (Format-LearningProgress $State).Contains('Training: 3/40')){throw 'Named training stage does not show saved steps'}
+$State.stage_progress=@{phase='load_model'}
+if(-not (Format-LearningProgress $State).Contains('Now: Loading the model onto the GPU.')){throw 'Model load still looks like training.'}
+$State.stage_progress=@{phase='evaluate';language='go';task='repair-1';completed=2;total=4}
+if(-not (Format-LearningProgress $State).Contains('Now: Checking go: repair-1. Saved 2/4.')){throw 'Current focused coding task is hidden.'}
 'PASS: Windows console shows training, independent benchmark schedule, progress, complete scores, and reuse'

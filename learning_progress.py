@@ -1,8 +1,38 @@
 """Read-only progress for continuous training and its independent benchmarks."""
 import argparse
 import copy
+import fcntl
 import json
 from pathlib import Path
+
+
+def worker_alive(session):
+    """Observe the process-owned lock; old status timestamps do not prove liveness."""
+    try:
+        with (Path(session)/'worker.lock').open('rb') as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return True
+    except FileNotFoundError:
+        pass
+    return False
+
+
+def worker_health(snapshot, alive):
+    value = copy.deepcopy(snapshot)
+    value['worker_alive'] = alive
+    if not alive and value.get('status') in ('running', 'waiting', 'pausing', 'stopping'):
+        value['saved_status'] = value['status']
+        value['status'] = 'interrupted'
+        value['phase'] = 'recovery'
+        control = value.get('desired', 'resume')
+        if control in ('pause', 'stop'):
+            detail = f'Worker is not running; saved {control} remains in effect.'
+        else:
+            detail = 'Worker is not running; saved progress is retained. Click Resume to recover.'
+        value.update(detail=detail, supervisor_detail=detail)
+    return value
 
 
 def benchmark_activity(output, progress):
@@ -63,7 +93,8 @@ def main():
         if progress and controller.state.get('benchmark_output'):
             progress.update(benchmark_activity(controller.state['benchmark_output'], progress))
         confirmation = read(controller.path/'confirmations'/Path(snapshot['child']).name/'status.json')
-        print(json.dumps(progress_view(snapshot, controller.state, confirmation)))
+        value = progress_view(snapshot, controller.state, confirmation)
+        print(json.dumps(worker_health(value, worker_alive(controller.path))))
     except (ValueError, OSError, KeyError) as error:
         parser.exit(1, str(error)+'\n')
 

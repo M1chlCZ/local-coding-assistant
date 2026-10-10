@@ -1,5 +1,7 @@
 # Windows experiment recipe
 
+For the current Go/TypeScript adapter experiment, see [focused training](focused-training.md).
+
 This recipe builds the pruned Qwen3.6 derivatives.
 The launcher default uses upstream Qwen3.8-27B.
 See the [RLM experiment](rlm.md) for recursive coding and the finite search over agent settings.

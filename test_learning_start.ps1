@@ -2,7 +2,7 @@ $ErrorActionPreference='Stop'
 $Tokens=$null;$Errors=$null
 $Ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'learning.ps1'),[ref]$Tokens,[ref]$Errors)
 if($Errors.Count){throw $Errors[0]}
-foreach($Name in @('Start-Worker','Join-NativeArguments','Get-SessionSwitches','Get-WorkerSettings','Get-WorkerTrigger')){
+foreach($Name in @('Start-Worker','Join-NativeArguments','Get-SessionSwitches','Get-WorkerSettings','Get-WorkerTrigger','Get-WorkerTaskName')){
     $Function=$Ast.Find({param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] -and $Node.Name -eq $Name},$true)
     Invoke-Expression $Function.Extent.Text
 }
@@ -18,7 +18,7 @@ function Register-ScheduledTask {param($TaskName,$Action,$Principal,$Settings,$T
 function Grant-TaskControl($TaskName){}
 function Start-ScheduledTask {param($TaskName) $script:FakeState.status='completed'}
 function Start-Sleep {param($Seconds)}
-foreach($Finished in @('completed','stopped')){
+foreach($Finished in @('completed','stopped','budget_exhausted')){
     $script:FakeState.status=$Finished;$script:Controls=@();$script:Registered=$false
     try {Start-Worker|Out-Null;throw 'Finished session was not rejected'}
     catch {if($_.Exception.Message -notlike '*finished*'){throw}}

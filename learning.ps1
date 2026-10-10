@@ -4,7 +4,8 @@ param(
     [string]$Session = '.cache/learning/tuned',
     [switch]$Research,
     [switch]$FastReject,
-    [switch]$Continuous
+    [switch]$Continuous,
+    [switch]$Focused
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -13,7 +14,9 @@ $ModelPath = Join-Path $ProjectRoot '.cache\models\Qwen3.8-27B-UD-Q4_K_M.gguf'
 $Common = @('-d','LocalCodingAssistant','-u','coder','--cd',$LinuxRoot,'--exec')
 $env:WSL_UTF8 = '1'
 if ($Continuous -and -not $PSBoundParameters.ContainsKey('Session')) { $Session = '.cache/learning/continuous' }
-$WorkerScript = if ($Continuous) { 'continuous_learning.py' } else { 'learning_session.py' }
+if ($Focused -and $Continuous) { throw 'Choose focused or continuous mode, not both.' }
+if ($Focused -and -not $PSBoundParameters.ContainsKey('Session')) { $Session = '.cache/learning/qwen35-go-ts' }
+$WorkerScript = if ($Focused) { 'focused_experiment.py' } elseif ($Continuous) { 'continuous_learning.py' } else { 'learning_session.py' }
 
 function Join-NativeArguments($Items) {
     if ($Items | Where-Object { $_ -match '["\r\n]' }) { throw 'Invalid argument character.' }
@@ -23,6 +26,7 @@ function Join-NativeArguments($Items) {
 }
 
 function Get-SessionSwitches([switch]$Linux) {
+    if ($Focused) { if (-not $Linux) { '-Focused' }; return }
     if ($Continuous) { if (-not $Linux) { '-Continuous' }; return }
     if ($Research) { if ($Linux) { '--research' } else { '-Research' } }
     if ($FastReject) { if ($Linux) { '--fast-reject' } else { '-FastReject' } }
@@ -31,17 +35,22 @@ function Get-SessionSwitches([switch]$Linux) {
 function Get-WorkerSettings {
     $Options = @{ ExecutionTimeLimit=[TimeSpan]::Zero; AllowStartIfOnBatteries=$true;
         DontStopIfGoingOnBatteries=$true; MultipleInstances='IgnoreNew' }
-    if ($Continuous) { $Options.RestartCount=999; $Options.RestartInterval=[TimeSpan]::FromMinutes(1) }
+    if ($Continuous -or $Focused) { $Options.RestartCount=999; $Options.RestartInterval=[TimeSpan]::FromMinutes(1) }
     return New-ScheduledTaskSettingsSet @Options
 }
 
 function Get-WorkerTrigger([string]$Owner) {
-    if ($Continuous) { return New-ScheduledTaskTrigger -AtLogOn -User $Owner }
+    if ($Continuous -or $Focused) {
+        New-ScheduledTaskTrigger -AtLogOn -User $Owner
+        # RestartOnFailure covers launch failures, not a successfully launched process that exits nonzero.
+        # IgnoreNew prevents duplicates; the saved controller command and terminal status remain authoritative.
+        New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval ([TimeSpan]::FromMinutes(5))
+    }
 }
 
 function Test-LearningAwake($Snapshot) {
     if ($Snapshot.status -in @('pausing','stopping')) { return $true }
-    return ($Snapshot.desired -notin @('pause','stop') -and $Snapshot.status -notin @('paused','blocked','stopped'))
+    return ($Snapshot.desired -notin @('pause','stop') -and $Snapshot.status -notin @('paused','blocked','stopped','completed','budget_exhausted','failed','interrupted'))
 }
 
 function Get-BootProbeResult([int]$ExitCode,[string]$Output) {
@@ -82,29 +91,72 @@ function Wait-LearningReady([string]$LogPrefix) {
     throw 'WSL boot dependencies remain unavailable; Windows will retry the worker. See boot logs.'
 }
 
-if ($Action -eq 'worker') {
-    $LogRoot = Join-Path $ProjectRoot '.cache\learning-windows'
-    New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
-    $Stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-ffff')
+function Get-WorkerTaskName {
+    $Hash = [Security.Cryptography.SHA256]::Create()
+    try { $Suffix = ([BitConverter]::ToString($Hash.ComputeHash([Text.Encoding]::UTF8.GetBytes($Session)))).Replace('-','').Substring(0,8) }
+    finally { $Hash.Dispose() }
+    return "LocalCodingAssistantLearning-$Suffix"
+}
+
+function Write-WorkerStatus([string]$State,[string]$Detail,[string]$LogPrefix,$ExitCode=$null) {
+    $File = Join-Path (Split-Path -Parent $LogPrefix) ((Get-WorkerTaskName)+'.json')
+    $Value = @{ status=$State; detail=$Detail; updated_at=[DateTime]::UtcNow.ToString('o');
+        windows_pid=$PID; session=$Session; worker_script=$WorkerScript; log_prefix=$LogPrefix; exit_code=$ExitCode }
+    $Temporary = "$File.$PID.tmp"
+    $Value | ConvertTo-Json | Set-Content -Encoding UTF8 -Path $Temporary
+    Move-Item -Force -Path $Temporary -Destination $File
+}
+
+function Invoke-WorkerGuard([string]$LogPrefix,[scriptblock]$Body) {
+    try {
+        Write-WorkerStatus 'starting' 'Starting the saved experiment' $LogPrefix
+        $ExitCode = & $Body
+        if ($null -eq $ExitCode) { throw 'Windows could not read the worker exit code.' }
+        $State = if ($ExitCode -eq 0) { 'exited' } else { 'failed' }
+        $Detail = "Worker exited with code $ExitCode. Logs: $LogPrefix"
+        Write-WorkerStatus $State $Detail $LogPrefix $ExitCode
+        Add-Content -Path "$LogPrefix.wrapper.log" -Value $Detail
+        return [int]$ExitCode
+    } catch {
+        $Detail = $_.Exception.Message
+        ($_ | Format-List * -Force | Out-String) | Add-Content -Path "$LogPrefix.wrapper.log"
+        Write-WorkerStatus 'failed' $Detail $LogPrefix 1
+        [Console]::Error.WriteLine("Learning worker failed: $Detail. See $LogPrefix.wrapper.log")
+        return 1
+    }
+}
+
+function Get-LinuxWorkerSnapshot {
+    $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript 'status' '--session' $Session
+    if ($LASTEXITCODE -ne 0) { throw "Cannot read saved worker status: $Result" }
+    return (($Result -join "`n") | ConvertFrom-Json)
+}
+
+function Invoke-LearningWorker([string]$LogPrefix) {
+    if ($Focused) {
+        $Initial = Get-LinuxWorkerSnapshot
+        if ($Initial.status -in @('completed','stopped','budget_exhausted')) { return 0 }
+    }
     Add-Type @'
 using System.Runtime.InteropServices;
 public static class LearningPower {
     [DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags);
 }
 '@
-    Wait-LearningReady (Join-Path $LogRoot $Stamp)
+    Wait-LearningReady $LogPrefix
     $NativeArguments = $Common + @('.cache/rlm-env/bin/python',$WorkerScript,'run','--session',$Session)
-    if (-not $Continuous) { $NativeArguments += @('--hours',$Hours.ToString([Globalization.CultureInfo]::InvariantCulture),'--model',$ModelPath) }
+    if (-not $Continuous -and -not $Focused) { $NativeArguments += @('--hours',$Hours.ToString([Globalization.CultureInfo]::InvariantCulture),'--model',$ModelPath) }
     $NativeArguments += @(Get-SessionSwitches -Linux)
     $WorkerProcess = Start-Process 'wsl.exe' -ArgumentList (Join-NativeArguments $NativeArguments) `
-        -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $LogRoot "$Stamp.out.log") `
-        -RedirectStandardError (Join-Path $LogRoot "$Stamp.err.log")
+        -WindowStyle Hidden -PassThru -RedirectStandardOutput "$LogPrefix.out.log" `
+        -RedirectStandardError "$LogPrefix.err.log"
     # Keep a process handle before exit so Windows PowerShell retains the native exit code.
     $WorkerHandle = $WorkerProcess.Handle
     try {
+        Write-WorkerStatus 'running' 'Windows worker launched; see experiment status for current progress' $LogPrefix
         while (-not $WorkerProcess.HasExited) {
             try {
-                $Snapshot = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript 'status' '--session' $Session | ConvertFrom-Json
+                $Snapshot = Get-LinuxWorkerSnapshot
                 $Paused = -not (Test-LearningAwake $Snapshot)
             } catch { $Paused = $false }
             # Keep the PC awake during work; pause restores normal idle sleep. Display sleep stays allowed.
@@ -114,8 +166,16 @@ public static class LearningPower {
             $WorkerProcess.Refresh()
         }
         $WorkerProcess.WaitForExit()
-        exit $WorkerProcess.ExitCode
+        return $WorkerProcess.ExitCode
     } finally { [void][LearningPower]::SetThreadExecutionState([uint32]2147483648) }
+}
+
+if ($Action -eq 'worker') {
+    $LogRoot = Join-Path $ProjectRoot '.cache\learning-windows'
+    New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
+    $Stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-ffff')
+    $LogPrefix = Join-Path $LogRoot $Stamp
+    exit (Invoke-WorkerGuard $LogPrefix { Invoke-LearningWorker $LogPrefix })
 }
 
 function Invoke-Control([string]$Command) {
@@ -125,7 +185,35 @@ function Invoke-Control([string]$Command) {
         $Result = & wsl.exe @Common '.cache/rlm-env/bin/python' $WorkerScript $Command '--session' $Session
     }
     if ($LASTEXITCODE -ne 0) { throw "Session command failed: $Result" }
+    if ($Command -eq 'status') {
+        return ((Add-WorkerHealth (($Result -join "`n") | ConvertFrom-Json)) | ConvertTo-Json -Depth 30)
+    }
     return ($Result -join "`n")
+}
+
+function Add-WorkerHealth($Value) {
+    if ($Value.worker_alive -eq $true -or $Value.status -notin @('running','waiting','starting','pausing','stopping','interrupted')) { return $Value }
+    try { $Task = Get-ScheduledTask -TaskName (Get-WorkerTaskName) -ErrorAction SilentlyContinue }
+    catch { return $Value } # The Linux lock remains authoritative when task inspection is unavailable.
+    if ($Task -and $Task.State -eq 'Running') {
+        if ($null -eq $Value.worker_alive) { return $Value }
+        $State = 'starting'
+        $Detail = 'Windows worker is starting or recovering; saved Pause and Stop remain respected.'
+    } else {
+        $State = 'interrupted'
+        $Detail = 'Worker is not running; saved progress and controls are retained.'
+        $Record = Join-Path $ProjectRoot ('.cache/learning-windows/'+(Get-WorkerTaskName)+'.json')
+        if (Test-Path $Record) {
+            try { $Saved = Get-Content $Record -Raw | ConvertFrom-Json; $Detail += ' '+$Saved.detail } catch { }
+        }
+        if ($Value.desired -notin @('pause','stop')) { $Detail += ' Click Resume to recover.' }
+    }
+    $Value | Add-Member -Force -NotePropertyName saved_status -NotePropertyValue $Value.status
+    $Value | Add-Member -Force -NotePropertyName status -NotePropertyValue $State
+    $Value | Add-Member -Force -NotePropertyName phase -NotePropertyValue 'recovery'
+    $Value | Add-Member -Force -NotePropertyName detail -NotePropertyValue $Detail
+    $Value | Add-Member -Force -NotePropertyName supervisor_detail -NotePropertyValue $Detail
+    return $Value
 }
 
 function Format-LearningProgress($Value) {
@@ -133,6 +221,19 @@ function Format-LearningProgress($Value) {
     $Limit = [Math]::Round($Value.limit_seconds/3600,2)
     $Lines = @("State: $($Value.status)  Round: $($Value.round)  Phase: $($Value.phase)", "Active hours: $Used / $Limit")
     $Now = $Value.detail
+    if ($Value.focused) {
+        $Stage = [Math]::Min($Value.stage_index+1,$Value.stage_total)
+        $TrainingUsed = [Math]::Round($Value.training_seconds/3600,2)
+        $Lines[0] = "State: $($Value.status)  Stage: $Stage/$($Value.stage_total)  Phase: $($Value.phase)"
+        $Lines[1] = "Total active hours: $Used; Training hours: $TrainingUsed / $Limit"
+        $Lines += 'Finite model comparison; benchmark time does not use the training budget.'
+        if ($null -ne $Value.stage_progress.completed) {
+            $Lines += "Stage checks: $($Value.stage_progress.completed)/$($Value.stage_progress.total)"
+        }
+        if ($null -ne $Value.training.step -and $Value.phase -ne 'train') {
+            $Lines += "Training: $($Value.training.step)/$($Value.training.max_steps)"
+        }
+    }
     if ($Value.recipe -eq 'balanced-code-v1') {
         $Lines += 'Recipe: balanced code answers; each candidate starts from the base model.'
         if ($Value.generation_batch_size -gt 1) {
@@ -206,8 +307,17 @@ function Format-LearningProgress($Value) {
         'evaluate' { $Lines += "Tests: $($Value.evaluation.completed)/$($Value.evaluation.total)  $($Value.evaluation.mode) $($Value.evaluation.checkpoint)" }
         'confirmation' { $Lines += "Fresh reserved checks: $($Value.confirmation_progress.mode) $($Value.confirmation_progress.completed)/$($Value.confirmation_progress.total)" }
     }
+    if ($Value.focused -and $Value.status -eq 'running') {
+        switch ($Value.stage_progress.phase) {
+            'load_runtime' { $Now = 'Loading the training environment.' }
+            'tokenize' { $Now = 'Checking complete coding examples before training.' }
+            'load_model' { $Now = 'Loading the model onto the GPU.' }
+            'evaluate' { $Now = "Checking $($Value.stage_progress.language): $($Value.stage_progress.task). Saved $($Value.stage_progress.completed)/$($Value.stage_progress.total)." }
+            'saved' { $Now = 'Results saved; preparing the next stage.' }
+        }
+    }
     $Lines += $Value.detail
-    if ($Value.status -in @('paused','pausing','stopped','stopping','waiting','blocked','failed')) {
+    if ($Value.status -in @('paused','pausing','stopped','stopping','waiting','blocked','failed','interrupted')) {
         $Now = "$($Value.status). $($Value.detail)"
     }
     $Lines = @($Lines[0], "Now: $Now") + $Lines[1..($Lines.Count-1)]
@@ -225,7 +335,7 @@ function Watch-LearningProgress {
             Write-Host ("`n"+(Get-Date).ToString('HH:mm:ss')+"`n"+$Text)
             $Previous = $Text; $Printed = Get-Date
         }
-        if ($Value.status -in @('completed','stopped','failed')) { return }
+        if ($Value.status -in @('completed','budget_exhausted','stopped','failed')) { return }
         Start-Sleep -Seconds 5
     }
 }
@@ -250,7 +360,7 @@ function Grant-TaskControl([string]$TaskName) {
 function Start-Worker {
     if ($Hours -lt 0.01 -or $Hours -gt 24) { throw 'Use 0.01 to 24 hours.' }
     $Saved = Invoke-Control 'status' | ConvertFrom-Json
-    if ($Saved.status -in @('completed','stopped')) {
+    if ($Saved.status -in @('completed','budget_exhausted','stopped')) {
         throw 'This session is finished. Choose a new session folder for fresh training tasks.'
     }
     Invoke-Control 'resume' | Out-Null
@@ -261,10 +371,7 @@ function Start-Worker {
         $Hours.ToString([Globalization.CultureInfo]::InvariantCulture))
     $WorkerArguments += @(Get-SessionSwitches)
     $ArgumentText = Join-NativeArguments $WorkerArguments
-    $Hash = [Security.Cryptography.SHA256]::Create()
-    try { $Suffix = ([BitConverter]::ToString($Hash.ComputeHash([Text.Encoding]::UTF8.GetBytes($Session)))).Replace('-','').Substring(0,8) }
-    finally { $Hash.Dispose() }
-    $TaskName = "LocalCodingAssistantLearning-$Suffix"
+    $TaskName = Get-WorkerTaskName
     $Existing = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($Existing -and $Existing.State -eq 'Running') { return Invoke-Control 'status' }
     $TaskAction = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
@@ -282,7 +389,7 @@ function Start-Worker {
     if ((Get-ScheduledTask -TaskName $TaskName).State -ne 'Running') {
         $Info = Get-ScheduledTaskInfo -TaskName $TaskName
         $Final = Invoke-Control 'status' | ConvertFrom-Json
-        if ($Info.LastTaskResult -eq 0 -and $Final.status -in @('completed','stopped')) {
+        if ($Info.LastTaskResult -eq 0 -and $Final.status -in @('completed','budget_exhausted','stopped')) {
             return Invoke-Control 'status'
         }
         if ($Final.status -eq 'failed') { throw "Worker failed: $($Final.detail)" }

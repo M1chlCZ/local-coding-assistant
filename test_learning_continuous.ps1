@@ -9,11 +9,12 @@ foreach($Name in @('Format-LearningProgress','Get-SessionSwitches','Get-WorkerSe
 }
 $Continuous=$true;$Research=$true;$FastReject=$true
 if(@(Get-SessionSwitches -Linux).Count){throw 'Bounded trainer arguments leaked into supervisor'}
-$script:Trigger=$null;$script:Settings=$null
-function New-ScheduledTaskTrigger {param([switch]$AtLogOn,$User) $script:Trigger=@{AtLogOn=[bool]$AtLogOn;User=$User};return $script:Trigger}
+$script:Triggers=@();$script:Settings=$null
+function New-ScheduledTaskTrigger {param([switch]$AtLogOn,$User,[switch]$Once,$At,$RepetitionInterval) $Value=@{AtLogOn=[bool]$AtLogOn;User=$User;Once=[bool]$Once;RepetitionInterval=$RepetitionInterval};$script:Triggers+=@($Value);return $Value}
 function New-ScheduledTaskSettingsSet {param($ExecutionTimeLimit,[switch]$AllowStartIfOnBatteries,[switch]$DontStopIfGoingOnBatteries,$MultipleInstances,$RestartCount,$RestartInterval) $script:Settings=@{RestartCount=$RestartCount;RestartInterval=$RestartInterval;MultipleInstances=$MultipleInstances};return $script:Settings}
 Get-WorkerTrigger 'test-user'|Out-Null;Get-WorkerSettings|Out-Null
-if(-not $script:Trigger.AtLogOn -or $script:Trigger.User -ne 'test-user'){throw 'Login recovery must target the worker owner'}
+if(-not $script:Triggers[0].AtLogOn -or $script:Triggers[0].User -ne 'test-user'){throw 'Login recovery must target the worker owner'}
+if($script:Triggers.Count -ne 2 -or -not $script:Triggers[1].Once -or $script:Triggers[1].RepetitionInterval.TotalMinutes -ne 5){throw 'Native process exits need a periodic recovery trigger'}
 if($script:Settings.RestartCount -ne 999 -or $script:Settings.MultipleInstances -ne 'IgnoreNew'){throw 'Task restart or duplicate protection missing'}
 if(-not (Test-LearningAwake ([pscustomobject]@{status='waiting';desired='resume'}))){throw 'Automatic retries must keep the PC awake'}
 foreach($Control in @('pause','stop')){
@@ -30,4 +31,12 @@ $Text=Format-LearningProgress $Value
 if($Text -notlike '*until Pause or Stop*' -or $Text -like '*Active hours: 8 / 0*'){throw 'Continuous progress still presents a global time cutoff'}
 $Continuous=$false
 if(@(Get-WorkerTrigger 'test-user').Count){throw 'Finite experiments unexpectedly gained a login trigger'}
+$Focused=$true
+if(@(Get-SessionSwitches -Linux).Count){throw 'Focused controller received legacy trainer arguments'}
+if(@(Get-SessionSwitches) -notcontains '-Focused'){throw 'Focused mode was lost in the Windows worker task'}
+$script:Triggers=@();Get-WorkerTrigger 'test-user'|Out-Null;Get-WorkerSettings|Out-Null
+if($script:Triggers.Count -ne 2 -or -not $script:Triggers[0].AtLogOn -or $script:Settings.RestartCount -ne 999){throw 'Focused experiment cannot recover after login or a transient failure'}
+foreach($State in @('completed','budget_exhausted')){
+    if(Test-LearningAwake ([pscustomobject]@{status=$State;desired='resume'})){throw 'Finished experiment must release the keep-awake request'}
+}
 'PASS: continuous login recovery, bounded restarts and progress; finite mode unchanged'

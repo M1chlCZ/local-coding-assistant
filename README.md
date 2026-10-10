@@ -49,6 +49,13 @@ For Mac access, use the [SSH connection instructions](research/wsl.md#connect-fr
 The external agent harness supplies tools and file access.
 The API listens on loopback.
 
+## Focused training experiment
+
+The [Qwen3.5-4B experiment](research/focused-training.md) trains on 2,456 complete Go and TypeScript repairs.
+It compares the unchanged model, the trained adapter, and the previous student on matched coding tests.
+Windows Pause and Resume preserve progress. Automatic recovery respects Pause, Stop, and completed experiments.
+The experiment keeps the accepted model until the results receive review.
+
 ## Recursive coding experiment
 
 The [RLM experiment](research/rlm.md) adds a bounded Python REPL and optional model subcalls.
