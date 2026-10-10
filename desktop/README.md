@@ -15,7 +15,7 @@ The release includes .NET. It is not code-signed, so Windows can show an unknown
 
 This first release requires an already prepared WSL backend. It does not install CUDA,
 Docker, Python packages or model weights for you. Follow the repository's
-[WSL setup](../research/wsl.md) and [focused training recipe](../research/focused-training.md).
+[WSL setup](https://github.com/M1chlCZ/local-coding-assistant/blob/main/research/wsl.md) and [focused training recipe](https://github.com/M1chlCZ/local-coding-assistant/blob/main/research/focused-training.md).
 Use a recent NVIDIA driver and enough free space for the model, datasets and checkpoints.
 
 In **Connection**, choose your WSL distribution, Linux user and absolute project folder.
