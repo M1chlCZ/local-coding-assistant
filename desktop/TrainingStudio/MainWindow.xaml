@@ -85,6 +85,18 @@
      <Button Content="Create paused experiment" Click="Create_Click" HorizontalAlignment="Left"/>
     </StackPanel></Border></ScrollViewer>
    </TabItem>
+   <TabItem Header="Startup">
+    <Border Style="{StaticResource Card}" Margin="0,20,6,0" VerticalAlignment="Top"><StackPanel>
+     <TextBlock Text="Choose what starts with Windows" Style="{StaticResource Heading}"/>
+     <CheckBox x:Name="AutoLearning" Content="Resume learning automatically after Windows login" Margin="0,8,0,10"/>
+     <TextBlock Text="When enabled, unfinished experiments recover after login or an unexpected worker exit. Saved Pause, Stop and completed runs stay respected." Foreground="#526174" Margin="24,0,0,24"/>
+     <CheckBox x:Name="AutoStudio" Content="Open Training Studio after Windows login" Margin="0,8,0,10"/>
+     <TextBlock Text="This only opens the app. It does not start training when automatic learning is off." Foreground="#526174" Margin="24,0,0,24"/>
+     <Button Content="Save startup preferences" Click="Startup_Click" HorizontalAlignment="Left"/>
+     <TextBlock x:Name="StartupSummary" Margin="0,20,0,12"/>
+     <TextBlock Text="With automatic learning off, there are no login or timer starts: use Start / Resume yourself. Changing these settings does not pause or stop work already running." Foreground="#526174"/>
+    </StackPanel></Border>
+   </TabItem>
    <TabItem Header="Connection">
     <ScrollViewer VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource Card}" Margin="0,20,6,0"><StackPanel MaxWidth="720" HorizontalAlignment="Left">
      <TextBlock Text="Your local WSL backend" Style="{StaticResource Heading}"/>
@@ -95,7 +107,7 @@
      <Label Target="{Binding ElementName=ProjectRoot}" Content="Absolute Linux project folder"/><TextBox x:Name="ProjectRoot" Style="{StaticResource Field}"/>
      <Label Target="{Binding ElementName=PythonPath}" Content="Controller Python path, relative to the project or absolute"/><TextBox x:Name="PythonPath" Style="{StaticResource Field}"/>
      <Button Content="Save and connect" Click="Connect_Click" HorizontalAlignment="Left"/>
-     <TextBlock Text="Closing this window leaves training running. Start / Resume creates a background task when needed. It recovers after login and respects saved Pause and Stop. Keep the installed app in the same folder." Foreground="#526174" Margin="0,20,0,12"/>
+     <TextBlock Text="Closing this window leaves training running. Start / Resume creates a background task when needed. Choose login behavior in Startup. Saved Pause and Stop stay respected." Foreground="#526174" Margin="0,20,0,12"/>
      <Button Content="Open setup guide" Click="Help_Click" HorizontalAlignment="Left"/>
     </StackPanel></Border></ScrollViewer>
    </TabItem>

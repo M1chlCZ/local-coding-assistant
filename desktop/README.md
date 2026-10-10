@@ -32,7 +32,7 @@ These prerequisites are checked again by the training and evaluation tools.
 
 - **Overview** shows worker activity, GPU memory, elapsed time and measured coding results.
 - **Activity & checkpoints** shows the current stage log and complete saved checkpoints.
-- **Start / Resume** starts saved work. A background task recovers it after Windows login.
+- **Start / Resume** starts saved work in a windowless background worker.
 - **Pause for gaming** requests a checkpoint and releases the GPU. Wait for **paused**.
 - **Stop** ends the finite experiment. Use Pause if you want to continue it later.
 
@@ -40,6 +40,21 @@ Closing the app leaves the worker running. Saved Pause and Stop remain in effect
 Training Studio adds a task named `TrainingStudio-…` only when a worker needs to start.
 Existing workers continue to use their existing controls. One global GPU lock prevents
 simultaneous training runs; pause the active experiment before starting another.
+
+## Startup preferences
+
+Open **Startup** and select **Save startup preferences** after making changes.
+
+- **Resume learning automatically after Windows login** is on by default. It adds login
+  and recovery triggers. Saved Pause, Stop and completed experiments stay respected.
+- **Open Training Studio after Windows login** is off by default. Turn it on to show
+  the dashboard when you sign in. This switch alone does not start learning.
+
+Turn both off to open Studio yourself and press **Start / Resume** manually.
+Disabling automatic learning removes login, timer and failure-retry starts. Changing
+these preferences does not stop work already running; use **Pause for gaming** for that.
+Settings stay in `%LOCALAPPDATA%\TrainingStudio\startup.json`.
+The controls apply to Studio workers, not legacy PowerShell tasks or unrelated apps.
 
 ## Create an experiment
 
@@ -86,12 +101,13 @@ Connection profiles and worker logs stay in your Windows user profile. WSL datas
 checkpoints and reports stay in the ignored `.cache` folder. Exported reports can contain
 private paths: review them before sharing. The setup-guide button opens GitHub in your browser.
 
-Do not move or overwrite the installed EXE while its background task is running.
-Pause, wait for a saved checkpoint, and stop the corresponding Windows scheduled task before
-upgrading. Saved experiment controls remain intact. The installer refuses to replace a running app.
+Each release installs in its own version folder. The installer updates shortcuts and future
+scheduled launches without interrupting an older running worker. Close the old dashboard
+and open the new shortcut after upgrading. Keep the old version folder until its worker exits.
+The installer refuses to overwrite the same version while it is running.
 Do not update Python source files bound to an active experiment.
 
-To uninstall, pause experiments first, remove the `TrainingStudio-…` scheduled tasks you created,
+To uninstall, pause experiments first, remove the `TrainingStudio-…` and `TrainingStudioUI` scheduled tasks you created,
 then delete the app folder and shortcuts. Keep the WSL experiment folders to retain results.
 
 ## Build and test
@@ -110,3 +126,7 @@ python3 -m unittest test_desktop_bridge test_focused_report test_focused_experim
 CI builds the Windows executable and tests the bridge. Real GPU throughput, checkpoint recovery
 and WSL integration still need hardware tests. The app's `--smoke <png-path>` option renders
 its live connected dashboard for a local UI smoke check; it does not start or stop training.
+
+On a prepared Windows profile with an installed worker, `--check-startup <output>` checks
+all four startup combinations and restores the original preferences. It briefly changes
+scheduled triggers without starting or stopping learning.

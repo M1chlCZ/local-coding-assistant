@@ -16,6 +16,33 @@ internal static class ControlCheck
             if(!rejected) throw new IOException("Invalid session accepted");
         }
     }
+    public static async Task Startup(string output)
+    {
+        var original=StartupOptions.Load();
+        try
+        {
+            foreach(var option in new[]{new StartupOptions(false,false),new StartupOptions(false,true),new StartupOptions(true,false),new StartupOptions(true,true)})
+            {
+                await Backend.ConfigureStartup(option);
+                if(StartupOptions.Load()!=option) throw new IOException("Startup preferences were not saved.");
+                var check=JsonNode.Parse(await Backend.PowerShell("""
+                    $ErrorActionPreference='Stop'
+                    $workers=@(Get-ScheduledTask -TaskName 'TrainingStudio-*' | Where-Object { $_.Actions.Arguments -match '^--worker ' })
+                    $ui=Get-ScheduledTask -TaskName TrainingStudioUI -ErrorAction SilentlyContinue
+                    @{workers=@($workers | ForEach-Object { @{triggers=@($_.Triggers | Where-Object { $null -ne $_ }).Count; retries=$_.Settings.RestartCount} }); ui=($null -ne $ui); uiTriggers=@($ui.Triggers | Where-Object { $null -ne $_ }).Count; uiArguments=[string]$ui.Actions.Arguments} | ConvertTo-Json -Depth 5 -Compress
+                    """))!;
+                var workers=check["workers"]!.AsArray();
+                if(workers.Count==0) throw new IOException("No installed worker to check.");
+                foreach(var worker in workers)
+                    if(worker!["triggers"]!.GetValue<int>()!=(option.ResumeLearningOnLogin?2:0) || worker["retries"]!.GetValue<int>()!=(option.ResumeLearningOnLogin?3:0))
+                        throw new IOException("Worker startup settings do not match the preference.");
+                if(check["ui"]!.GetValue<bool>()!=option.OpenStudioOnLogin || (option.OpenStudioOnLogin && (check["uiTriggers"]!.GetValue<int>()!=1 || check["uiArguments"]!.ToString()!="")))
+                    throw new IOException("Studio startup task is not independent.");
+            }
+        }
+        finally { await Backend.ConfigureStartup(original); }
+        File.WriteAllText(output,"All four startup combinations passed; original preferences restored.");
+    }
     public static async Task Run(string session,string output)
     {
         if(!session.StartsWith("desktop-smoke-",StringComparison.Ordinal)) throw new ArgumentException("Use a dedicated desktop-smoke- fixture.");

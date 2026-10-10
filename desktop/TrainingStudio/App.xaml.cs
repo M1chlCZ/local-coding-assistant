@@ -12,6 +12,12 @@ public partial class App : Application
             catch(Exception ex) { File.WriteAllText(e.Args[1],ex.ToString()); Shutdown(1); }
             return;
         }
+        if(e.Args.Length==2 && e.Args[0]=="--check-startup")
+        {
+            try { await ControlCheck.Startup(e.Args[1]); Shutdown(0); }
+            catch(Exception ex) { File.WriteAllText(e.Args[1]+".error",ex.ToString()); Shutdown(1); }
+            return;
+        }
         if (e.Args.Length == 3 && e.Args[0] == "--worker")
         {
             try { await Backend.Worker(e.Args[1], e.Args[2]); Shutdown(0); }

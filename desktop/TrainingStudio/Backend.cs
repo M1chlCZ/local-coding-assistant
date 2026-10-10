@@ -22,6 +22,18 @@ public sealed record Profile(string Distribution, string User, string Root, stri
     public void Save() { Validate(); Directory.CreateDirectory(Home); File.WriteAllText(FileName, JsonSerializer.Serialize(this)); }
 }
 
+public sealed record StartupOptions(bool ResumeLearningOnLogin=true, bool OpenStudioOnLogin=false)
+{
+    static string FileName => Path.Combine(Profile.Home,"startup.json");
+    public static StartupOptions Load() => File.Exists(FileName) ? JsonSerializer.Deserialize<StartupOptions>(File.ReadAllText(FileName))! : new();
+    public void Save()
+    {
+        Directory.CreateDirectory(Profile.Home);
+        File.WriteAllText(FileName+".tmp",JsonSerializer.Serialize(this));
+        File.Move(FileName+".tmp",FileName,true);
+    }
+}
+
 public sealed class Backend(Profile profile)
 {
     public Profile Profile { get; } = profile;
@@ -86,7 +98,7 @@ public sealed class Backend(Profile profile)
         var config=Path.Combine(folder,id+".json"); File.WriteAllText(config,JsonSerializer.Serialize(Profile));
         var exe=Environment.ProcessPath ?? throw new IOException("Cannot locate installed app");
         if(Path.GetFileNameWithoutExtension(exe).Equals("dotnet",StringComparison.OrdinalIgnoreCase)) throw new IOException("Run the published TrainingStudio.exe to install the background worker.");
-        var payload=Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new{exe,config,session,name="TrainingStudio-"+id})));
+        var payload=Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new{exe,config,session,name="TrainingStudio-"+id,automatic=StartupOptions.Load().ResumeLearningOnLogin})));
         // Data crosses PowerShell as base64 JSON, never interpolated executable syntax.
         var script="""
         $ErrorActionPreference='Stop'
@@ -94,15 +106,57 @@ public sealed class Backend(Profile profile)
         $owner=[Security.Principal.WindowsIdentity]::GetCurrent().Name
         $arguments='--worker "' + $d.config + '" ' + $d.session
         $action=New-ScheduledTaskAction -Execute $d.exe -Argument $arguments
-        $triggers=@((New-ScheduledTaskTrigger -AtLogOn -User $owner),(New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval ([TimeSpan]::FromMinutes(5))))
-        $settings=New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 3 -RestartInterval ([TimeSpan]::FromMinutes(1))
+        $triggers=@()
+        $settings=New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+        if($d.automatic) {
+            $triggers=@((New-ScheduledTaskTrigger -AtLogOn -User $owner),(New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval ([TimeSpan]::FromMinutes(5))))
+            $settings.RestartCount=3; $settings.RestartInterval='PT1M'
+        }
         $principal=New-ScheduledTaskPrincipal -UserId $owner -LogonType Interactive -RunLevel Limited
-        Register-ScheduledTask -TaskName $d.name -Action $action -Trigger $triggers -Settings $settings -Principal $principal -Force | Out-Null
+        $task=New-ScheduledTask -Action $action -Settings $settings -Principal $principal
+        $task.Triggers=$triggers
+        Register-ScheduledTask -TaskName $d.name -InputObject $task -Force | Out-Null
         Start-ScheduledTask -TaskName $d.name
         """.Replace("PAYLOAD",payload);
-        var start=new ProcessStartInfo("powershell.exe"){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};
-        foreach(var arg in new[]{"-NoProfile","-NonInteractive","-EncodedCommand",Convert.ToBase64String(Encoding.Unicode.GetBytes(script))}) start.ArgumentList.Add(arg);
-        await Run(start);
+        await PowerShell(script);
+    }
+    internal static async Task<string> PowerShell(string script)
+    {
+        var start=new ProcessStartInfo("powershell.exe"){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=Encoding.UTF8,StandardErrorEncoding=Encoding.UTF8};
+        foreach(var arg in new[]{"-NoProfile","-NonInteractive","-EncodedCommand",Convert.ToBase64String(Encoding.Unicode.GetBytes("$ProgressPreference='SilentlyContinue'; [Console]::OutputEncoding=[Text.UTF8Encoding]::new()\n"+script))}) start.ArgumentList.Add(arg);
+        return await Run(start);
+    }
+    public static async Task ConfigureStartup(StartupOptions options)
+    {
+        var exe=Environment.ProcessPath ?? throw new IOException("Cannot locate installed app");
+        var payload=Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new{exe,automatic=options.ResumeLearningOnLogin,open=options.OpenStudioOnLogin})));
+        await PowerShell("""
+        $ErrorActionPreference='Stop'
+        $d=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('PAYLOAD')) | ConvertFrom-Json
+        $owner=[Security.Principal.WindowsIdentity]::GetCurrent().Name
+        Get-ScheduledTask -TaskName 'TrainingStudio-*' -ErrorAction SilentlyContinue | ForEach-Object {
+            $task=$_
+            if($task.Actions.Arguments -notmatch '^--worker ') { return }
+            $task.Triggers=@()
+            $task.Settings.RestartCount=0; $task.Settings.RestartInterval=$null
+            if($d.automatic) {
+                $task.Triggers=@((New-ScheduledTaskTrigger -AtLogOn -User $owner),(New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval ([TimeSpan]::FromMinutes(5))))
+                $task.Settings.RestartCount=3; $task.Settings.RestartInterval='PT1M'
+            }
+            Set-ScheduledTask -InputObject $task | Out-Null
+        }
+        if($d.open) {
+            $action=New-ScheduledTaskAction -Execute $d.exe
+            $trigger=New-ScheduledTaskTrigger -AtLogOn -User $owner
+            $principal=New-ScheduledTaskPrincipal -UserId $owner -LogonType Interactive -RunLevel Limited
+            $settings=New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+            Register-ScheduledTask -TaskName 'TrainingStudioUI' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
+        } else {
+            Get-ScheduledTask -TaskName 'TrainingStudioUI' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false
+        }
+        exit 0
+        """.Replace("PAYLOAD",payload));
+        options.Save();
     }
     [DllImport("kernel32.dll")] static extern uint SetThreadExecutionState(uint flags);
     public static async Task Worker(string config, string session)

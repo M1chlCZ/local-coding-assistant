@@ -23,7 +23,9 @@ public partial class MainWindow : Window
         InitializeComponent(); Controls.IsEnabled=false;
         try { var p=Profile.Load(); Distro.Text=p.Distribution; LinuxUser.Text=p.User; ProjectRoot.Text=p.Root; PythonPath.Text=p.Python; }
         catch(Exception ex) { Notice.Text="Saved connection could not be read: "+ex.Message; }
-        Loaded += async (_,_) => { await Safe(async()=>{if(!string.IsNullOrWhiteSpace(ProjectRoot.Text)) await Connect(); else Tabs.SelectedIndex=4;}); Ready.TrySetResult(latest is not null); timer.Start(); };
+        try { var options=StartupOptions.Load(); AutoLearning.IsChecked=options.ResumeLearningOnLogin; AutoStudio.IsChecked=options.OpenStudioOnLogin; StartupSummary.Text=StartupDescription(options); }
+        catch(Exception ex) { Notice.Text="Startup preferences could not be read: "+ex.Message; }
+        Loaded += async (_,_) => { await Safe(async()=>{if(!string.IsNullOrWhiteSpace(ProjectRoot.Text)) await Connect(); else Tabs.SelectedIndex=5;}); Ready.TrySetResult(latest is not null); timer.Start(); };
         timer.Tick += async (_,_) => {if(!busy && backend is not null && Session is not null) await Safe(Refresh,false);};
         Closed += (_,_)=>timer.Stop();
     }
@@ -123,6 +125,14 @@ public partial class MainWindow : Window
         }
         ChartHint.Text=models is null?"Waiting for complete matched results. See current task progress above.":"Completed test results. Review language regressions before choosing a checkpoint.";
     }
+    static string StartupDescription(StartupOptions options) =>
+        (options.ResumeLearningOnLogin?"Learning: resumes after login. ":"Learning: start manually. ")+
+        (options.OpenStudioOnLogin?"Studio: opens after login.":"Studio: open it yourself.");
+    async void Startup_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{
+        var options=new StartupOptions(AutoLearning.IsChecked==true,AutoStudio.IsChecked==true);
+        await Backend.ConfigureStartup(options);
+        StartupSummary.Text="Saved. "+StartupDescription(options);
+    });
     async void Connect_Click(object s,RoutedEventArgs e)=>await Safe(Connect);
     async void Detect_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{Distro.ItemsSource=await Backend.Distributions();});
     async void Session_Changed(object s,SelectionChangedEventArgs e){if(!loading) await Safe(Refresh);}
