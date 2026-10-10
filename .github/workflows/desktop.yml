@@ -30,6 +30,7 @@ jobs:
           $check = Start-Process ./dist/TrainingStudio.exe -ArgumentList '--self-check', 'self-check.txt' -PassThru -Wait
           if ($check.ExitCode -ne 0) { Get-Content self-check.txt; throw 'Native input checks failed' }
           Copy-Item desktop/install.ps1,desktop/README.md,LICENSE dist
+          Copy-Item desktop/licenses dist -Recurse
           Remove-Item dist/*.pdb -ErrorAction SilentlyContinue
           Compress-Archive dist/* TrainingStudio-win-x64.zip
           (Get-FileHash TrainingStudio-win-x64.zip -Algorithm SHA256).Hash + '  TrainingStudio-win-x64.zip' | Set-Content SHA256SUMS.txt
