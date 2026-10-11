@@ -3,14 +3,11 @@
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/m1chl)
 <a href="https://buymeacoffee.com/xdujifyzvt"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy me a coffee" height="30"></a>
 
-A Windows launcher for English coding chat and agent use on a 16 GB NVIDIA GPU.
-It runs llama.cpp on the PC through CUDA, with CPU offloading for larger models.
-The system prompt requests English. The weights remain multilingual.
+A Windows desktop app for local AI fine-tuning on NVIDIA GPUs. Control WSL training, pause it for gaming, and compare coding results before accepting an update.
 
-**Research prototype.** The default is Qwen3.8-27B with pinned Unsloth UD-Q4_K_M weights.
-Setup downloads the model and runtime from their upstream repositories.
-Our pruned Qwen3.6 derivative remains available through the [experiment recipe](research/recipe.md).
-Its weights are not published yet.
+**Research prototype for 16 GB NVIDIA GPUs.** It needs a prepared WSL backend. More training does not guarantee better code.
+
+[Download Training Studio](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
 ## Windows training app
 
@@ -28,6 +25,17 @@ The loop collects answers that pass code tests, trains a small adapter, and comp
 Rejected updates do not replace the retained model or end the loop. More training does not guarantee better code.
 
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
+
+## Coding chat and agent launcher
+
+A Windows launcher for English coding chat and agent use on a 16 GB NVIDIA GPU.
+It runs llama.cpp on the PC through CUDA, with CPU offloading for larger models.
+The system prompt requests English. The weights remain multilingual.
+
+**Research prototype.** The default is Qwen3.8-27B with pinned Unsloth UD-Q4_K_M weights.
+Setup downloads the model and runtime from their upstream repositories.
+Our pruned Qwen3.6 derivative remains available through the [experiment recipe](research/recipe.md).
+Its weights are not published yet.
 
 ## Run on Windows
 
@@ -151,3 +159,5 @@ Review credentials and screenshots separately.
 Original code uses the [MIT license](LICENSE).
 Upstream model licenses remain separate.
 See [NOTICE.md](NOTICE.md) and [ATTRIBUTION.md](ATTRIBUTION.md) for sources and redistribution terms.
+
+If this project helps you, consider giving it a star. Bug reports and contributions are welcome.
