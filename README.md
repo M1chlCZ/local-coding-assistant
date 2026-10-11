@@ -1,5 +1,7 @@
 # <img src="desktop/TrainingStudio/Assets/logo-icon.png" width="48" height="48" alt="Training Studio logo"> Training Studio
 
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/m1chl)
+
 A Windows launcher for English coding chat and agent use on a 16 GB NVIDIA GPU.
 It runs llama.cpp on the PC through CUDA, with CPU offloading for larger models.
 The system prompt requests English. The weights remain multilingual.
