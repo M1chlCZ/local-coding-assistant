@@ -1,4 +1,4 @@
-# Local Coding Assistant
+# <img src="desktop/TrainingStudio/Assets/logo-icon.png" width="48" height="48" alt="Training Studio logo"> Training Studio
 
 A Windows launcher for English coding chat and agent use on a 16 GB NVIDIA GPU.
 It runs llama.cpp on the PC through CUDA, with CPU offloading for larger models.
@@ -11,11 +11,20 @@ Its weights are not published yet.
 
 ## Windows training app
 
-[Training Studio](desktop/README.md) is a native C# desktop app for WSL CUDA fine-tuning.
-It shows live activity, GPU use, checkpoints, and matched coding results.
-Use Start, Pause for gaming, Resume, and Stop from the app.
-The first release supports the Qwen3.5-4B Go/TypeScript recipe and requires a prepared WSL backend.
-Dataset and model files stay private. See [releases](https://github.com/M1chlCZ/local-coding-assistant/releases) for the Windows download.
+Training Studio controls local CUDA fine-tuning through WSL. It shows live activity, GPU use, saved checkpoints, and coding results.
+Version **0.1.3** adds a simpler interface and a continuous training loop.
+The loop uses Qwen3.5-4B with Python, Go, TypeScript, Rust, and Dart examples.
+It requires a prepared WSL backend. Model files and private data stay on your PC.
+
+- **Start / Stop** controls the session. **Pause** saves progress and releases the GPU for gaming.
+- **Home** shows whether the model improves. **Activity** shows progress and errors.
+- **Results** shows past comparisons. **Settings** contains startup preferences, GPU power, and appearance.
+- The interface uses the Windows theme by default, with a subtle Mica background.
+
+The loop collects answers that pass code tests, trains a small adapter, and compares its results with the retained model.
+Rejected updates do not replace the retained model or end the loop. More training does not guarantee better code.
+
+[Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
 ## Run on Windows
 
@@ -57,7 +66,7 @@ For Mac access, use the [SSH connection instructions](research/wsl.md#connect-fr
 The external agent harness supplies tools and file access.
 The API listens on loopback.
 
-## Focused training experiment
+## Earlier focused training experiment
 
 The [Qwen3.5-4B experiment](research/focused-training.md) trains on 2,456 complete Go and TypeScript repairs.
 It compares the unchanged model, the trained adapter, and the previous student on matched coding tests.
@@ -96,13 +105,14 @@ The [private history tool](research/private-history.md) exports local Codex mess
 Exports, reviews, and private adapters stay in the ignored `private-data/` directory.
 History-derived ideas need executable tests before training.
 
-## Measured results
+## Earlier measured results
 
 The [benchmark guide](research/benchmarking.md) separates training checks, reserved repair tests, and direct coding benchmarks.
 Training uses a separate Qwen3-4B student.
 On all 164 HumanEval tasks, its unchanged NF4 base passed 118 and the accepted adapter passed 121.
 The adapter gained 14 tasks and lost 11, so the higher total does not establish an improvement without regressions.
-Continuous mode schedules fresh repair checks and a full HumanEval audit after each experiment, with a six-active-hour limit.
+The earlier continuous mode uses a six-active-hour limit and schedules repair checks and a full HumanEval audit after each experiment.
+The Studio loop in 0.1.3 has no time limit and uses the comparison schedule in the learning method.
 Unchanged accepted weights reuse verified results. The Windows controls show the schedule and last complete comparison.
 
 RTX 5070 Ti, Ryzen 9 9900X, 32 GB RAM, 8K context:

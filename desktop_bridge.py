@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-from focused_experiment import Experiment
+from focused_experiment import Experiment, open_experiment
 from focused_report import compare
 from qwen35_train import atomic_json, load_verified, sha256
 
@@ -37,12 +37,20 @@ def tail(path):
 
 
 def checked_report(path):
-    file = path / 'comparison.json'
+    state = json.loads((path/'status.json').read_text()) if (path/'status.json').exists() else {}
+    if state.get('continuous'):
+        name = state.get('last_report')
+        if not name: return None
+        file = (path/name).resolve()
+        if not file.is_relative_to(path.resolve()) or sha256(file) != state.get('last_report_sha256'):
+            raise ValueError('Retained loop report changed')
+    else:
+        file = path / 'comparison.json'
     if not file.exists():
         return None
     report = json.loads(file.read_text())
     state_file = path / 'status.json'
-    if state_file.exists():
+    if state_file.exists() and not state.get('continuous'):
         state = json.loads(state_file.read_text())
         saved = next((s for s in state.get('completed_stages', []) if s.get('result') == 'comparison.json'), None)
         if saved is None:
@@ -79,7 +87,7 @@ def verdict(report):
 
 def snapshot(name):
     path = session_path(name)
-    experiment = Experiment(path)
+    experiment = open_experiment(path)
     value = experiment.snapshot()
     value['session'] = name
     report = checked_report(path)
@@ -90,7 +98,8 @@ def snapshot(name):
     log = path / (phase + '.log')
     value['log'] = tail(log) if phase in [s['name'] for s in experiment.config['stages']] and log.resolve().is_relative_to(path.resolve()) else ''
     value['checkpoints'] = []
-    for marker in sorted((path / 'adapter').glob('**/complete.json')):
+    markers = path.glob('round-*/adapter/checkpoint-*/complete.json') if value.get('continuous') else (path/'adapter').glob('**/complete.json')
+    for marker in sorted(markers)[-12:]:
         if marker.is_symlink() or not marker.resolve().is_relative_to(path.resolve()):
             continue
         value['checkpoints'].append({'path': str(marker.parent.relative_to(path)),
@@ -219,7 +228,7 @@ def dispatch(request):
                 state=json.loads(file.read_text())
                 if state.get('focused') and (file.parent/'config.json').is_file():
                     sessions.append({'name':file.parent.name,'status':state['status']})
-                    if (file.parent/'comparison.json').is_file():
+                    if (file.parent/'comparison.json').is_file() or state.get('last_report'):
                         quality = verdict(checked_report(file.parent))
                         if quality['total']:
                             history.append({'session':file.parent.name,'updated_at':state.get('updated_at',0),**quality})
@@ -228,10 +237,14 @@ def dispatch(request):
         return {'sessions':sessions, 'history':history}
     if action == 'validate-data': return dataset_info(request['dataset'])
     if action == 'prepare': return prepare(request)
+    if action == 'prepare-loop':
+        from coding_loop import CodingLoop
+        loop = CodingLoop.prepare(session_path(request['name']))
+        return {'session':request['name'],'status':loop.snapshot()['status']}
     if action not in ('status','pause','resume','stop'):
         raise ValueError('Unsupported desktop action')
     name = request['session']
-    if action != 'status': Experiment(session_path(name)).control(action)
+    if action != 'status': open_experiment(session_path(name)).control(action)
     return snapshot(name)
 
 

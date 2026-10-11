@@ -13,12 +13,12 @@ The release includes .NET. It is not code-signed, so Windows can show an unknown
 
 ## Connect your backend
 
-This first release requires an already prepared WSL backend. It does not install CUDA,
+Version 0.1.3 requires a prepared WSL backend. It does not install CUDA,
 Docker, Python packages or model weights for you. Follow the repository's
 [WSL setup](https://github.com/M1chlCZ/local-coding-assistant/blob/main/research/wsl.md) and [focused training recipe](https://github.com/M1chlCZ/local-coding-assistant/blob/main/research/focused-training.md).
 Use a recent NVIDIA driver and enough free space for the model, datasets and checkpoints.
 
-In **Connection**, choose your WSL distribution, Linux user and absolute project folder.
+In **Settings → Connection**, choose your WSL distribution, Linux user and absolute project folder.
 Set the controller Python path, normally `.cache/rlm-env/bin/python`. Select **Save and connect**.
 The Linux checkout must include `desktop_bridge.py` from this release.
 Settings stay in `%LOCALAPPDATA%\TrainingStudio\connection.json`.
@@ -30,35 +30,47 @@ These prerequisites are checked again by the training and evaluation tools.
 
 ## Use it
 
-- **Overview** shows worker activity, GPU memory, elapsed time and measured coding results.
-- **Activity & checkpoints** shows the current stage log and complete saved checkpoints.
-- **Start / Resume** starts saved work in a windowless background worker.
-- **Pause for gaming** requests a checkpoint and releases the GPU. Wait for **paused**.
-- **Stop** ends the finite experiment. Use Pause if you want to continue it later.
+- **Home** shows the learning state, current activity, GPU use and measured quality.
+- **Activity** shows the current stage log and complete saved checkpoints.
+- One main button shows **Start** when idle or paused, and **Stop** while learning.
+  **Start** resumes saved work. After a session ends, **Start new session** opens setup;
+  it does not reset old results.
+- **Pause** requests a checkpoint and releases the GPU. Wait for **paused**.
+- **Stop** ends the experiment after confirmation. Use Pause for a break.
+- **Results** holds past comparisons. **Settings** holds setup, GPU power and login options.
 
 Closing the app leaves the worker running. Saved Pause and Stop remain in effect after login.
 Training Studio adds a task named `TrainingStudio-…` only when a worker needs to start.
 Existing workers continue to use their existing controls. One global GPU lock prevents
 simultaneous training runs; pause the active experiment before starting another.
 
+## Appearance
+
+The **Appearance** selector in Settings defaults to **System**, which follows Windows app
+light/dark settings. Choose **Light** or **Dark** to override it for Studio only.
+The choice is saved locally and applies without restarting. The native Windows Mica
+backdrop and translucent cards add subtle depth. Windows controls the backdrop;
+turning off transparency or using a contrast theme gives solid surfaces. Status polling keeps
+the experiment selector and controls steady; explicit actions still prevent duplicate clicks.
+
 ## Startup preferences
 
-Open **Startup** and select **Save startup preferences** after making changes.
+Open **Settings → Startup** and select **Save startup preferences** after making changes.
 
 - **Resume learning automatically after Windows login** is on by default. It adds login
   and recovery triggers. Saved Pause, Stop and completed experiments stay respected.
 - **Open Training Studio after Windows login** is off by default. Turn it on to show
   the dashboard when you sign in. This switch alone does not start learning.
 
-Turn both off to open Studio yourself and press **Start / Resume** manually.
+Turn both off to open Studio yourself and press **Start** manually.
 Disabling automatic learning removes login, timer and failure-retry starts. Changing
-these preferences does not stop work already running; use **Pause for gaming** for that.
+these preferences does not stop work already running; use **Pause** for that.
 Settings stay in `%LOCALAPPDATA%\TrainingStudio\startup.json`.
 The controls apply to Studio workers, not legacy PowerShell tasks or unrelated apps.
 
 ## GPU power
 
-Open **GPU power**, select the NVIDIA GPU, and choose **Enable power control** once.
+Open **Settings → GPU power**, select the NVIDIA GPU, and choose **Enable power control** once.
 Windows asks for administrator permission for this setup. Then use the slider or
 5% preset buttons and select **Apply training limit**. The percentage uses the GPU's
 default wattage, not current utilization. The driver supplies the minimum; presets
@@ -70,7 +82,7 @@ Changing the slider alone does not change power. **Restore 100%** also saves 100
 as the training setting.
 
 - **Pause** restores 100% while the checkpoint saves. Wait for **paused** before gaming.
-- **Resume** reapplies the saved limit when the worker becomes active, within its
+- **Start** reapplies the saved limit when the worker becomes active, within its
   ten-second status interval.
 - Stop, failure and completion restore 100%. This also works with the dashboard closed.
 
@@ -93,41 +105,36 @@ NVIDIA documents the supported power ranges and privileges in its
 
 ## Create an experiment
 
-Open **New experiment**. This release supports **Qwen3.5-4B BF16 LoRA** on a 16 GB NVIDIA GPU.
+Open **Settings → New session**. This release supports **Qwen3.5-4B BF16 LoRA** on a 16 GB NVIDIA GPU.
 Other architectures are not supported by the wizard yet.
 
-Choose a unique name and a Linux path to a training JSONL file.
-Its adjacent `<file>.manifest.json` must describe the training split, SHA-256,
-language counts and execution provenance accepted by `qwen35_train.load_verified`.
-The fixed recipe requires at least 2,000 examples, including 250 Go and 250 TypeScript examples.
-Raw chat exports are not accepted as verified training data.
+Choose a unique name and select **Create session**. Select **Start**
+when ready. The loop has no time limit. Pause saves progress and releases the GPU;
+Resume continues it. Stop ends the session. Login recovery respects both controls.
 
-The existing `focused_data.py` importer produces this format from the pinned public dataset:
+Each cycle collects complete programs from fresh source problems, checks them in isolated
+containers, and keeps only passing answers. Training uses balanced Python, Go, TypeScript,
+Rust and Dart examples plus earlier verified answers. The base weights stay frozen;
+small LoRA adapters receive at most ten optimizer steps per cycle.
 
-```sh
-.cache/rlm-env/bin/python focused_data.py --output .cache/studio-data
-```
-
-Select **Validate and preview data**, then choose a one-, three- or six-hour active training limit.
-Select **Create paused experiment**. The app copies the dataset into the private experiment
-folder, binds its hashes, and prepares four stages: baseline audit, training, trained audit,
-and comparison. Select **Start / Resume** when ready.
-
-The trainer makes at most one data pass. Benchmark time is separate from training time.
-Oversized answers are excluded, not truncated. If the time budget expires before training
-completes, the checkpoint stays saved and the experiment has no final quality verdict.
+Validation runs after each training block. A candidate must gain a validation pass without
+losing an earlier pass, then pass a matched 790-task comparison before it replaces the retained
+model. The full comparison also runs on every fifth cycle that has a training candidate.
+Rejected candidates are removed and collection continues. Existing completed experiments
+stay available in the picker. Integrity failures still need attention; temporary worker failures
+retry with a delay.
 
 ## Read the result
 
-**Not yet measured** means matched tests are not complete. Partial test counts are progress.
-**Improved on these tests** means more tasks pass without losing earlier passes.
-**Mixed results** exposes regressions even when the total rises. **Regressed on these tests**
-means fewer tasks pass overall. No adapter is promoted automatically.
+**Not yet measured** means matched tests are not complete. Partial counts show progress.
+**Retained model unchanged** means the latest candidate was not accepted. Its gains and losses
+remain visible. A rejection does not stop the learning loop.
 
-The 790 function tests cover Python, Go, TypeScript, Rust and Dart. These public tests
-may occur in model pretraining. They do not establish general coding or agent quality.
-Publisher execution evidence is not the same as locally rerunning every training example.
-Use the language table and gained/lost task IDs in the exported report when reviewing a model.
+The 790 function tests cover five languages. These public tests may occur in model pretraining.
+They are reused for selection and do not establish general coding or agent quality. Fresh
+validation problems are separated from training by problem family, including translations.
+
+See the [learning method](https://github.com/M1chlCZ/local-coding-assistant/blob/studio-v0.1.3/research/verified-learning.md) for sources and limitations.
 
 ## Privacy and maintenance
 
@@ -170,3 +177,8 @@ scheduled triggers without starting or stopping learning.
 The native `--self-check` covers GPU range validation and pause/stop/failure decisions.
 `--check-gpu-power <running-session> <output>` briefly checks supported 85–100% presets
 on real hardware, then restores the original saved setting (100% if unset).
+
+On a connected Windows profile, `--check-ui <output>` verifies steady controls during
+a background read, a command queued behind that read, and text contrast in both themes.
+It renders every tab in Light, Dark and System modes without changing saved preferences
+or issuing training controls.

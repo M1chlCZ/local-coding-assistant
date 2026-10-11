@@ -2,6 +2,7 @@
 import argparse
 import contextlib
 import json
+import math
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
@@ -18,9 +19,23 @@ def validate_adapter(path, model, revision):
         raise ValueError('Only an intact, completed adapter for this pinned base can be evaluated')
 
 
+def sampling(data):
+    """Evaluation is greedy by default; collection can request reproducible sampling."""
+    temperature = data.get('temperature', 0)
+    seed = data.get('seed', 3407)
+    if (type(temperature) not in (int, float) or not math.isfinite(temperature)
+            or not 0 <= temperature <= 1 or type(seed) is not int or not 0 <= seed < 2**32):
+        raise ValueError('Use temperature 0 to 1 and a 32-bit unsigned seed')
+    return ({'do_sample': True, 'temperature': temperature, 'top_p': .95}
+            if temperature else {'do_sample': False}), seed
+
+
 def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, context, batch_size):
     import torch
     conversations, maximum = validate_batch(data, output_limit)
+    options, seed = sampling(data)
+    if options['do_sample']:
+        torch.manual_seed(seed)
     responses = []
     # Small bounded batches protect the 16 GB BF16 working set, including long repair prompts.
     for start in range(0, len(conversations), batch_size):
@@ -33,7 +48,7 @@ def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, con
         inputs = inputs.to('cuda')
         mode = model.disable_adapter() if has_adapter and not use_adapter else contextlib.nullcontext()
         with mode, torch.inference_mode():
-            out = model.generate(**inputs, do_sample=False, max_new_tokens=maximum,
+            out = model.generate(**inputs, **options, max_new_tokens=maximum,
                                  pad_token_id=tokenizer.pad_token_id)
         responses.extend(completion(tokenizer, tokens[padded:], int(mask.sum()), maximum,
                                     model.generation_config.eos_token_id)

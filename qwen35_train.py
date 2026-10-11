@@ -66,7 +66,7 @@ def load_verified(dataset, manifest):
                 raise ValueError(f'Invalid row {number}')
             task = row.get('task_id')
             if (not isinstance(task, str) or not task or task in seen
-                    or row.get('split') != 'train' or row.get('language') not in ('go', 'typescript')):
+                    or row.get('split') != 'train' or row.get('language') not in ('python', 'go', 'typescript', 'rust', 'dart')):
                 raise ValueError(f'Invalid, duplicate, or nontraining row {number}')
             messages = row.get('messages')
             if (not isinstance(messages, list) or not 2 <= len(messages) <= 64
@@ -246,6 +246,8 @@ def parser():
     result.add_argument('--min-per-language', type=int, default=250)
     result.add_argument('--pause-file', type=Path)
     result.add_argument('--resume', action='store_true')
+    result.add_argument('--languages', nargs='+', choices=('python','go','typescript','rust','dart'), default=['go','typescript'])
+    result.add_argument('--initial-adapter', type=Path)
     result.add_argument('--check-data', action='store_true', help='Check manifest only; load no model')
     result.add_argument('--prepare-data', action='store_true', help='Tokenize and report exclusions; load no model')
     return result
@@ -266,11 +268,22 @@ def validate_args(args):
         raise ValueError('Use an empty output directory or --resume')
 
 
+def initial_adapter_digest(args):
+    if not args.initial_adapter:
+        return None
+    from qwen35_server import validate_adapter
+    validate_adapter(args.initial_adapter, args.model, args.revision)
+    config = read_json(args.initial_adapter / 'adapter_config.json')
+    if config.get('r') != args.rank or config.get('lora_alpha') != args.rank:
+        raise ValueError('Initial adapter architecture differs from the training recipe')
+    return sha256(args.initial_adapter / 'adapter_model.safetensors')
+
+
 def make_binding(args, report, versions):
     keys = ('model', 'revision', 'max_steps', 'max_epochs', 'learning_rate', 'max_length',
-            'rank', 'gradient_accumulation', 'save_steps', 'seed', 'min_examples', 'min_per_language')
+            'rank', 'gradient_accumulation', 'save_steps', 'seed', 'min_examples', 'min_per_language', 'languages')
     return {**{key: getattr(args, key) for key in keys}, 'precision': 'bf16',
-            'dataset_sha256': sha256(args.dataset), 'manifest_sha256': sha256(args.manifest),
+            'initial_adapter_sha256': initial_adapter_digest(args), 'dataset_sha256': sha256(args.dataset), 'manifest_sha256': sha256(args.manifest),
             'encoded_sha256': report['encoded_sha256'], 'included_count': report['included_count'],
             'target_modules': TARGET_MODULES, 'versions': versions,
             'trainer_sha256': sha256(__file__)}
@@ -278,9 +291,9 @@ def make_binding(args, report, versions):
 
 def request_binding(args):
     keys = ('model', 'revision', 'max_steps', 'max_epochs', 'learning_rate', 'max_length',
-            'rank', 'gradient_accumulation', 'save_steps', 'seed', 'min_examples', 'min_per_language')
+            'rank', 'gradient_accumulation', 'save_steps', 'seed', 'min_examples', 'min_per_language', 'languages')
     return {**{key: getattr(args, key) for key in keys},
-            'dataset_sha256': sha256(args.dataset), 'manifest_sha256': sha256(args.manifest),
+            'initial_adapter_sha256': initial_adapter_digest(args), 'dataset_sha256': sha256(args.dataset), 'manifest_sha256': sha256(args.manifest),
             'trainer_sha256': sha256(__file__)}
 
 
@@ -297,7 +310,7 @@ def train(args, rows, progress):
     encoded, report = encode_rows(tokenizer, rows, args.max_length)
     atomic_json(args.output / 'tokenization.json', report)
     if (len(encoded) < args.min_examples or any(report['languages'].get(language, 0)
-            < args.min_per_language for language in ('go', 'typescript'))):
+            < args.min_per_language for language in args.languages)):
         raise ValueError(f"Only {len(encoded)} complete examples fit; minimum is {args.min_examples} "
                          f"and {args.min_per_language} per language. See tokenization.json.")
     if args.prepare_data:
@@ -333,7 +346,23 @@ def train(args, rows, progress):
         target_modules=TARGET_MODULES, lora_dropout=0, bias='none',
         use_gradient_checkpointing='unsloth', random_state=args.seed,
         max_seq_length=args.max_length)
+    if args.initial_adapter and not checkpoint:
+        # Unsloth stores a model-specific target regex, not the requested module-name list.
+        initial = read_json(args.initial_adapter / 'adapter_config.json')['target_modules']
+        current = model.peft_config['default'].target_modules
+        if (initial != current if isinstance(current, str) else set(initial) != set(current)):
+            raise ValueError('Initial adapter target modules differ from the loaded model')
+        loaded = set_peft_model_state_dict(model, load_file(str(args.initial_adapter / 'adapter_model.safetensors')))
+        if loaded.unexpected_keys or any('lora_' in k for k in loaded.missing_keys):
+            raise ValueError('Initial adapter did not load all LoRA weights')
     model.config.use_cache = False
+    trainable = [(name, parameter.numel()) for name, parameter in model.named_parameters() if parameter.requires_grad]
+    if not trainable or any('lora_' not in name for name, _ in trainable):
+        raise ValueError('Only LoRA adapter weights may be updated')
+    atomic_json(args.output / 'weights.json', dict(method='LoRA', base_weights_frozen=True,
+        trainable_parameters=sum(count for _, count in trainable),
+        total_parameters=sum(parameter.numel() for parameter in model.parameters()),
+        target_modules=TARGET_MODULES, initial_adapter_sha256=binding['initial_adapter_sha256']))
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     if tokenizer.pad_token_id is None:

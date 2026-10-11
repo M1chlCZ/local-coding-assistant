@@ -15,37 +15,55 @@ public partial class MainWindow : Window
     Backend? backend;
     JsonNode? latest;
     bool busy, loading, powerBusy, powerLoading;
+    readonly SemaphoreSlim operationGate=new(1,1);
     readonly DispatcherTimer timer = new() { Interval=TimeSpan.FromSeconds(5) };
     public TaskCompletionSource<bool> Ready { get; } = new();
     string? Session => SessionPicker.SelectedItem as string;
     public MainWindow()
     {
         InitializeComponent(); Controls.IsEnabled=false;
+        ThemePicker.SelectedIndex=Array.IndexOf(new[]{"System","Light","Dark"},Appearance.Mode);
         try { var p=Profile.Load(); Distro.Text=p.Distribution; LinuxUser.Text=p.User; ProjectRoot.Text=p.Root; PythonPath.Text=p.Python; }
         catch(Exception ex) { Notice.Text="Saved connection could not be read: "+ex.Message; }
         try { var options=StartupOptions.Load(); AutoLearning.IsChecked=options.ResumeLearningOnLogin; AutoStudio.IsChecked=options.OpenStudioOnLogin; StartupSummary.Text=StartupDescription(options); }
         catch(Exception ex) { Notice.Text="Startup preferences could not be read: "+ex.Message; }
-        Loaded += async (_,_) => { await Safe(async()=>{if(!string.IsNullOrWhiteSpace(ProjectRoot.Text)) await Connect(); else Tabs.SelectedIndex=6;}); await RefreshPower(true); Ready.TrySetResult(latest is not null); timer.Start(); };
+        Loaded += async (_,_) => { await Safe(async()=>{if(!string.IsNullOrWhiteSpace(ProjectRoot.Text)) await Connect(); else OpenSettings(3);}); await RefreshPower(true); Ready.TrySetResult(latest is not null); timer.Start(); };
         timer.Tick += async (_,_) => {if(!busy && backend is not null && Session is not null) await Safe(Refresh,false); if(PowerTab.IsSelected && !powerBusy) await RefreshPower(false);};
         Closed += (_,_)=>timer.Stop();
     }
     async Task Safe(Func<Task> work, bool announce=true)
     {
-        if(busy) return;
-        busy=true; Controls.IsEnabled=false; SessionPicker.IsEnabled=false;
-        try { await work(); if(announce) Notice.Text="Ready. Data and model files stay on this PC."; }
+        if(announce)
+        {
+            if(busy)return;
+            busy=true; UpdateControls(); SessionPicker.IsEnabled=false;
+            await operationGate.WaitAsync();
+        }
+        else if(busy || !await operationGate.WaitAsync(0))return;
+        try { await work(); if(announce) Notice.Text="Your data and model files stay on this PC."; }
         catch(Exception ex) { latest=null; Notice.Text=ex.Message; ConnectionBadge.Text="Action failed · check details below"; if(!announce) {Activity.Text="Connection unavailable"; ActivityDetail.Text="Displayed results are from the last successful read. Training may still be running."; StageProgress.IsIndeterminate=false;} }
-        finally { busy=false; SessionPicker.IsEnabled=true; UpdateControls(); }
+        finally
+        {
+            if(announce){busy=false;SessionPicker.IsEnabled=true;}
+            operationGate.Release(); UpdateControls();
+        }
     }
     void UpdateControls()
     {
-        Controls.IsEnabled=backend is not null && latest is not null && Session is not null;
-        string status=latest?["status"]?.ToString()??"";
-        bool terminal=new[]{"completed","stopped","budget_exhausted"}.Contains(status);
-        ResumeButton.IsEnabled=!terminal;
-        PauseButton.IsEnabled=!terminal && status!="paused";
-        StopButton.IsEnabled=!terminal;
+        Controls.IsEnabled=!busy && backend is not null && latest is not null && Session is not null;
+        var view=ControlView();
+        PrimaryButton.IsEnabled=view.Enabled;
+        PrimaryText.Text=view.Button;
+        PrimaryIcon.Text=view.Action=="stop"?"\uE71A":"\uE768";
+        System.Windows.Automation.AutomationProperties.SetName(PrimaryButton,view.Button+" learning");
+        PrimaryButton.ToolTip=view.Action=="stop"?"End this session. Use Pause if you want to continue it later.":view.Hint;
+        PauseButton.Visibility=view.CanPause?Visibility.Visible:Visibility.Collapsed;
+        PauseButton.IsEnabled=view.CanPause;
+        StatusTitle.Text=view.Title; StatusHint.Text=view.Hint; StatusIcon.Text=view.Icon;
+        StatusTile.SetResourceReference(Border.BackgroundProperty,"Quality"+view.Tone+"Brush");
     }
+    LearningControls ControlView()=>LearningControls.For(S(latest,"status","unknown"),S(latest,"desired",""),latest?["worker_alive"]?.GetValue<bool>()==true,N(latest,"active_seconds")>0);
+    void OpenSettings(int page){Tabs.SelectedIndex=3;SettingsTabs.SelectedIndex=page;}
     async Task Connect()
     {
         var p=new Profile(Distro.Text.Trim(),LinuxUser.Text.Trim(),ProjectRoot.Text.Trim(),PythonPath.Text.Trim());
@@ -63,7 +81,7 @@ public partial class MainWindow : Window
         latest=null;
         RenderHistory(data);
         if(Session is not null) await Refresh();
-        else {Activity.Text="No experiments yet"; ActivityDetail.Text="Prepare a new experiment from the New experiment tab."; Tabs.SelectedIndex=3;}
+        else {Activity.Text="No experiments yet"; ActivityDetail.Text="Create a learning session in Settings."; OpenSettings(0);}
     }
     void RenderHistory(JsonNode data)
     {
@@ -75,7 +93,9 @@ public partial class MainWindow : Window
         {
             var row=new StackPanel{Margin=new Thickness(0,0,0,16)};
             row.Children.Add(new TextBlock{Text=$"{item.Experiment}    {item.Delta:+0.0;-0.0;0.0} percentage points · {item.Lost:0} lost",Margin=new Thickness(0,0,0,5)});
-            row.Children.Add(new ProgressBar{Minimum=0,Maximum=100,Value=Math.Abs(item.Delta),Height=10,Foreground=item.Delta<0?Brushes.IndianRed:Brushes.SeaGreen});
+            var bar=new ProgressBar{Minimum=0,Maximum=100,Value=Math.Abs(item.Delta),Height=10};
+            bar.SetResourceReference(ProgressBar.ForegroundProperty,item.Delta<0?"NegativeBrush":"PositiveBrush");
+            row.Children.Add(bar);
             HistoryChart.Children.Add(row);
         }
     }
@@ -83,7 +103,10 @@ public partial class MainWindow : Window
     {
         if(Session is null || backend is null) return;
         bool hadReport=latest?["report"] is not null;
-        latest=await backend.Call(new{action="status",session=Session}); Render(latest);
+        string session=Session; var currentBackend=backend;
+        var result=await currentBackend.Call(new{action="status",session});
+        if(session!=Session || currentBackend!=backend)return;
+        latest=result; Render(latest);
         if(!hadReport && latest["report"] is not null) RenderHistory(await backend.Call(new{action="list"}));
         ConnectionBadge.Text="Updated "+DateTime.Now.ToString("HH:mm:ss")+" · local WSL";
     }
@@ -94,20 +117,42 @@ public partial class MainWindow : Window
     {
         var q=state["quality"]!;
         QualityTitle.Text=S(q,"label");
-        string color=S(q,"tone") switch {"good"=>"#E7F4EC","bad"=>"#FCEDEC","mixed"=>"#FFF3DE",_=>"#EDF1F7"};
-        QualityCard.Background=(Brush)new BrushConverter().ConvertFromString(color)!;
-        QualityDetail.Text=N(q,"total")>0?$"{N(q,"before"):0} → {N(q,"after"):0} passed out of {N(q,"total"):0}. Newly solved: {N(q,"gained"):0}. Newly failed: {N(q,"lost"):0}.":"Complete the baseline and trained benchmarks to measure a change.";
-        Activity.Text=S(state,"status").Replace('_',' ') + " · " + S(state,"phase").Replace('-',' ');
-        ActivityDetail.Text=S(state,"detail");
+        string tone=S(q,"tone") switch {"good"=>"Good","bad"=>"Bad","mixed"=>"Mixed",_=>"Neutral"};
+        QualityCard.SetResourceReference(Border.BackgroundProperty,"Quality"+tone+"Brush");
+        QualityDetail.Text=N(q,"total")>0?$"{N(q,"before"):0} → {N(q,"after"):0} passed out of {N(q,"total"):0}. Newly solved: {N(q,"gained"):0}. Newly failed: {N(q,"lost"):0}.":"The first comparison will appear after training and testing.";
+        string phase=S(state["stage_progress"],"phase",S(state,"phase")).Split('/').Last();
+        Activity.Text=phase switch {
+            "prepare" or "validate-source"=>"Checking new examples",
+            "load-model" or "load_model" or "load_runtime"=>"Loading the model",
+            "collect"=>"Solving coding examples",
+            "export" or "verify-replay" or "tokenize"=>"Preparing verified examples",
+            "train"=>"Training a small update",
+            "baseline" or "audit-parent"=>"Testing the current model",
+            "candidate" or "audit-candidate"=>"Testing the new candidate",
+            "gate" or "finish"=>"Comparing the results",
+            "saved"=>"Progress saved",_=>"Working on this learning cycle"};
+        ActivityDetail.Text=ControlView().Action=="stop"?"Studio saves progress as it works. You can pause whenever you need the GPU.":ControlView().Hint;
         var p=state["stage_progress"];
         double done=N(p,"completed"),total=N(p,"total");
         if(total<=0){done=N(p,"step");total=N(p,"max_steps");}
         StageProgress.IsIndeterminate=total<=0 && S(state,"status")=="running";
         StageProgress.Value=total>0?100*done/total:0;
-        ProgressText.Text=$"Stage {Math.Min(N(state,"stage_index")+1,N(state,"stage_total")):0}/{N(state,"stage_total"):0}"+(total>0?$" · {done:0}/{total:0}":"")+" · "+S(p,"phase","")+" "+S(p,"language","");
-        if(p?["task"] is not null) ProgressText.Text+=" · "+S(p,"task");
-        if(N(p,"heartbeat_at")>0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds()-N(p,"heartbeat_at")>120) ProgressText.Text+=" · No stage update for over 2 minutes; inspect the log";
-        Clocks.Text="Training "+Duration(N(state,"training_seconds"))+" / "+Duration(N(state,"limit_seconds"))+" · All active work "+Duration(N(state,"active_seconds"));
+        string units=phase is "train" or "saved"?"training steps":phase.Contains("audit") || phase is "baseline" or "candidate"?"tests":"examples";
+        ProgressText.Text=total>0?$"{done:0} of {total:0} {units}":"Preparing this step…";
+        if(p?["language"] is not null)ProgressText.Text+=" · "+CultureInfo.InvariantCulture.TextInfo.ToTitleCase(S(p,"language"));
+        if(N(p,"heartbeat_at")>0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds()-N(p,"heartbeat_at")>120)
+            ProgressText.Text+=" · This step is taking longer. Details are in Activity.";
+        bool continuous=state["continuous"]?.GetValue<bool>()==true;
+        Clocks.Text="Training "+Duration(N(state,"training_seconds"))+(continuous?" · No time cutoff":" / "+Duration(N(state,"limit_seconds")))+" · All active work "+Duration(N(state,"active_seconds"));
+        if(continuous) {
+            ProgressText.Text="Cycle "+N(state,"cycle").ToString("0")+" · "+ProgressText.Text;
+
+            if(state["report"]?["accepted"]?.GetValue<bool>()==false) {
+                QualityTitle.Text="Retained model unchanged";
+                QualityDetail.Text="The latest update was not accepted. "+QualityDetail.Text;
+                QualityCard.SetResourceReference(Border.BackgroundProperty,"QualityNeutralBrush");
+            }
+        }
         var gpu=state["gpu"]; GpuName.Text=S(gpu,"name","GPU information unavailable");
         GpuMemory.Text=gpu is null?"":$"{N(gpu,"used_mb")/1024:0.0} / {N(gpu,"total_mb")/1024:0.0} GB VRAM";
         Vram.Value=N(gpu,"total_mb")>0?100*N(gpu,"used_mb")/N(gpu,"total_mb"):0;
@@ -124,6 +169,16 @@ public partial class MainWindow : Window
             panel.Children.Add(new ProgressBar{Height=10,Maximum=Math.Max(1,N(suite.Value,"total")),Value=N(suite.Value,"passed")}); Chart.Children.Add(panel);
         }
         ChartHint.Text=models is null?"Waiting for complete matched results. See current task progress above.":"Completed test results. Review language regressions before choosing a checkpoint.";
+    }
+    void Theme_Changed(object sender,SelectionChangedEventArgs e)
+    {
+        if(ThemePicker.SelectedItem is not ComboBoxItem item || item.Content.ToString()==Appearance.Mode)return;
+        try
+        {
+            Appearance.Apply(item.Content.ToString()!,save:true);
+            if(latest is not null)Render(latest);
+        }
+        catch(Exception ex){Notice.Text="Theme could not be saved: "+ex.Message;}
     }
     PowerGpu? SelectedGpu=>PowerDevices.SelectedItem as PowerGpu;
     async Task RefreshPower(bool reset)
@@ -206,7 +261,15 @@ public partial class MainWindow : Window
     async void Connect_Click(object s,RoutedEventArgs e)=>await Safe(Connect);
     async void Detect_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{Distro.ItemsSource=await Backend.Distributions();});
     async void Session_Changed(object s,SelectionChangedEventArgs e){if(!loading) { await Safe(Refresh); await RefreshPower(true); }}
-    async void Resume_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{
+    async void Primary_Click(object s,RoutedEventArgs e)
+    {
+        var view=ControlView();
+        if(busy || !view.Enabled)return;
+        if(view.Action=="new"){OpenSettings(0);ExperimentName.Text="coding-model-"+DateTime.Now.ToString("yyyyMMdd-HHmmss");ExperimentName.Focus();return;}
+        if(view.Action=="stop"){Stop_Click(s,e);return;}
+        if(view.Action=="resume")await StartLearning();
+    }
+    async Task StartLearning()=>await Safe(async()=>{
         var state=await backend!.Call(new{action="resume",session=Session});
         if(state["worker_alive"]?.GetValue<bool>()!=true) await backend.EnsureWorker(Session!);
         await Refresh();
@@ -214,19 +277,13 @@ public partial class MainWindow : Window
     async void Pause_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{await backend!.Call(new{action="pause",session=Session});await GpuPower.Sync(backend,Session!,restore:true);await Refresh();});
     async void Stop_Click(object s,RoutedEventArgs e)
     {
-        if(MessageBox.Show(this,"End this experiment? Its checkpoints and results remain saved. Stop is final; choose Pause if you want to resume later.","Stop experiment",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
+        if(MessageBox.Show(this,"Stop this learning session?\n\nYour checkpoints and results stay saved. This ends the session. For a gaming break, choose No and use Pause instead.","Stop learning",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;
         await Safe(async()=>{await backend!.Call(new{action="stop",session=Session});await GpuPower.Sync(backend,Session!,restore:true);await Refresh();});
     }
-    async void ValidateData_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{
-        if(backend is null)throw new InvalidOperationException("Connect to WSL first.");
-        var data=await backend.Call(new{action="validate-data",dataset=DatasetPath.Text.Trim()},180);
-        DatasetPreview.Text=$"{S(data,"rows")} examples · {data["languages"]}\nEvidence: {S(data,"verification")}\n\nPreview: {S(data,"preview")}";
-    });
     async void Create_Click(object s,RoutedEventArgs e)=>await Safe(async()=>{
         if(backend is null)throw new InvalidOperationException("Connect to WSL first.");
         var name=ExperimentName.Text.Trim();
-        var hours=int.Parse(((ComboBoxItem)Hours.SelectedItem).Tag.ToString()!,CultureInfo.InvariantCulture);
-        await backend.Call(new{action="prepare",name,dataset=DatasetPath.Text.Trim(),hours},240);
+        await backend.Call(new{action="prepare-loop",name},240);
         await LoadSessions(select:name); Tabs.SelectedIndex=0;
     });
     void Export_Click(object s,RoutedEventArgs e)

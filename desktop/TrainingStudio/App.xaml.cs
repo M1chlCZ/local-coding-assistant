@@ -42,8 +42,45 @@ public partial class App : Application
             catch(Exception ex) { File.WriteAllText(e.Args[2]+".error",ex.ToString()); Shutdown(1); }
             return;
         }
+        Appearance.Initialize();
         var window = new MainWindow(); MainWindow = window; window.Show();
         window.Closed += (_, _) => Shutdown();
+        if(e.Args.Length==2 && e.Args[0]=="--check-ui")
+        {
+            string original=Appearance.Mode;
+            try
+            {
+                if(!await window.Ready.Task.WaitAsync(TimeSpan.FromSeconds(90)))throw new IOException("No live session loaded");
+                await window.CheckRefreshBehavior();
+                foreach(string mode in new[]{"Light","Dark","System"})
+                {
+                    Appearance.Apply(mode);
+                    window.ThemePicker.SelectedIndex=Array.IndexOf(new[]{"System","Light","Dark"},mode);
+                    TrainingStudio.MainWindow.CheckThemeContrast();
+                    for(int tab=0;tab<window.Tabs.Items.Count;tab++)
+                    {
+                        window.Tabs.SelectedIndex=tab;
+                        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                        Capture(window,e.Args[1]+"."+mode+"."+tab+".png");
+                    }
+                    for(int page=0;page<window.SettingsTabs.Items.Count;page++) {
+                        window.SettingsTabs.SelectedIndex=page;
+                        await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                        Capture(window,e.Args[1]+"."+mode+".settings-"+page+".png");
+                    }
+                    window.Width=920;window.Height=680;window.Tabs.SelectedIndex=0;
+                    await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                    window.CheckControlStates();
+                    Capture(window,e.Args[1]+"."+mode+".compact.png");
+                    window.Width=1220;window.Height=880;
+                }
+                File.WriteAllText(e.Args[1],"State controls, compact layout, background refresh, Light/Dark/System contrast and all settings pages passed. Native backdrop="+window.CheckBackdrop());
+                Shutdown(0);
+            }
+            catch(Exception ex){File.WriteAllText(e.Args[1]+".error",ex.ToString());Shutdown(1);}
+            finally{Appearance.Apply(original,save:true);}
+            return;
+        }
         if(e.Args.Length==2 && e.Args[0]=="--smoke")
         {
             try
@@ -54,11 +91,7 @@ public partial class App : Application
                 {
                     window.Tabs.SelectedIndex=tab;
                     await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-                    window.UpdateLayout();
-                    var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth,(int)window.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);
-                    bitmap.Render(window);
-                    var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
-                    using(var stream=File.Create(tab==0?e.Args[1]:e.Args[1]+".tab"+tab+".png")) encoder.Save(stream);
+                    Capture(window,tab==0?e.Args[1]:e.Args[1]+".tab"+tab+".png");
                 }
                 File.WriteAllText(e.Args[1]+".json", "{\"connected\":true,\"rendered\":true}");
                 Shutdown(0);
@@ -66,4 +99,13 @@ public partial class App : Application
             catch(Exception ex) { File.WriteAllText(e.Args[1]+".error",ex.ToString()); Shutdown(1); }
         }
     }
+    static void Capture(Window window,string path)
+    {
+        window.UpdateLayout();
+        var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth,(int)window.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);
+        bitmap.Render(window);
+        var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using var stream=File.Create(path);encoder.Save(stream);
+    }
+
 }

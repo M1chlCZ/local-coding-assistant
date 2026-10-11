@@ -89,7 +89,7 @@ class Experiment:
             if not isinstance(stage['command'], list) or not stage['command'] or any(
                     not isinstance(v, str) for v in stage['command']):
                 raise ValueError('Stage command must contain explicit arguments')
-        if not 0 < config.get('limit_seconds', 21600) <= 21600:
+        if not (config.get('continuous') is True and config.get('limit_seconds') is None) and not 0 < (config.get('limit_seconds', 21600) or 0) <= 21600:
             raise ValueError('Training budget must be positive and at most six hours')
         path.mkdir(parents=True, exist_ok=True)
         atomic_json(path/'config.json', config)
@@ -199,7 +199,7 @@ class Experiment:
                 now = time.monotonic(); elapsed = now-clock; clock = now
                 budget = self.state['training_seconds']+elapsed if stage.get('train') else self.state['training_seconds']
                 self.save(active_seconds=self.state['active_seconds']+elapsed, training_seconds=budget)
-                requested = self.desired() != 'resume' or self.exiting or (stage.get('train') and budget >= self.state['limit_seconds'])
+                requested = self.desired() != 'resume' or self.exiting or (stage.get('train') and self.state['limit_seconds'] is not None and budget >= self.state['limit_seconds'])
                 if requested and interruption is None:
                     interruption = now
                     self.save(status='pausing' if self.desired() != 'stop' else 'stopping',
@@ -234,6 +234,9 @@ class Experiment:
             if gpu:
                 gpu.close()
 
+    def next_cycle(self):
+        return False
+
     def run(self):
         def exit_requested(*_):
             self.exiting = True
@@ -261,9 +264,11 @@ class Experiment:
                 if self.state['status'] == 'failed':
                     time.sleep(2); continue
                 if self.state['stage_index'] == len(self.config['stages']):
+                    if self.next_cycle():
+                        continue
                     self.save(status='completed', phase='completed', detail='Finite experiment and scheduled comparisons completed')
                     return
-                if self.config['stages'][self.state['stage_index']].get('train') and self.state['training_seconds'] >= self.state['limit_seconds']:
+                if self.state['limit_seconds'] is not None and self.config['stages'][self.state['stage_index']].get('train') and self.state['training_seconds'] >= self.state['limit_seconds']:
                     self.save(status='budget_exhausted', detail='Six active training hours reached; checkpoint retained, experiment incomplete')
                     return
                 try:
@@ -271,13 +276,20 @@ class Experiment:
                     self.execute_stage(self.config['stages'][self.state['stage_index']])
                 except (OSError, ValueError, RuntimeError) as error:
                     count = self.state['failures']+1
-                    self.save(status='failed' if count >= 3 or isinstance(error, ValueError) else 'waiting',
+                    self.save(status='failed' if isinstance(error, ValueError) or (count >= 3 and not self.config.get('continuous')) else 'waiting',
                               failures=count, detail=str(error)[-6000:])
                     if self.state['status'] == 'waiting':
-                        for _ in range(60):
+                        for _ in range(min(900, 60 * 2**min(count-1,4))):
                             if self.desired() != 'resume' or self.exiting:
                                 break
                             time.sleep(1)
+
+
+def open_experiment(path):
+    if read(Path(path)/'config.json', {}).get('continuous'):
+        from coding_loop import CodingLoop
+        return CodingLoop(path)
+    return Experiment(path)
 
 
 def main():
@@ -292,7 +304,7 @@ def main():
                 raise ValueError('Pass a reviewed experiment configuration')
             experiment = Experiment.create(args.session, read(args.config))
         else:
-            experiment = Experiment(args.session)
+            experiment = open_experiment(args.session)
             if args.action == 'run':
                 experiment.run(); return
             if args.action != 'status':
