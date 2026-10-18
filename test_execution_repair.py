@@ -117,6 +117,24 @@ class CorrectionTests(unittest.TestCase):
                 atomic_json(folder/'tasks.json',dict(validation=[dict(t,prompt='changed')]))
                 with self.assertRaises(ValueError):repl_learning.evaluate(folder,[t],None,'repl-baseline',config)
 
+    def test_timed_out_generation_drains_before_the_next_task_budget(self):
+        import repl_learning
+        with tempfile.TemporaryDirectory() as d:
+            folder=Path(d);tasks=[task(),dict(task(),id='second')]
+            atomic_json(folder/'tasks.json',tasks)
+            events=[]
+            def solve(*args):
+                events.append('task')
+                return dict(passed=False,model_error='TimeoutError: deadline')
+            def ready(*args,**kwargs):
+                events.append('idle')
+                return dict(status='ok')
+            with patch.object(stage,'server',return_value=contextlib.nullcontext()), \
+                 patch.object(repl_learning,'run_task',side_effect=solve), \
+                 patch('evaluation.request',side_effect=ready):
+                repl_learning.evaluate(folder,tasks,None,'repl-baseline',dict(repl_tasks=2))
+            self.assertEqual(events,['task','idle','task'])
+
     def test_request_timeout_at_shared_deadline_is_a_failed_attempt(self):
         import repl_learning
         result=dict(error='APITimeoutError: Request timed out.', elapsed_s=240.01,

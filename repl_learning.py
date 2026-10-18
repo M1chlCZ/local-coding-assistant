@@ -135,6 +135,11 @@ def evaluate(folder, tasks, adapter, phase, config):
     if len(saved['rows'])<len(selected):
         with server(adapter,folder):
             for task in selected[len(saved['rows']):]:
+                if saved['rows'] and saved['rows'][-1].get('model_error','').startswith('TimeoutError:'):
+                    # The single-request server may still finish a disconnected generation.
+                    from evaluation import request
+                    if request('http://127.0.0.1:8090','/health',timeout=180).get('status') != 'ok':
+                        raise RuntimeError('REPL model server did not become idle')
                 progress(folder,phase,len(saved['rows']),len(selected),task=task['id'],language=task['language'])
                 result=run_task(folder,task)
                 saved['rows'].append(dict(id=task['id'],language=task['language'],**result))
