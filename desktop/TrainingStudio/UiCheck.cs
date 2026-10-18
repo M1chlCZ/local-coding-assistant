@@ -63,18 +63,25 @@ public partial class MainWindow
     }
     internal static void CheckThemeContrast()
     {
-        double Light(string key)
+        if(Duration(172801)!="2d 00:00:01")throw new IOException("Learning clock wrapped after 24 hours");
+        double Light(string key,byte backdrop=0)
         {
             var c=((SolidColorBrush)Application.Current.Resources[key]).Color;
+            if(c.A<255) {
+                double alpha=c.A/255.0;
+                c=Color.FromRgb((byte)(alpha*c.R+(1-alpha)*backdrop),(byte)(alpha*c.G+(1-alpha)*backdrop),(byte)(alpha*c.B+(1-alpha)*backdrop));
+            }
             double Channel(byte b){double v=b/255.0;return v<=0.04045?v/12.92:Math.Pow((v+0.055)/1.055,2.4);}
             return 0.2126*Channel(c.R)+0.7152*Channel(c.G)+0.0722*Channel(c.B);
         }
         void Check(string text,string background)
         {
-            double a=Light(text),b=Light(background);
-            if((Math.Max(a,b)+0.05)/(Math.Min(a,b)+0.05)<4.5)throw new IOException($"Low theme contrast: {text} on {background}");
+            foreach(byte backdrop in new byte[]{0,255}) {
+                double a=Light(text),b=Light(background,backdrop);
+                if((Math.Max(a,b)+0.05)/(Math.Min(a,b)+0.05)<4.5)throw new IOException($"Low theme contrast: {text} on {background}");
+            }
         }
-        foreach(var background in new[]{"WindowBrush","CardBrush","NoticeBrush","QualityGoodBrush","QualityBadBrush","QualityMixedBrush","QualityNeutralBrush"})
+        foreach(var background in new[]{"WindowBrush","CardBrush","NoticeBrush","InsetBrush","StepBrush","QualityGoodBrush","QualityBadBrush","QualityMixedBrush","QualityNeutralBrush"})
         {
             Check("TextBrush",background);Check("MutedBrush",background);
         }

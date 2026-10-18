@@ -239,7 +239,9 @@ def dispatch(request):
     if action == 'prepare': return prepare(request)
     if action == 'prepare-loop':
         from coding_loop import CodingLoop
-        loop = CodingLoop.prepare(session_path(request['name']))
+        teacher = request.get('teacher', True)
+        if type(teacher) is not bool: raise ValueError('Teacher selection must be true or false')
+        loop = CodingLoop.prepare(session_path(request['name']), teacher=teacher)
         return {'session':request['name'],'status':loop.snapshot()['status']}
     if action not in ('status','pause','resume','stop'):
         raise ValueError('Unsupported desktop action')

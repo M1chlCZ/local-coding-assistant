@@ -66,3 +66,47 @@ Runtime settings, examples, reports, logs, and weights stay under the ignored `.
 
 A new machine needs the pinned model, isolated training environment, Docker images, and a reviewed local settings file.
 The Windows controls do not download or prepare these dependencies automatically.
+
+## Legacy verified-code recipe
+
+This section records the earlier complete-code recipe for existing sessions.
+New 0.1.4 sessions use [execution learning](execution-learning.md), including its
+lower initial learning rate, language cap and separate REPL gate.
+
+The earlier continuous recipe keeps up to 128 verified answers per language. The exporter
+interleaves languages without reducing every language to the smallest pool.
+At least 100 complete examples, including eight in each language, must fit before
+training starts. Imported replay stays in the training split and is checked again
+with the source tests. Validation and benchmark answers never enter replay.
+
+New blocks use one pass over the data, capped at 128 optimizer steps. The starting
+learning rate is 0.00002. If the latest complete full benchmark lost previous
+passes, the next block halves that trial's rate, down to 0.000005. A successful
+trial keeps its rate. Smaller existing rates are never raised after a regression.
+Partial results and small validation results do not change the rate. Each block
+records the decision and its source report in `recipe.json`.
+
+This is an experimental update limit, not a promise of better code. Reducing the
+rate too far can also prevent learning; the floor prevents endless reductions.
+The trainer still saves every five steps and when Pause reaches the next optimizer
+step. Resume keeps the started block's exact recipe and restores the optimizer,
+scheduler, and random state. Recipe changes apply to unstarted blocks only.
+
+Matched validation runs after every training block. A complete 790-task comparison
+runs for a promising candidate, or every 20 actual training blocks for a progress
+report. Collection-only rounds do not count. An audit already in progress finishes
+from its saved tasks. Promotion still requires a validation gain and no lost passes
+on the full comparison. These reused tests do not establish general coding quality.
+
+The settings follow the bounded-epoch and data-quality guidance in the
+[Unsloth LoRA guide](https://unsloth.ai/docs/get-started/fine-tuning-llms-guide/lora-hyperparameters-guide).
+Increasing repeated exposure to a tiny dataset is not a substitute for more useful examples.
+
+Replay verification is cached by the complete answer, test cases, language,
+checker source, and immutable compiler image. A change to any of these reruns
+the checks. Successful cached checks avoid compiling the same replay on every block.
+
+If the current trainer reports a failure but hangs while closing, the worker
+releases that process and uses the existing checkpoint retry path. It checks the
+process ID and start time so an old error cannot stop a new run. Pause and Stop
+remain in control during recovery.

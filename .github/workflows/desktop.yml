@@ -1,10 +1,10 @@
 name: Training Studio
 on:
   push:
-    paths: ['desktop/**', 'desktop_bridge.py', 'coding_loop*.py', 'focused_experiment.py', 'qwen35_*.py', 'test_coding_loop.py', 'test_qwen35_training.py', 'test_desktop_bridge.py', '.github/workflows/desktop.yml']
+    paths: ['desktop/**', 'desktop_bridge.py', 'coding_loop*.py', 'focused_experiment.py', 'qwen35_*.py', 'repl_learning.py', 'recursive_agent.py', 'training_data.py', 'polyglot_runtime.py', 'teacher_data.py', 'test_*.py', '.github/workflows/desktop.yml']
     tags: ['studio-v*']
   pull_request:
-    paths: ['desktop/**', 'desktop_bridge.py', 'coding_loop*.py', 'focused_experiment.py', 'qwen35_*.py', 'test_coding_loop.py', 'test_qwen35_training.py', 'test_desktop_bridge.py', '.github/workflows/desktop.yml']
+    paths: ['desktop/**', 'desktop_bridge.py', 'coding_loop*.py', 'focused_experiment.py', 'qwen35_*.py', 'repl_learning.py', 'recursive_agent.py', 'training_data.py', 'polyglot_runtime.py', 'teacher_data.py', 'test_*.py', '.github/workflows/desktop.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m unittest test_desktop_bridge test_focused_report test_focused_experiment test_coding_loop test_qwen35_training
+      - run: python -m unittest test_desktop_bridge test_focused_report test_focused_experiment test_coding_loop test_qwen35_training test_execution_repair test_loop_recipe test_teacher_data
   windows:
     runs-on: windows-latest
     steps:

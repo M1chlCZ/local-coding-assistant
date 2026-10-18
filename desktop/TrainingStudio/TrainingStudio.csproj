@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>TrainingStudio</AssemblyName>
-    <Version>0.1.3</Version>
+    <Version>0.1.4-preview.1</Version>
     <ApplicationIcon>Assets/studio.ico</ApplicationIcon>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>

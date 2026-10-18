@@ -1,15 +1,15 @@
 <Window x:Class="TrainingStudio.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Training Studio" Width="1220" Height="880" MinWidth="920" MinHeight="680" Icon="Assets/studio.ico" FontFamily="Segoe UI Variable Display, Segoe UI" FontSize="14" Foreground="{DynamicResource TextBrush}" WindowStartupLocation="CenterScreen">
- <Grid Margin="28">
+ <Grid Margin="20">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <DockPanel Margin="0,0,0,22">
+  <DockPanel Margin="0,0,0,14">
    <Image Source="Assets/logo-icon.png" Width="48" Height="48" Margin="0,0,12,0" DockPanel.Dock="Left" AutomationProperties.Name="Training Studio logo"/>
-   <StackPanel DockPanel.Dock="Left"><TextBlock Text="Training Studio" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Teach locally. See what improves." Foreground="{DynamicResource MutedBrush}"/></StackPanel>
+   <StackPanel DockPanel.Dock="Left"><TextBlock Text="Training Studio" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Learn from mistakes. Verify every update." Foreground="{DynamicResource MutedBrush}"/></StackPanel>
    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
     <ComboBox x:Name="SessionPicker" MinWidth="220" MaxWidth="300" HorizontalAlignment="Right" SelectionChanged="Session_Changed" AutomationProperties.Name="Learning session"/>
     <TextBlock x:Name="ConnectionBadge" Text="Connect your PC in Settings" HorizontalAlignment="Right" Margin="0,6,0,0" FontSize="12" Foreground="{DynamicResource MutedBrush}"/>
    </StackPanel>
   </DockPanel>
-  <Border Grid.Row="1" Style="{StaticResource Card}" Padding="20">
+  <Border Grid.Row="1" Style="{StaticResource Card}" Padding="12">
    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <Border x:Name="StatusTile" Width="48" Height="48" CornerRadius="14" Background="{DynamicResource QualityNeutralBrush}" Margin="0,0,16,0" VerticalAlignment="Center">
      <TextBlock x:Name="StatusIcon" Text="&#xE768;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -30,31 +30,50 @@
   </Border>
   <TabControl Grid.Row="2" x:Name="Tabs" Background="Transparent" BorderThickness="0">
    <TabItem Header="Home">
-    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,20,6,0">
-     <Border x:Name="QualityCard" Style="{StaticResource Card}" Background="{DynamicResource QualityNeutralBrush}">
-      <StackPanel><TextBlock Text="MODEL QUALITY" Foreground="{DynamicResource MutedBrush}" FontSize="12" FontWeight="SemiBold"/>
-       <TextBlock x:Name="QualityTitle" Text="Not yet measured" FontSize="30" FontWeight="SemiBold" Margin="0,8,0,8"/>
-       <TextBlock x:Name="QualityDetail" Text="The first comparison will appear after training and testing."/>
-       <TextBlock Text="We compare coding tests before and after each update. More training does not always mean better code." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,12,0,0"/>
-      </StackPanel>
+    <ScrollViewer x:Name="HomeScroll" VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,8,6,0">
+     <Border Style="{StaticResource Card}" Padding="6">
+      <UniformGrid Columns="5" x:Name="Pipeline">
+       <Border x:Name="CollectStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="1  Collect" FontWeight="SemiBold"/><TextBlock Text="Check examples" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
+       <Border x:Name="RepairStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="2  Repair" FontWeight="SemiBold"/><TextBlock Text="Execute and retest" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
+       <Border x:Name="TrainStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="3  Train" FontWeight="SemiBold"/><TextBlock Text="Learn the correction" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
+       <Border x:Name="CompareStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="4  Compare" FontWeight="SemiBold"/><TextBlock Text="Code and REPL" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
+       <Border x:Name="RetainStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="5  Retain" FontWeight="SemiBold"/><TextBlock Text="Keep verified gains" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
+      </UniformGrid>
      </Border>
      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border Style="{StaticResource Card}"><StackPanel>
-       <TextBlock Text="What is happening" Style="{StaticResource Heading}"/>
+      <Border Style="{StaticResource Card}" Padding="16"><StackPanel>
        <TextBlock x:Name="Activity" Text="Waiting for connection" FontSize="18" FontWeight="SemiBold"/>
-       <TextBlock x:Name="ActivityDetail" Margin="0,8,0,12"/>
+       <TextBlock x:Name="ActivityDetail" Visibility="Collapsed"/>
+       <Border Background="{DynamicResource InsetBrush}" CornerRadius="8" Padding="10" Margin="0,10,0,12">
+        <StackPanel><TextBlock Text="CURRENT TASK" FontSize="11" Foreground="{DynamicResource MutedBrush}"/><TextBlock x:Name="CurrentTask" Text="Waiting for a task" FontFamily="Cascadia Mono, Consolas" FontSize="12" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/></StackPanel>
+       </Border>
+       <UniformGrid Columns="3" Margin="0,0,0,12">
+        <StackPanel><TextBlock Text="First attempt" Foreground="{DynamicResource MutedBrush}" FontSize="12"/><TextBlock x:Name="FirstPasses" Text="—" FontSize="26" FontWeight="SemiBold"/></StackPanel>
+        <StackPanel><TextBlock Text="Repaired" Foreground="{DynamicResource MutedBrush}" FontSize="12"/><TextBlock x:Name="RepairedCount" Text="—" FontSize="26" FontWeight="SemiBold"/></StackPanel>
+        <StackPanel><TextBlock Text="REPL training rows" Foreground="{DynamicResource MutedBrush}" FontSize="12"/><TextBlock x:Name="ReplCount" Text="—" FontSize="26" FontWeight="SemiBold"/></StackPanel>
+       </UniformGrid>
        <ProgressBar x:Name="StageProgress" Height="8" Minimum="0" Maximum="100"/>
        <TextBlock x:Name="ProgressText" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,8"/>
-       <TextBlock x:Name="Clocks" Foreground="{DynamicResource MutedBrush}"/>
+       <TextBlock x:Name="Clocks" Foreground="{DynamicResource MutedBrush}" FontSize="12"/>
+       <TextBlock x:Name="Teaching" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,6,0,0"/>
       </StackPanel></Border>
-      <Border Grid.Column="2" Style="{StaticResource Card}"><StackPanel>
-       <TextBlock Text="Your GPU" Style="{StaticResource Heading}"/>
-       <TextBlock x:Name="GpuName" Text="Not connected" FontWeight="SemiBold"/>
-       <TextBlock x:Name="GpuMemory" Margin="0,12,0,8"/>
+      <Border x:Name="QualityCard" Grid.Column="2" Style="{StaticResource Card}" Padding="16"><StackPanel>
+       <TextBlock Text="Retained model" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
+       <TextBlock x:Name="QualityTitle" Text="Not yet measured" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,8"/>
+       <TextBlock x:Name="QualityDetail" Text="Candidates must pass matched code and REPL checks." FontSize="12" Foreground="{DynamicResource MutedBrush}"/>
+       <TextBlock x:Name="AcceptedCount" Text="0 accepted updates" Margin="0,8,0,10" FontWeight="SemiBold" FontSize="12"/>
+       <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,0,0,10"/>
+       <TextBlock x:Name="GpuName" Text="Not connected" FontWeight="SemiBold" FontSize="12"/>
+       <TextBlock x:Name="GpuMemory" Margin="0,8,0,6"/>
        <ProgressBar x:Name="Vram" Height="8" Maximum="100"/>
-       <TextBlock x:Name="GpuUsage" Margin="0,12,0,0" Foreground="{DynamicResource MutedBrush}"/>
+       <TextBlock x:Name="GpuUsage" Margin="0,8,0,0" Foreground="{DynamicResource MutedBrush}" FontSize="12"/>
       </StackPanel></Border>
      </Grid>
+     <Border x:Name="DecisionCard" Style="{StaticResource Card}" Padding="16"><Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <StackPanel Margin="0,0,18,0"><TextBlock Text="Latest decision" FontWeight="SemiBold" FontSize="18"/><TextBlock x:Name="DecisionReason" Text="Waiting for a complete comparison." Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0"/></StackPanel>
+      <StackPanel Grid.Column="1"><TextBlock Text="REPL COMPARISON" FontSize="11" Foreground="{DynamicResource MutedBrush}"/><TextBlock x:Name="ReplComparison" Text="Not yet measured" FontWeight="SemiBold" FontSize="18" Margin="0,6,0,0"/><TextBlock Text="Same tasks and call budget" Foreground="{DynamicResource MutedBrush}" FontSize="12"/></StackPanel>
+     </Grid></Border>
      <Border Style="{StaticResource Card}"><Expander Header="See coding test results"><StackPanel Margin="0,14,0,0">
       <TextBlock x:Name="ChartHint" Text="Completed measurements will appear here. Partial scores are not improvements." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
       <StackPanel x:Name="Chart"/>
@@ -87,15 +106,17 @@
      </DockPanel>
      <TabControl Grid.Row="1" x:Name="SettingsTabs" Background="Transparent" BorderThickness="0">
    <TabItem Header="New session">
-    <Border Style="{StaticResource Card}" Margin="0,20,6,0" VerticalAlignment="Top"><StackPanel MaxWidth="720" HorizontalAlignment="Left">
+    <ScrollViewer x:Name="NewSessionScroll" VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource Card}" Margin="0,20,6,0" VerticalAlignment="Top"><StackPanel MaxWidth="720" HorizontalAlignment="Left">
      <TextBlock Text="Start a learning session" Style="{StaticResource Heading}"/>
-     <TextBlock Text="Qwen3.5-4B · CUDA · verified complete programs" FontWeight="SemiBold"/>
-     <TextBlock Text="Studio finds coding examples, checks the answers, trains a small update, then tests it. It keeps the better model and repeats until you pause or stop." Margin="0,16,0,16"/>
+     <TextBlock Text="Qwen3.5-4B · CUDA · tested coding examples" FontWeight="SemiBold"/>
+     <TextBlock Text="Execution learning: attempt a task, read public test feedback, repair it, and retest. Studio trains the verified correction and executed REPL steps, then compares code and recursive tool use before keeping an update." Margin="0,16,0,16"/>
      <TextBlock Text="Python, Go, TypeScript, Rust and Dart. Updates are checked before they replace the model. Test answers are kept out of training." Foreground="{DynamicResource MutedBrush}"/>
+     <CheckBox x:Name="TeacherExamples" IsChecked="True" Content="Include checked teacher examples" Margin="0,16,0,8"/>
+     <TextBlock Text="Optional NVIDIA reference functions supplement the repair lessons. Language pools are capped to prevent Python from dominating. Test answers stay out of training. Downloads about 128 MB once. Improvement is measured, not guaranteed." Foreground="{DynamicResource MutedBrush}"/>
      <Label Target="{Binding ElementName=ExperimentName}" Content="Session name" Margin="0,16,0,0"/><TextBox x:Name="ExperimentName" Style="{StaticResource Field}" Text="my-coding-model"/>
      <TextBlock Text="No overall time limit. Pause saves progress and releases the GPU for gaming. Resume continues saved work. Stop ends this loop. Data and models stay on this PC." Margin="0,8,0,16"/>
-     <Button Content="Create session" Click="Create_Click" HorizontalAlignment="Left"/>
-    </StackPanel></Border>
+     <Button x:Name="CreateSession" Content="Create session" Click="Create_Click" HorizontalAlignment="Left"/>
+    </StackPanel></Border></ScrollViewer>
    </TabItem>
    <TabItem Header="Startup">
     <Border Style="{StaticResource Card}" Margin="0,20,6,0" VerticalAlignment="Top"><StackPanel>
@@ -149,6 +170,6 @@
     </Grid>
    </TabItem>
   </TabControl>
-  <Border Grid.Row="3" Background="{DynamicResource NoticeBrush}" CornerRadius="8" Padding="12" Margin="0,16,0,0"><TextBlock x:Name="Notice" Text="Your data and model files stay on this PC." TextWrapping="Wrap"/></Border>
+  <Border Grid.Row="3" Background="{DynamicResource NoticeBrush}" CornerRadius="8" Padding="8" Margin="0,8,0,0"><TextBlock x:Name="Notice" FontSize="12" Text="Your data and model files stay on this PC." TextWrapping="Wrap"/></Border>
  </Grid>
 </Window>

@@ -40,12 +40,14 @@ internal static class Appearance
 #pragma warning restore WPF0001
         bool dark=IsDark;
         var colors=new (string key,string light,string dark)[]{
-            ("WindowBrush","#F4F6FA","#151B23"),("CardBrush","#CCFFFFFF","#CC202936"),
-            ("BorderBrush","#E1E6ED","#39475A"),("TextBrush","#192637","#EDF2F8"),
-            ("MutedBrush","#526174","#B8C6D9"),("NoticeBrush","#E9EEF5","#283547"),
+            ("WindowBrush","#F4F6FA","#151B23"),("CardBrush","#E0FFFFFF","#E0202936"),
+            ("BorderBrush","#B3D9E1EC","#B349596D"),("TextBrush","#192637","#EDF2F8"),
+            ("MutedBrush","#455568","#B8C6D9"),("NoticeBrush","#E0E9EEF5","#E0283547"),
+            ("InsetBrush","#D9EDF2F7","#D9111923"),("StepBrush","#E0DFECFE","#F0253E5B"),
+            ("ClearBrush","#00FFFFFF","#00202936"),
             ("LogBrush","#EDF2F7","#111923"),("LogTextBrush","#24364B","#DDE6F3"),
-            ("QualityGoodBrush","#E7F4EC","#163E31"),("QualityBadBrush","#FCEDEC","#4A242A"),
-            ("QualityMixedBrush","#FFF3DE","#46361C"),("QualityNeutralBrush","#EDF1F7","#27354A"),
+            ("QualityGoodBrush","#E0E7F4EC","#E0163E31"),("QualityBadBrush","#E0FCEDEC","#E04A242A"),
+            ("QualityMixedBrush","#E0FFF3DE","#E046361C"),("QualityNeutralBrush","#E0EDF1F7","#E027354A"),
             ("PrimaryBrush","#145BC0","#84B9FF"),("PrimaryTextBrush","#FFFFFF","#092240"),
             ("PositiveBrush","#2E7654","#79D7AA"),("NegativeBrush","#B43744","#FF969F")};
         foreach(var color in colors)
@@ -55,7 +57,7 @@ internal static class Appearance
                 brush=new SolidColorBrush(color.key is "TextBrush" or "MutedBrush" or "LogTextBrush" ? SystemColors.WindowTextColor :
                     color.key=="PrimaryBrush"?SystemColors.HighlightColor : color.key=="PrimaryTextBrush"?SystemColors.HighlightTextColor:SystemColors.WindowColor);
             }
-            else if(color.key=="CardBrush" && Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize","EnableTransparency",1) is int transparency && transparency==0)
+            else if(color.key!="ClearBrush" && brush.Color.A<255 && Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize","EnableTransparency",1) is int transparency && transparency==0)
                 brush.Color=Color.FromRgb(brush.Color.R,brush.Color.G,brush.Color.B);
             brush.Freeze(); Application.Current.Resources[color.key]=brush;
         }

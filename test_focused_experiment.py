@@ -82,11 +82,87 @@ class FocusedExperimentTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'finished'):
                 exp.control('resume')
 
+    def test_stopped_continuous_session_requires_explicit_resume(self):
+        from train_adapter import atomic_json
+        exp = self.create()
+        config = dict(exp.config, continuous=True, limit_seconds=None)
+        atomic_json(self.path/'config.json', config)
+        exp.save(config_sha256=self.module().sha256(self.path/'config.json'),
+                 status='stopped', active_seconds=125, training_seconds=30)
+        exp = self.module().Experiment(self.path)
+        exp.control('stop')
+        exp.run()  # Login recovery alone must not resume Stop.
+        self.assertEqual(exp.snapshot()['status'], 'stopped')
+        exp.control('resume')
+        restored = self.module().Experiment(self.path).snapshot()
+        self.assertEqual(restored['status'], 'interrupted')
+        self.assertEqual(restored['desired'], 'resume')
+        self.assertEqual(restored['active_seconds'], 125)
+        self.assertEqual(restored['training_seconds'], 30)
+
+    @unittest.skipUnless(Path('/proc/self/stat').exists(), 'Linux worker restart test')
+    def test_manual_resume_of_stopped_loop_keeps_completed_work(self):
+        from train_adapter import atomic_json
+        module = self.module()
+        exp = self.create()
+        (self.path/'baseline.json').write_text('{"completed": true}')
+        exp.finish_stage()
+        completed = list(exp.state['completed_stages'])
+        result = self.path/'next.json'
+        config = dict(exp.config, continuous=True, limit_seconds=None)
+        config['stages'][1] = dict(name='next', gpu=False, result='next.json', command=[sys.executable,
+            '-c', 'from pathlib import Path;Path('+repr(str(result))+').write_text(\'{"completed":true}\')'])
+        atomic_json(self.path/'config.json', config)
+        exp.save(config_sha256=module.sha256(self.path/'config.json'), status='stopped',
+                 active_seconds=125, training_seconds=30)
+        exp = module.Experiment(self.path)
+        exp.control('resume')
+        exp.run()
+        self.assertEqual(exp.state['status'], 'completed')
+        self.assertEqual(exp.state['completed_stages'][:1], completed)
+        self.assertEqual(exp.state['training_seconds'], 30)
+        self.assertGreaterEqual(exp.state['active_seconds'], 125)
+        self.assertTrue(result.exists())
+
     def test_stage_result_cannot_escape_session(self):
         exp = self.create()
         bad = dict(exp.config, stages=[dict(exp.config['stages'][0], result='../result.json')])
         with self.assertRaisesRegex(ValueError, 'result path'):
             self.module().Experiment.create(Path(self.tmp.name)/'bad', bad)
+
+    def test_failed_trainer_is_detected_only_for_current_process(self):
+        from train_adapter import atomic_json
+        exp = self.create()
+        stage = dict(exp.config['stages'][1], train=True, progress='adapter/progress.json')
+        progress = self.path/'adapter/progress.json'
+        for pid, started, status, expected in [(71, 101, 'failed', 'CUDA failed'),
+                (70, 101, 'failed', None), (71, 99, 'failed', None),
+                (71, 101, 'running', None)]:
+            atomic_json(progress, dict(pid=pid, started_at=started, status=status, error='CUDA failed'))
+            self.assertEqual(exp.trainer_failure(stage, 71, 100), expected)
+        self.assertIsNone(exp.trainer_failure(dict(stage, train=False), 71, 100))
+
+    @unittest.skipUnless(Path('/proc/self/stat').exists(), 'Linux process ownership test')
+    def test_failed_trainer_hung_in_cleanup_releases_its_process(self):
+        module = self.module()
+        exp = self.create()
+        exp.control('resume')
+        progress = self.path/'progress.json'
+        script = ('import os,time,json;from pathlib import Path;p=Path('+repr(str(progress))+');'
+            "tmp=p.with_suffix('.tmp');tmp.write_text(json.dumps("
+            "dict(status='failed',pid=os.getpid(),started_at=time.time(),error='CUDA failed')));tmp.replace(p);"
+            'time.sleep(120)')
+        stage = dict(exp.config['stages'][1], train=True, gpu=False,
+                     command=[sys.executable, '-c', script])
+        # A bounded child prevents a broken watchdog from hanging the test suite.
+        driver = ('from focused_experiment import Experiment;'
+                  'e=Experiment('+repr(str(self.path))+');e.execute_stage('+repr(stage)+')')
+        result = subprocess.run([sys.executable, '-c', driver], capture_output=True,
+                                text=True, timeout=10)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('CUDA failed', result.stderr)
+        self.assertFalse((self.path/'process.json').exists())
+        self.assertEqual(module.Experiment(self.path).state['stage_index'], 0)
 
     @unittest.skipUnless(Path('/proc/self/stat').exists(), 'Linux process ownership test')
     def test_finished_training_budget_allows_remaining_audit(self):

@@ -1,5 +1,6 @@
 """Bounded standard-library programs in a locally built, immutable compiler image."""
 import json
+import os
 import subprocess
 import uuid
 from pathlib import Path
@@ -76,6 +77,8 @@ def check_program(language,source,cases=None,timeout=60,filename=None):
     program=f"from pathlib import Path\nPath('/workspace/{filename}').write_text({source!r})\n"+checks+f'print({marker!r})\n'
     name='local-polyglot-'+uuid.uuid4().hex
     command=container_command(True);command[2:2]=['--name',name]
+    if os.environ.get('LCA_REPL_OWNER'):
+        command[2:2]=['--label','local-coding-assistant.owner='+os.environ['LCA_REPL_OWNER']]
     try:
         result=bounded_run(command+['python','-I','-S','-'],program,timeout=timeout)
         if result['exit_code'] in (125,126,127):raise RuntimeError('Compiler container infrastructure failed: '+result['output'])

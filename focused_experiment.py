@@ -113,12 +113,18 @@ class Experiment:
     def control(self, action):
         if action not in ('pause', 'resume', 'stop'):
             raise ValueError('Use Pause, Resume or Stop')
-        if action == 'resume' and self.state['status'] in TERMINAL:
+        if action == 'resume' and self.state['status'] in TERMINAL and not (
+                self.state['status'] == 'stopped' and self.config.get('continuous')):
             raise ValueError('This finite experiment is finished; its clock and results stay preserved')
         atomic_json(self.path/'command.json', {'action': action, 'requested_at': time.time()})
 
+    def explicit_restart(self):
+        return self.state['status'] == 'stopped' and self.config.get('continuous') and self.desired() == 'resume'
+
     def snapshot(self):
         value = dict(self.state, desired=self.desired(), worker_alive=locked(self.path/'worker.lock'))
+        if self.explicit_restart():
+            value.update(status='interrupted', detail='Resume requested; continuing saved work when the worker starts')
         if not value['worker_alive'] and value['status'] not in TERMINAL:
             if owned_group(read(self.path/'process.json'), self.path):
                 value.update(status='interrupted', detail='A saved model process still needs cleanup; GPU release is not confirmed')
@@ -161,6 +167,16 @@ class Experiment:
         stop_owned_group(owner, self.path)
         (self.path/'process.json').unlink(missing_ok=True)
 
+    def trainer_failure(self, stage, pid, started_at):
+        """Ignore old progress; CUDA cleanup can hang after this trainer fails."""
+        if not stage.get('train'):
+            return None
+        progress = read(self.path/stage.get('progress', 'progress.json'), {})
+        if (progress.get('status') == 'failed' and progress.get('pid') == pid
+                and progress.get('started_at', 0) >= started_at):
+            return progress.get('error') or 'Trainer reported failure'
+        return None
+
     def execute_stage(self, stage):
         pause = self.path/'pause.requested'
         pause.unlink(missing_ok=True)
@@ -188,6 +204,7 @@ class Experiment:
                 if stage.get('train') and (self.path/Path(stage['result']).parent/'request.json').exists():
                     command.append('--resume')
                 token = uuid.uuid4().hex
+                started_at = time.time()
                 process = subprocess.Popen(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
                     start_new_session=True, env={**os.environ, 'PYTHONUNBUFFERED': '1',
                     'HF_HUB_OFFLINE': '1', 'HF_HUB_DISABLE_TELEMETRY': '1',
@@ -199,6 +216,9 @@ class Experiment:
                 now = time.monotonic(); elapsed = now-clock; clock = now
                 budget = self.state['training_seconds']+elapsed if stage.get('train') else self.state['training_seconds']
                 self.save(active_seconds=self.state['active_seconds']+elapsed, training_seconds=budget)
+                failure = self.trainer_failure(stage, process.pid, started_at)
+                if failure:
+                    raise RuntimeError(f'{stage["name"]}: {failure}')
                 requested = self.desired() != 'resume' or self.exiting or (stage.get('train') and self.state['limit_seconds'] is not None and budget >= self.state['limit_seconds'])
                 if requested and interruption is None:
                     interruption = now
@@ -245,6 +265,8 @@ class Experiment:
         with (self.path/'worker.lock').open('a') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX|fcntl.LOCK_NB)
             self.recover_child(); self.validate()
+            if self.explicit_restart():
+                self.save(status='interrupted', detail='Continuing stopped loop from saved progress')
             last_command = self.state.get('last_command', 0)
             while self.state['status'] not in TERMINAL:
                 command = read(self.path/'command.json')

@@ -24,6 +24,8 @@ It requires a prepared WSL backend. Model files and private data stay on your PC
 The loop collects answers that pass code tests, trains a small adapter, and compares its results with the retained model.
 Rejected updates do not replace the retained model or end the loop. More training does not guarantee better code.
 
+The **0.1.4 source preview** adds [execution learning](research/execution-learning.md): successful correction conversations, executed REPL repair lessons, a capped multilingual training mix, and matched recursive-agent checks before accepting an update. Its Windows 11 dashboard shows the current task, repair counts and rejection reasons, with Mica and translucent panels. Existing experiments and checkpoints stay separate. A model-quality improvement has not yet been established for this recipe.
+
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
 ## Coding chat and agent launcher

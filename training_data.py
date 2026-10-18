@@ -70,18 +70,19 @@ def repair_calls(task, trace, patch):
         raise ValueError('Root prompt must end with a user message')
     if 'test_visible.py' not in task['files'] or 'test_visible.py' in task['editable']:
         raise ValueError('Tested repairs require an immutable visible test file')
-    context = {'files': task['files'], 'editable': task['editable'], 'task': task['prompt']}
+    context = {'files': task['files'], 'editable': task['editable'], 'task': task['prompt'],
+               **({'language':task['language']} if task.get('language') else {})}
     test = ("import subprocess,sys\n"
             "tested = subprocess.run([sys.executable, '-B', '-I', '-c', "
             + repr("import sys;sys.path.insert(0,'/workspace');exec(open('/workspace/test_visible.py').read())")
-            + "], capture_output=True, text=True, timeout=10)\n"
+            + "], capture_output=True, text=True, timeout=45)\n"
             "print('Test exit:', tested.returncode)\nprint(tested.stdout+tested.stderr)\n")
     repair = ("from pathlib import Path\npatch = " + repr(patch)
               + "\nfor name,source in patch.items():\n    Path('/workspace', name).write_text(source)\n"
               + test + "assert tested.returncode == 0\n")
-    codes = ['print(context)', test, repair,
+    codes = ["print(context['task'][:1500])\nfor name,source in context['files'].items():\n    print(name, source[:2000])", test, repair,
              "answer['content'] = patch\nanswer['ready'] = True"]
-    environment = Sandbox(context, allow_queries=False)
+    environment = Sandbox(context, allow_queries=False, cell_seconds=60)
     calls = []
     messages = list(first['messages'])
     try:

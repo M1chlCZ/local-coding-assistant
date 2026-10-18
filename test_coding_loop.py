@@ -52,7 +52,13 @@ class LoopTests(unittest.TestCase):
             self.assertEqual(other.desired(),'pause')
             self.assertTrue(other.config['stages'][0]['name'].startswith('round-000002/'))
             loop.save(status='stopped')
-            with self.assertRaises(ValueError):loop.control('resume')
+            loop.control('stop')
+            self.assertEqual(open_experiment(loop.path).snapshot()['status'],'stopped')
+            loop.control('resume')
+            resumed=open_experiment(loop.path).snapshot()
+            self.assertEqual(resumed['status'],'interrupted')
+            self.assertEqual(resumed['cycle'],2)
+            self.assertEqual(resumed['training_seconds'],86400)
 
     @unittest.skipUnless(Path('/proc/self/stat').exists(), 'Linux worker lifecycle')
     def test_real_worker_crosses_day_budget_and_pauses_after_second_cycle(self):
@@ -65,7 +71,7 @@ from pathlib import Path
 import coding_loop
 from qwen35_train import atomic_json
 path=Path(sys.argv[1])
-def fixture(path,cycle):
+def fixture(path,cycle,method=None):
     folder=path/f'round-{cycle:06d}'
     body='from pathlib import Path; import json,time; p=Path('+repr(str(path))+'); '
     body+='(p/'+repr(f'round-{cycle:06d}/finish.json')+').write_text('+repr('{"completed":true,"accepted":false,"retained_adapter":null,"decision":"Fixture rejected"}')+'); '

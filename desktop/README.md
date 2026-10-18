@@ -33,10 +33,11 @@ These prerequisites are checked again by the training and evaluation tools.
 - **Home** shows the learning state, current activity, GPU use and measured quality.
 - **Activity** shows the current stage log and complete saved checkpoints.
 - One main button shows **Start** when idle or paused, and **Stop** while learning.
-  **Start** resumes saved work. After a session ends, **Start new session** opens setup;
-  it does not reset old results.
+  **Start** resumes saved work. A stopped continuous loop shows **Resume**.
+  A finished experiment shows **Start new session**; it does not reset old results.
 - **Pause** requests a checkpoint and releases the GPU. Wait for **paused**.
-- **Stop** ends the experiment after confirmation. Use Pause for a break.
+- **Stop** stops learning after confirmation. A continuous loop can resume later.
+  It stays stopped after login until you select **Resume**. Use Pause for a break.
 - **Results** holds past comparisons. **Settings** holds setup, GPU power and login options.
 
 Closing the app leaves the worker running. Saved Pause and Stop remain in effect after login.
@@ -110,16 +111,19 @@ Other architectures are not supported by the wizard yet.
 
 Choose a unique name and select **Create session**. Select **Start**
 when ready. The loop has no time limit. Pause saves progress and releases the GPU;
-Resume continues it. Stop ends the session. Login recovery respects both controls.
+Resume continues it. Stop keeps learning off until you explicitly resume.
+Login recovery respects both controls and never creates a replacement session.
 
 Each cycle collects complete programs from fresh source problems, checks them in isolated
 containers, and keeps only passing answers. Training uses balanced Python, Go, TypeScript,
 Rust and Dart examples plus earlier verified answers. The base weights stay frozen;
-small LoRA adapters receive at most ten optimizer steps per cycle.
+small LoRA adapters receive at most 128 optimizer steps and one epoch per cycle.
 
-Validation runs after each training block. A candidate must gain a validation pass without
-losing an earlier pass, then pass a matched 790-task comparison before it replaces the retained
-model. The full comparison also runs on every fifth cycle that has a training candidate.
+The 0.1.4 source preview also trains successful public-feedback corrections and executed REPL
+repair lessons. A separate matched REPL pilot runs before and after each training block.
+A candidate must gain a direct-validation or REPL pass without losing an earlier pass in either,
+then preserve earlier passes in a matched 790-task comparison before it replaces the retained
+model. Periodic full comparisons also check candidates that did not pass the initial gate.
 Rejected candidates are removed and collection continues. Existing completed experiments
 stay available in the picker. Integrity failures still need attention; temporary worker failures
 retry with a delay.
@@ -182,3 +186,22 @@ On a connected Windows profile, `--check-ui <output>` verifies steady controls d
 a background read, a command queued behind that read, and text contrast in both themes.
 It renders every tab in Light, Dark and System modes without changing saved preferences
 or issuing training controls.
+
+## Teacher examples
+
+New sessions can mix published NVIDIA reference functions with verified replay.
+Studio checks the reference tests locally and keeps validation answers separate.
+The first source is Python; the full regression check still covers five languages.
+The dashboard shows the teaching method, example counts and accepted updates.
+See [the pilot and its limits](../research/teacher-training.md).
+
+## Execution learning preview
+
+New sessions in 0.1.4 use [execution learning](../research/execution-learning.md).
+Home shows the five-stage cycle, current task, first-attempt passes, successful corrections,
+executed REPL training rows and the latest rejection reasons. Long sessions display elapsed days.
+REPL skills have their own before/after result; training activity does not count as improvement.
+
+The Windows 11 Fluent theme supplies the Mica window backdrop. Cards, selected stages and
+inset surfaces have translucent fills with fully opaque text. Windows transparency preferences
+and high-contrast settings take precedence. Light, Dark and System themes remain available.

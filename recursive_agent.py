@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 import queue
 import re
 import subprocess
@@ -96,6 +97,8 @@ class Sandbox:
         else:
             command = container_command(IMAGE)
         command[2:2] = ['--name', name, '--label', 'local-coding-assistant.rlm=true']
+        if os.environ.get('LCA_REPL_OWNER'):
+            command[2:2] = ['--label','local-coding-assistant.owner='+os.environ['LCA_REPL_OWNER']]
         try:
             self.container = subprocess.check_output(command + ['sleep', '3600'], text=True, timeout=30).strip()
             subprocess.run(['docker', 'exec', '-i', self.container, 'python', '-I', '-c',
@@ -351,6 +354,8 @@ def grade(task, changes):
     name = 'local-rlm-grade-' + uuid.uuid4().hex
     command = container_command(IMAGE, True)
     command[2:2] = ['--name', name]
+    if os.environ.get('LCA_REPL_OWNER'):
+        command[2:2] = ['--label','local-coding-assistant.owner='+os.environ['LCA_REPL_OWNER']]
     try:
         result = bounded_run(command+['python','-I','-S','-'], program, timeout=20)
         return {'passed':result['exit_code']==0 and not result['output_limited']
