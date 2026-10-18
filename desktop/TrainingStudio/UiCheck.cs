@@ -18,17 +18,37 @@ public partial class MainWindow
     internal void CheckControlStates()
     {
         LearningControls.Check();
+        if(QualityDetail.FontWeight!=FontWeights.Normal)throw new IOException("Navigation weight leaked into page content");
+        if(((SolidColorBrush)QualityTitle.Foreground).Color!=((SolidColorBrush)Application.Current.Resources["TextBrush"]).Color)
+            throw new IOException("Navigation accent leaked into page content");
         var saved=latest;
         try {
             foreach(string status in new[]{"running","paused","stopped","completed","interrupted","failed","pausing","stopping","waiting"}) {
                 latest=saved!.DeepClone();latest["status"]=status;latest["desired"]=status is "paused" or "pausing"?"pause":status is "stopped" or "stopping"?"stop":"resume";
                 latest["worker_alive"]=status is not("interrupted" or "stopped" or "completed");latest["active_seconds"]=10;
                 UpdateControls();UpdateLayout();
-                if(PrimaryText.Text!=ControlView().Button || StatusTitle.Text!=ControlView().Title)throw new IOException("State text differs from controls");
+                if(PrimaryText.Text!=ControlView().Button || StatusTitle.Text!=(ControlView().Title=="Running"?"Learning from execution":ControlView().Title))throw new IOException("State text differs from controls");
                 var position=PrimaryButton.TranslatePoint(new Point(),this);
                 if(position.X<0 || position.X+PrimaryButton.ActualWidth>ActualWidth)throw new IOException("Main control is clipped");
             }
-        } finally {latest=saved;UpdateControls();}
+            latest=saved!.DeepClone();
+            latest["continuous"]=false;
+            latest["quality"]!["label"]="Improved on these tests";
+            latest["quality"]!["tone"]="good";
+            latest["quality"]!["total"]=10;
+            latest["report"]=new System.Text.Json.Nodes.JsonObject();
+            Render(latest);
+            if(QualityTitle.Text!="Improved on these tests" || DecisionTitle.Text!=QualityTitle.Text)
+                throw new IOException("Finite experiment verdict was replaced by a promotion decision");
+            latest["continuous"]=true;latest["report"]!["accepted"]=false;latest["quality"]!["total"]=0;
+            Render(latest);
+            if(DecisionTitle.Text!="More verified examples needed" || GainedCount.Text!="—")
+                throw new IOException("Collection-only round was shown as a rejected candidate");
+            latest["quality"]!["total"]=10;Render(latest);
+            if(DecisionTitle.Text!="Previous update rejected")throw new IOException("Rejected candidate was not identified");
+            latest["report"]!["accepted"]=true;Render(latest);
+            if(DecisionTitle.Text!="Update accepted")throw new IOException("Accepted candidate was not identified");
+        } finally {latest=saved;Render(saved!);UpdateControls();}
     }
     internal async Task CheckRefreshBehavior()
     {
@@ -63,6 +83,8 @@ public partial class MainWindow
     }
     internal static void CheckThemeContrast()
     {
+        foreach(string key in new[]{"CodeKeywordBrush","StepNumberTextBrush"})
+            if(Appearance.HighContrastColor(key)!=SystemColors.WindowTextColor)throw new IOException("High contrast hides "+key);
         if(Duration(172801)!="2d 00:00:01")throw new IOException("Learning clock wrapped after 24 hours");
         double Light(string key,byte backdrop=0)
         {
@@ -85,6 +107,8 @@ public partial class MainWindow
         {
             Check("TextBrush",background);Check("MutedBrush",background);
         }
+        Check("CodeKeywordBrush","InsetBrush");
+        Check("StepNumberTextBrush","StepNumberBrush");
         Check("LogTextBrush","LogBrush");
         Check("PrimaryTextBrush","PrimaryBrush");
     }

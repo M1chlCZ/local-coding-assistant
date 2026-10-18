@@ -9,6 +9,10 @@ A Windows desktop app for local AI fine-tuning on NVIDIA GPUs. Control WSL train
 
 [Download Training Studio](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
+![Training Studio running on Windows 11 with live execution-repair progress](reports/training-studio-windows11.png)
+
+*Current Windows 11 interface, captured from the running 0.1.4-preview.2 app. Mica picks up the desktop colors; the displayed counts are live results.*
+
 ## Windows training app
 
 Training Studio controls local CUDA fine-tuning through WSL. It shows live activity, GPU use, saved checkpoints, and coding results.

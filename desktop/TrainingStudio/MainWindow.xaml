@@ -1,103 +1,74 @@
 <Window x:Class="TrainingStudio.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Training Studio" Width="1220" Height="880" MinWidth="920" MinHeight="680" Icon="Assets/studio.ico" FontFamily="Segoe UI Variable Display, Segoe UI" FontSize="14" Foreground="{DynamicResource TextBrush}" WindowStartupLocation="CenterScreen">
- <Grid Margin="20">
-  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <DockPanel Margin="0,0,0,14">
-   <Image Source="Assets/logo-icon.png" Width="48" Height="48" Margin="0,0,12,0" DockPanel.Dock="Left" AutomationProperties.Name="Training Studio logo"/>
-   <StackPanel DockPanel.Dock="Left"><TextBlock Text="Training Studio" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Learn from mistakes. Verify every update." Foreground="{DynamicResource MutedBrush}"/></StackPanel>
-   <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
-    <ComboBox x:Name="SessionPicker" MinWidth="220" MaxWidth="300" HorizontalAlignment="Right" SelectionChanged="Session_Changed" AutomationProperties.Name="Learning session"/>
-    <TextBlock x:Name="ConnectionBadge" Text="Connect your PC in Settings" HorizontalAlignment="Right" Margin="0,6,0,0" FontSize="12" Foreground="{DynamicResource MutedBrush}"/>
-   </StackPanel>
+ <Grid Margin="24,18,24,20">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <DockPanel Margin="4,0,4,16">
+   <Border Width="54" Height="54" CornerRadius="9" Background="{DynamicResource PrimaryBrush}" Margin="0,0,18,0" DockPanel.Dock="Left"><Path Data="{StaticResource Iconconsole}" Fill="{DynamicResource PrimaryTextBrush}" Width="34" Height="34" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Training Studio"/></Border>
+   <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center"><TextBlock Text="Training Studio" FontSize="28" FontWeight="Bold"/><TextBlock Text="Learn from mistakes. Verify every update." FontSize="15" Foreground="{DynamicResource MutedBrush}"/></StackPanel>
+   <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"><ComboBox x:Name="SessionPicker" MinWidth="220" MaxWidth="300" HorizontalAlignment="Right" SelectionChanged="Session_Changed" AutomationProperties.Name="Learning session"/><TextBlock x:Name="ConnectionBadge" Text="Connect your PC in Settings" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel>
   </DockPanel>
-  <Border Grid.Row="1" Style="{StaticResource Card}" Padding="12">
-   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <Border x:Name="StatusTile" Width="48" Height="48" CornerRadius="14" Background="{DynamicResource QualityNeutralBrush}" Margin="0,0,16,0" VerticalAlignment="Center">
-     <TextBlock x:Name="StatusIcon" Text="&#xE768;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    </Border>
-    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0" AutomationProperties.LiveSetting="Polite">
-     <TextBlock x:Name="StatusTitle" Text="Ready when you are" FontSize="22" FontWeight="SemiBold"/>
-     <TextBlock x:Name="StatusHint" Text="Connect your PC in Settings to begin." Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" MaxWidth="520" HorizontalAlignment="Left"/>
-    </StackPanel>
-    <StackPanel Grid.Column="2" Orientation="Horizontal" x:Name="Controls" VerticalAlignment="Center">
-     <Button x:Name="PauseButton" Click="Pause_Click" AutomationProperties.AutomationId="Pause" AutomationProperties.Name="Pause learning for gaming" ToolTip="Save progress and free the GPU for gaming.">
-      <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE769;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="Pause"/></StackPanel>
-     </Button>
-     <Button x:Name="PrimaryButton" Click="Primary_Click" MinWidth="130" Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderThickness="0" AutomationProperties.AutomationId="StartStop">
-      <StackPanel Orientation="Horizontal"><TextBlock x:Name="PrimaryIcon" Text="&#xE768;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock x:Name="PrimaryText" Text="Start" FontWeight="SemiBold"/></StackPanel>
-     </Button>
-    </StackPanel>
-   </Grid>
-  </Border>
-  <TabControl Grid.Row="2" x:Name="Tabs" Background="Transparent" BorderThickness="0">
-   <TabItem Header="Home">
-    <ScrollViewer x:Name="HomeScroll" VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,8,6,0">
-     <Border Style="{StaticResource Card}" Padding="6">
-      <UniformGrid Columns="5" x:Name="Pipeline">
-       <Border x:Name="CollectStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="1  Collect" FontWeight="SemiBold"/><TextBlock Text="Check examples" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
-       <Border x:Name="RepairStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="2  Repair" FontWeight="SemiBold"/><TextBlock Text="Execute and retest" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
-       <Border x:Name="TrainStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="3  Train" FontWeight="SemiBold"/><TextBlock Text="Learn the correction" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
-       <Border x:Name="CompareStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="4  Compare" FontWeight="SemiBold"/><TextBlock Text="Code and REPL" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
-       <Border x:Name="RetainStep" CornerRadius="8" Padding="8"><StackPanel><TextBlock Text="5  Retain" FontWeight="SemiBold"/><TextBlock Text="Keep verified gains" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel></Border>
-      </UniformGrid>
-     </Border>
-     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border Style="{StaticResource Card}" Padding="16"><StackPanel>
-       <TextBlock x:Name="Activity" Text="Waiting for connection" FontSize="18" FontWeight="SemiBold"/>
-       <TextBlock x:Name="ActivityDetail" Visibility="Collapsed"/>
-       <Border Background="{DynamicResource InsetBrush}" CornerRadius="8" Padding="10" Margin="0,10,0,12">
-        <StackPanel><TextBlock Text="CURRENT TASK" FontSize="11" Foreground="{DynamicResource MutedBrush}"/><TextBlock x:Name="CurrentTask" Text="Waiting for a task" FontFamily="Cascadia Mono, Consolas" FontSize="12" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/></StackPanel>
-       </Border>
-       <UniformGrid Columns="3" Margin="0,0,0,12">
-        <StackPanel><TextBlock Text="First attempt" Foreground="{DynamicResource MutedBrush}" FontSize="12"/><TextBlock x:Name="FirstPasses" Text="—" FontSize="26" FontWeight="SemiBold"/></StackPanel>
-        <StackPanel><TextBlock Text="Repaired" Foreground="{DynamicResource MutedBrush}" FontSize="12"/><TextBlock x:Name="RepairedCount" Text="—" FontSize="26" FontWeight="SemiBold"/></StackPanel>
-        <StackPanel><TextBlock Text="REPL training rows" Foreground="{DynamicResource MutedBrush}" FontSize="12"/><TextBlock x:Name="ReplCount" Text="—" FontSize="26" FontWeight="SemiBold"/></StackPanel>
-       </UniformGrid>
-       <ProgressBar x:Name="StageProgress" Height="8" Minimum="0" Maximum="100"/>
-       <TextBlock x:Name="ProgressText" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,8"/>
-       <TextBlock x:Name="Clocks" Foreground="{DynamicResource MutedBrush}" FontSize="12"/>
-       <TextBlock x:Name="Teaching" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,6,0,0"/>
-      </StackPanel></Border>
-      <Border x:Name="QualityCard" Grid.Column="2" Style="{StaticResource Card}" Padding="16"><StackPanel>
-       <TextBlock Text="Retained model" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
-       <TextBlock x:Name="QualityTitle" Text="Not yet measured" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,8"/>
-       <TextBlock x:Name="QualityDetail" Text="Candidates must pass matched code and REPL checks." FontSize="12" Foreground="{DynamicResource MutedBrush}"/>
-       <TextBlock x:Name="AcceptedCount" Text="0 accepted updates" Margin="0,8,0,10" FontWeight="SemiBold" FontSize="12"/>
-       <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,0,0,10"/>
-       <TextBlock x:Name="GpuName" Text="Not connected" FontWeight="SemiBold" FontSize="12"/>
-       <TextBlock x:Name="GpuMemory" Margin="0,8,0,6"/>
-       <ProgressBar x:Name="Vram" Height="8" Maximum="100"/>
-       <TextBlock x:Name="GpuUsage" Margin="0,8,0,0" Foreground="{DynamicResource MutedBrush}" FontSize="12"/>
-      </StackPanel></Border>
+  <TabControl Grid.Row="1" x:Name="Tabs" Background="Transparent" BorderThickness="0">
+   <TabControl.Template><ControlTemplate TargetType="TabControl"><Grid><Grid.RowDefinitions><RowDefinition Height="50"/><RowDefinition Height="*"/></Grid.RowDefinitions><TabPanel IsItemsHost="True" HorizontalAlignment="Left" Margin="0,0,370,6"/><ContentPresenter Grid.Row="1" ContentSource="SelectedContent"/></Grid></ControlTemplate></TabControl.Template>
+   <TabItem><TabItem.Header><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource NavIcon}"/><TextBlock Text="Home"/></StackPanel></TabItem.Header>
+    <ScrollViewer x:Name="HomeScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+     <Grid Height="{Binding ViewportHeight, ElementName=HomeScroll}" MinHeight="590" Margin="0,0,4,0">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <Border Style="{StaticResource Card}" Padding="10,14" Margin="0,0,0,14"><UniformGrid Columns="5" x:Name="Pipeline">
+       <Border x:Name="CollectStep" CornerRadius="9" Padding="8,10"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource StepNumberBrush}" VerticalAlignment="Top"><TextBlock Text="1" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource StepNumberTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" Margin="10,0,0,0"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A5;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="23" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="Collect" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel><TextBlock Text="Gather tasks and run" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,7,0,0"/></StackPanel></Grid></Border>
+       <Border x:Name="RepairStep" CornerRadius="9" Padding="8,10"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource StepNumberBrush}" VerticalAlignment="Top"><TextBlock Text="2" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource StepNumberTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" Margin="10,0,0,0"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE90F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="23" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="Repair" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel><TextBlock Text="Fix errors and retry" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,7,0,0"/></StackPanel></Grid></Border>
+       <Border x:Name="TrainStep" CornerRadius="9" Padding="8,10"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource StepNumberBrush}" VerticalAlignment="Top"><TextBlock Text="3" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource StepNumberTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" Margin="10,0,0,0"><StackPanel Orientation="Horizontal"><Path Data="{StaticResource Iconbrain_circuit}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Border}, Path=(TextElement.Foreground)}" Width="25" Height="25" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="Train" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel><TextBlock Text="Learn from outcomes" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,7,0,0"/></StackPanel></Grid></Border>
+       <Border x:Name="CompareStep" CornerRadius="9" Padding="8,10"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource StepNumberBrush}" VerticalAlignment="Top"><TextBlock Text="4" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource StepNumberTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" Margin="10,0,0,0"><StackPanel Orientation="Horizontal"><Path Data="{StaticResource Iconscales}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Border}, Path=(TextElement.Foreground)}" Width="25" Height="25" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="Compare" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel><TextBlock Text="Evaluate candidates" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,7,0,0"/></StackPanel></Grid></Border>
+       <Border x:Name="RetainStep" CornerRadius="9" Padding="8,10"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource StepNumberBrush}" VerticalAlignment="Top"><TextBlock Text="5" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource StepNumberTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" Margin="10,0,0,0"><StackPanel Orientation="Horizontal"><Path Data="{StaticResource Icondatabase}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Border}, Path=(TextElement.Foreground)}" Width="25" Height="25" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="Retain" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel><TextBlock Text="Keep the best model" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,7,0,0"/></StackPanel></Grid></Border>
+      </UniformGrid></Border>
+      <Grid Grid.Row="1" Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="1.72*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <Border Style="{StaticResource Card}" Padding="20,18" Margin="0"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Text="Learning this cycle" FontSize="20" FontWeight="Bold" Margin="0,0,0,16"/>
+        <Border Grid.Row="1" Background="{DynamicResource InsetBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6" MinHeight="88" Margin="0,0,0,18"><Grid><Grid.RowDefinitions><RowDefinition Height="32"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+         <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="10,0"><DockPanel><TextBlock Text="Task" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/><Button x:Name="CopyCode" DockPanel.Dock="Right" Content="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Click="CopyCode_Click" Padding="4" Margin="6,0,0,0" MinHeight="26" MinWidth="26" Background="Transparent" BorderThickness="0" ToolTip="Copy source code" AutomationProperties.Name="Copy source code"/><TextBlock x:Name="TaskLanguage" DockPanel.Dock="Right" Foreground="{DynamicResource MutedBrush}" FontSize="12" VerticalAlignment="Center"/><TextBlock x:Name="CurrentTask" Text="Waiting for a task" FontFamily="Cascadia Mono, Consolas" FontSize="13" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></DockPanel></Border>
+         <Grid Grid.Row="1" Margin="10,6" ClipToBounds="True"><Grid.ColumnDefinitions><ColumnDefinition Width="26"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock x:Name="CodeLines" Foreground="{DynamicResource MutedBrush}" FontFamily="Cascadia Mono, Consolas" FontSize="12" LineHeight="17"/><TextBlock x:Name="CodePreview" Grid.Column="1" Text="Code appears when a task starts." FontFamily="Cascadia Mono, Consolas" FontSize="12" LineHeight="17" TextWrapping="NoWrap" ClipToBounds="True"/></Grid>
+        </Grid></Border>
+        <StackPanel Grid.Row="2"><UniformGrid Columns="3">
+         <StackPanel HorizontalAlignment="Center"><TextBlock Text="First attempt" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center"/><TextBlock x:Name="FirstPasses" Text="—" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center"/></StackPanel>
+         <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0"><StackPanel><TextBlock Text="Repaired" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center"/><TextBlock x:Name="RepairedCount" Text="—" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center"/></StackPanel></Border>
+         <StackPanel><TextBlock Text="REPL lessons" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center"/><TextBlock x:Name="ReplCount" Text="—" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center" ToolTip="Verified training rows from executed REPL lessons"/></StackPanel>
+        </UniformGrid><TextBlock x:Name="ActivityDetail" Text="Live counts appear as tasks finish." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,10,0,0"/></StackPanel>
+        <Border Grid.Row="3" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,16,0,0" Padding="0,12,0,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="Activity" Text="Waiting for connection" FontSize="12" VerticalAlignment="Center" MaxWidth="180"/><ProgressBar x:Name="StageProgress" Grid.Column="1" Height="9" Margin="14,0" Minimum="0" Maximum="100" VerticalAlignment="Center"/><TextBlock x:Name="ProgressText" Grid.Column="2" Text="Cycle 1" FontSize="12" VerticalAlignment="Center"/></Grid></Border>
+       </Grid></Border>
+       <Border x:Name="QualityCard" Grid.Column="2" Style="{StaticResource Card}" Padding="20,18" Margin="0"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Text="Retained model" FontSize="20" FontWeight="Bold"/>
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,12"><Path Data="{StaticResource Icondatabase}" Fill="{DynamicResource MutedBrush}" Width="66" Height="66" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,20"/><TextBlock x:Name="QualityTitle" Text="No update accepted yet" FontSize="19" FontWeight="Bold" TextAlignment="Center"/><TextBlock x:Name="QualityDetail" Text="Candidates must pass matched checks." Foreground="{DynamicResource MutedBrush}" TextAlignment="Center" Margin="0,12,0,0"/><TextBlock x:Name="AcceptedCount" Text="0 accepted updates" Foreground="{DynamicResource MutedBrush}" TextAlignment="Center" FontSize="11" Margin="0,8,0,0"/></StackPanel>
+        <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,14,0,0"><StackPanel><DockPanel><TextBlock x:Name="GpuMemory" DockPanel.Dock="Right" FontWeight="SemiBold"/><TextBlock Text="GPU memory" Foreground="{DynamicResource MutedBrush}"/></DockPanel><ProgressBar x:Name="Vram" Height="9" Maximum="100" Margin="0,10,0,0"/><DockPanel Margin="0,8,0,0"><TextBlock x:Name="GpuUsage" DockPanel.Dock="Right" FontSize="11" Foreground="{DynamicResource MutedBrush}"/><TextBlock x:Name="GpuName" Text="Not connected" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/></DockPanel></StackPanel></Border>
+       </Grid></Border>
+      </Grid>
+      <Border Grid.Row="2" x:Name="DecisionCard" Style="{StaticResource Card}" Padding="20,16" Margin="0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="1.72*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <StackPanel Margin="0,0,20,0"><TextBlock Text="Latest decision" FontWeight="Bold" FontSize="20"/><StackPanel Orientation="Horizontal" Margin="0,12,0,0"><Ellipse x:Name="DecisionDot" Width="12" Height="12" Fill="{DynamicResource MutedBrush}" Margin="0,0,10,0"/><TextBlock x:Name="DecisionTitle" Text="Waiting for a comparison" FontSize="15" FontWeight="SemiBold"/></StackPanel><TextBlock x:Name="DecisionReason" Text="Results appear after matched checks finish." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="22,5,0,0"/></StackPanel>
+       <UniformGrid Grid.Column="1" Columns="3" VerticalAlignment="Center"><Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"><StackPanel><TextBlock Text="New passes" Foreground="{DynamicResource MutedBrush}" FontSize="12" HorizontalAlignment="Center"/><TextBlock x:Name="GainedCount" Text="—" FontSize="25" FontWeight="SemiBold" HorizontalAlignment="Center"/></StackPanel></Border><Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"><StackPanel><TextBlock Text="Lost passes" Foreground="{DynamicResource MutedBrush}" FontSize="12" HorizontalAlignment="Center"/><TextBlock x:Name="LostCount" Text="—" FontSize="25" FontWeight="SemiBold" HorizontalAlignment="Center"/></StackPanel></Border><Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"><StackPanel><TextBlock Text="REPL comparison" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextAlignment="Center"/><TextBlock x:Name="ReplComparison" Text="—" FontSize="20" FontWeight="SemiBold" TextAlignment="Center" Margin="0,4,0,0"/></StackPanel></Border></UniformGrid>
+      </Grid></Border>
      </Grid>
-     <Border x:Name="DecisionCard" Style="{StaticResource Card}" Padding="16"><Grid>
-      <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <StackPanel Margin="0,0,18,0"><TextBlock Text="Latest decision" FontWeight="SemiBold" FontSize="18"/><TextBlock x:Name="DecisionReason" Text="Waiting for a complete comparison." Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0"/></StackPanel>
-      <StackPanel Grid.Column="1"><TextBlock Text="REPL COMPARISON" FontSize="11" Foreground="{DynamicResource MutedBrush}"/><TextBlock x:Name="ReplComparison" Text="Not yet measured" FontWeight="SemiBold" FontSize="18" Margin="0,6,0,0"/><TextBlock Text="Same tasks and call budget" Foreground="{DynamicResource MutedBrush}" FontSize="12"/></StackPanel>
-     </Grid></Border>
-     <Border Style="{StaticResource Card}"><Expander Header="See coding test results"><StackPanel Margin="0,14,0,0">
+    </ScrollViewer>
+   </TabItem>
+   <TabItem><TabItem.Header><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D9;" Style="{StaticResource NavIcon}"/><TextBlock Text="Activity"/></StackPanel></TabItem.Header>
+    <Grid Margin="0,20,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="160"/></Grid.RowDefinitions>
+     <StackPanel><TextBlock Text="Live worker output" Style="{StaticResource Heading}"/><TextBlock x:Name="Clocks" Foreground="{DynamicResource MutedBrush}" FontSize="12"/><TextBlock x:Name="Teaching" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,12"/></StackPanel>
+     <TextBox x:Name="Logs" Grid.Row="1" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="12" Background="{DynamicResource LogBrush}" Foreground="{DynamicResource LogTextBrush}" Padding="16" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Worker log"/>
+     <ListBox Grid.Row="2" x:Name="Checkpoints" Margin="0,14,0,0" AutomationProperties.Name="Saved checkpoints"/>
+    </Grid>
+   </TabItem>
+   <TabItem><TabItem.Header><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D2;" Style="{StaticResource NavIcon}"/><TextBlock Text="Results"/></StackPanel></TabItem.Header>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource Card}" Margin="0,20,6,0"><StackPanel>
+     <TextBlock Text="Measured progress across experiments" Style="{StaticResource Heading}"/>
+     <TextBlock Text="Each bar shows the change from that experiment's own baseline. Different datasets or settings are not a direct model ranking. Unfinished runs have no quality score." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,16"/>
+          <Border Style="{StaticResource Card}"><Expander Header="See coding test results"><StackPanel Margin="0,14,0,0">
       <TextBlock x:Name="ChartHint" Text="Completed measurements will appear here. Partial scores are not improvements." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
       <StackPanel x:Name="Chart"/>
       <DataGrid x:Name="LanguageGrid" AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" MaxHeight="240" BorderThickness="0"/>
       <Button Content="Export private result report…" Click="Export_Click" HorizontalAlignment="Left" Margin="0,14,0,0"/>
      </StackPanel></Expander></Border>
-    </StackPanel></ScrollViewer>
-   </TabItem>
-   <TabItem Header="Activity">
-    <Grid Margin="0,20,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="160"/></Grid.RowDefinitions>
-     <TextBlock Text="Live worker output · refreshes every 5 seconds" Style="{StaticResource Heading}"/>
-     <TextBox x:Name="Logs" Grid.Row="1" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="12" Background="{DynamicResource LogBrush}" Foreground="{DynamicResource LogTextBrush}" Padding="16" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Worker log"/>
-     <ListBox Grid.Row="2" x:Name="Checkpoints" Margin="0,14,0,0" AutomationProperties.Name="Saved checkpoints"/>
-    </Grid>
-   </TabItem>
-   <TabItem Header="Results">
-    <ScrollViewer VerticalScrollBarVisibility="Auto"><Border Style="{StaticResource Card}" Margin="0,20,6,0"><StackPanel>
-     <TextBlock Text="Measured progress across experiments" Style="{StaticResource Heading}"/>
-     <TextBlock Text="Each bar shows the change from that experiment's own baseline. Different datasets or settings are not a direct model ranking. Unfinished runs have no quality score." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,16"/>
+
      <StackPanel x:Name="HistoryChart"/>
      <DataGrid x:Name="HistoryGrid" IsReadOnly="True" AutoGenerateColumns="True" CanUserAddRows="False" HeadersVisibility="Column"/>
     </StackPanel></Border></ScrollViewer>
    </TabItem>
-   <TabItem Header="Settings">
+   <TabItem><TabItem.Header><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource NavIcon}"/><TextBlock Text="Settings"/></StackPanel></TabItem.Header>
     <Grid Margin="0,20,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <DockPanel Margin="0,0,0,16"><TextBlock Text="Make Studio work for you" FontSize="22" FontWeight="SemiBold"/>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><Label Target="{Binding ElementName=ThemePicker}" Content="Appearance"/>
@@ -170,6 +141,11 @@
     </Grid>
    </TabItem>
   </TabControl>
-  <Border Grid.Row="3" Background="{DynamicResource NoticeBrush}" CornerRadius="8" Padding="8" Margin="0,8,0,0"><TextBlock x:Name="Notice" FontSize="12" Text="Your data and model files stay on this PC." TextWrapping="Wrap"/></Border>
+  <Border Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="12,5" Margin="0,0,0,0" Height="42" ToolTip="{Binding Text, ElementName=StatusHint}">
+   <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Border x:Name="StatusTile" Width="8" Height="8" CornerRadius="4" Background="{DynamicResource PrimaryBrush}" Margin="0,0,9,0"><TextBlock x:Name="StatusIcon" Visibility="Collapsed"/></Border><TextBlock x:Name="StatusTitle" Text="Ready" Foreground="{DynamicResource MutedBrush}" FontSize="13" VerticalAlignment="Center" Margin="0,0,12,0"/><TextBlock x:Name="StatusHint" Visibility="Collapsed"/>
+    <StackPanel Orientation="Horizontal" x:Name="Controls"><Button x:Name="PauseButton" Click="Pause_Click" AutomationProperties.AutomationId="Pause" AutomationProperties.Name="Pause learning for gaming" Padding="10,4" MinHeight="30" ToolTip="Save progress and free the GPU."><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE769;" Style="{StaticResource ButtonIcon}"/><TextBlock Text="Pause"/></StackPanel></Button><Button x:Name="PrimaryButton" Click="Primary_Click" Padding="10,4" MinHeight="30" Margin="0" AutomationProperties.AutomationId="StartStop"><StackPanel Orientation="Horizontal"><TextBlock x:Name="PrimaryIcon" Text="&#xE768;" Style="{StaticResource ButtonIcon}"/><TextBlock x:Name="PrimaryText" Text="Start"/></StackPanel></Button></StackPanel>
+   </StackPanel>
+  </Border>
+  <DockPanel Grid.Row="2" Margin="4,12,0,0"><TextBlock Text="&#xE7F4;" Style="{StaticResource NavIcon}"/><TextBlock x:Name="Notice" Text="Local processing   |   Models and data stay on your computer." Foreground="{DynamicResource MutedBrush}" FontSize="12" VerticalAlignment="Center"/></DockPanel>
  </Grid>
 </Window>

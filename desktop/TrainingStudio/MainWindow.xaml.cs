@@ -8,6 +8,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Documents;
+using System.Text.RegularExpressions;
 namespace TrainingStudio;
 
 public partial class MainWindow : Window
@@ -18,10 +20,12 @@ public partial class MainWindow : Window
     readonly SemaphoreSlim operationGate=new(1,1);
     readonly DispatcherTimer timer = new() { Interval=TimeSpan.FromSeconds(5) };
     public TaskCompletionSource<bool> Ready { get; } = new();
+    string displayedCode="";
     string? Session => SessionPicker.SelectedItem as string;
     public MainWindow()
     {
         InitializeComponent(); Controls.IsEnabled=false;
+        SourceInitialized += (_,_)=>Appearance.TitleBar(this);
         ThemePicker.SelectedIndex=Array.IndexOf(new[]{"System","Light","Dark"},Appearance.Mode);
         try { var p=Profile.Load(); Distro.Text=p.Distribution; LinuxUser.Text=p.User; ProjectRoot.Text=p.Root; PythonPath.Text=p.Python; }
         catch(Exception ex) { Notice.Text="Saved connection could not be read: "+ex.Message; }
@@ -59,8 +63,8 @@ public partial class MainWindow : Window
         PrimaryButton.ToolTip=view.Action=="stop"?(latest?["continuous"]?.GetValue<bool>()==true?"Stop learning and automatic restart. Resume continues saved progress.":"End this session. Use Pause if you want to continue it later."):view.Hint;
         PauseButton.Visibility=view.CanPause?Visibility.Visible:Visibility.Collapsed;
         PauseButton.IsEnabled=view.CanPause;
-        StatusTitle.Text=view.Title; StatusHint.Text=view.Hint; StatusIcon.Text=view.Icon;
-        StatusTile.SetResourceReference(Border.BackgroundProperty,"Quality"+view.Tone+"Brush");
+        StatusTitle.Text=view.Title=="Running"?"Learning from execution":view.Title; StatusHint.Text=view.Hint; StatusIcon.Text=view.Icon;
+        StatusTile.SetResourceReference(Border.BackgroundProperty,view.Title=="Running"?"PrimaryBrush":"MutedBrush");
     }
     LearningControls ControlView()=>LearningControls.For(S(latest,"status","unknown"),S(latest,"desired",""),latest?["worker_alive"]?.GetValue<bool>()==true,N(latest,"active_seconds")>0,latest?["continuous"]?.GetValue<bool>()==true);
     void OpenSettings(int page){Tabs.SelectedIndex=3;SettingsTabs.SelectedIndex=page;}
@@ -120,10 +124,10 @@ public partial class MainWindow : Window
     void Render(JsonNode state)
     {
         var q=state["quality"]!;
-        QualityTitle.Text=S(q,"label");
-        string tone=S(q,"tone") switch {"good"=>"Good","bad"=>"Bad","mixed"=>"Mixed",_=>"Neutral"};
-        QualityCard.SetResourceReference(Border.BackgroundProperty,"Quality"+tone+"Brush");
-        QualityDetail.Text=N(q,"total")>0?$"Latest comparison: {N(q,"before"):0} → {N(q,"after"):0} / {N(q,"total"):0} passed. {N(q,"gained"):0} gained · {N(q,"lost"):0} lost.":"Candidates must pass matched checks before replacing the retained model.";
+        bool continuous=state["continuous"]?.GetValue<bool>()==true;
+        QualityTitle.Text=continuous && N(state,"accepted_updates")==0?"No update accepted yet":S(q,"label");
+        QualityCard.SetResourceReference(Border.BackgroundProperty,"CardBrush");
+        QualityDetail.Text=N(q,"total")>0?$"Latest comparison: {N(q,"before"):0} → {N(q,"after"):0} / {N(q,"total"):0} passed. {N(q,"gained"):0} gained · {N(q,"lost"):0} lost.":"Candidates must pass matched checks.";
         string phase=S(state["stage_progress"],"phase",S(state,"phase")).Split('/').Last();
         string stage=S(state,"phase").Split('/').Last();
         if(phase=="evaluate")phase=stage;
@@ -141,18 +145,38 @@ public partial class MainWindow : Window
             "repl-candidate"=>"Checking candidate REPL skills",
             "gate" or "finish"=>"Comparing the results",
             "saved"=>"Progress saved",_=>"Working on this learning cycle"};
-        ActivityDetail.Text=ControlView().Action=="stop"?"Studio saves progress as it works. You can pause whenever you need the GPU.":ControlView().Hint;
+        ActivityDetail.Text="Live counts appear as tasks finish. REPL counts are verified training rows.";
         var p=state["stage_progress"];
         CurrentTask.Text=S(p,"task","Preparing the next task");
         CurrentTask.ToolTip=CurrentTask.Text;
+        var preview=state["task_preview"];
+        CurrentTask.Text=S(preview,"filename",CurrentTask.Text);
+        TaskLanguage.Text=S(preview,"language",S(p,"language",""));
+        displayedCode=S(preview,"code","");
+        CopyCode.IsEnabled=displayedCode.Length>0 && preview?["truncated"]?.GetValue<bool>()!=true;
+        CodeLines.Text=string.Join("\n",Enumerable.Range(1,Math.Min(8,displayedCode.Split('\n').Length)));
+        CodePreview.Inlines.Clear();
+        string snippet=string.Join("\n",displayedCode.Replace("\t","    ").Split('\n').Take(8));
+        if(snippet.Length==0){CodeLines.Text="";snippet="Source preview appears when a coding task starts.";}
+        foreach(string part in Regex.Split(snippet,@"(\b(?:def|return|import|from|if|else|for|while|class|func|package|fn|let|const|var|int|void|print|pub|use|std)\b)")) {
+            var run=new Run(part);
+            if(Regex.IsMatch(part,@"^[a-z]+$"))run.SetResourceReference(TextElement.ForegroundProperty,"CodeKeywordBrush");
+            CodePreview.Inlines.Add(run);
+        }
         bool observed=N(state,"collected_examples")>0;
         FirstPasses.Text=observed?$"{N(state,"first_passes"):0} / {N(state,"collected_examples"):0}":"—";
         RepairedCount.Text=observed?$"{N(state,"repaired_examples"):0}":"—";
         ReplCount.Text=N(state,"training_examples")>0?$"{N(state,"repl_examples"):0}":"—";
         AcceptedCount.Text=$"{N(state,"accepted_updates"):0} accepted updates";
         int current=stage switch {"prepare"=>0,"collect" or "export"=>1,"train"=>2,"finish"=>4,_=>3};
-        for(int i=0;i<Pipeline.Children.Count;i++)
-            ((Border)Pipeline.Children[i]).SetResourceReference(Border.BackgroundProperty,i==current?"StepBrush":"ClearBrush");
+        for(int i=0;i<Pipeline.Children.Count;i++) {
+            var step=(Border)Pipeline.Children[i];
+            step.SetResourceReference(Border.BackgroundProperty,i==current?"StepBrush":"ClearBrush");
+            var number=(Border)((Grid)step.Child).Children[0];
+            number.SetResourceReference(Border.BackgroundProperty,i==current?"PrimaryBrush":"StepNumberBrush");
+            ((TextBlock)number.Child).SetResourceReference(TextBlock.ForegroundProperty,i==current?"PrimaryTextBrush":"StepNumberTextBrush");
+            step.SetResourceReference(TextElement.ForegroundProperty,i==current?"PrimaryBrush":"TextBrush");
+        }
         double done=N(p,"completed"),total=N(p,"total");
         if(total<=0){done=N(p,"step");total=N(p,"max_steps");}
         StageProgress.IsIndeterminate=total<=0 && S(state,"status")=="running";
@@ -162,28 +186,36 @@ public partial class MainWindow : Window
         if(p?["language"] is not null)ProgressText.Text+=" · "+CultureInfo.InvariantCulture.TextInfo.ToTitleCase(S(p,"language"));
         if(S(state,"status")=="running" && N(p,"heartbeat_at")>0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds()-N(p,"heartbeat_at")>120)
             ProgressText.Text+=" · This step is taking longer. Details are in Activity.";
-        bool continuous=state["continuous"]?.GetValue<bool>()==true;
+        StageProgress.ToolTip=ProgressText.Text;
         Teaching.Text=continuous
             ?(S(state,"teaching_method") switch {"execution_repair"=>"Execution feedback + REPL repair lessons","teacher_mix"=>"Teacher examples + verified replay",_=>"Verified self-training"})+
                 (N(state,"training_examples")>0?$" · {N(state,"training_examples"):0} training rows · {N(state,"correction_examples"):0} corrections":"")
             :"Supervised training experiment";
         Clocks.Text="Training "+Duration(N(state,"training_seconds"))+(continuous?" · No time cutoff":" / "+Duration(N(state,"limit_seconds")))+" · All active work "+Duration(N(state,"active_seconds"));
         if(continuous) {
-            ProgressText.Text="Cycle "+N(state,"cycle").ToString("0")+" · "+ProgressText.Text;
+            ProgressText.Text="Cycle "+N(state,"cycle").ToString("0");
 
             if(state["report"]?["accepted"]?.GetValue<bool>()==false) {
                 QualityTitle.Text="Retained model unchanged";
-                QualityCard.SetResourceReference(Border.BackgroundProperty,"QualityNeutralBrush");
+                QualityCard.SetResourceReference(Border.BackgroundProperty,"CardBrush");
             }
         }
         var report=state["report"];
         var reasons=report?["reasons"]?.AsArray();
+        bool measured=N(q,"total")>0;
+        DecisionTitle.Text=report is null?"Waiting for a comparison":!continuous?S(q,"label"):
+            !measured?"More verified examples needed":report["accepted"]?.GetValue<bool>()==true?"Update accepted":"Previous update rejected";
+        string decisionBrush=!measured?"MutedBrush":continuous?(report?["accepted"]?.GetValue<bool>()==true?"PositiveBrush":"NegativeBrush"):
+            S(q,"tone") switch {"good"=>"PositiveBrush","bad"=>"NegativeBrush",_=>"MutedBrush"};
+        DecisionDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty,decisionBrush);
+        GainedCount.Text=measured?N(q,"gained").ToString("0"):"—";
+        LostCount.Text=measured?N(q,"lost").ToString("0"):"—";
         DecisionReason.Text=reasons?.Count>0?string.Join(". ",reasons.Select(r=>r!.ToString())):
             S(report,"decision",S(state,"readiness","Waiting for a complete comparison."));
         var repl=report?["comparisons"]?["training_effect"]?["repl"]?.AsObject();
-        ReplComparison.Text=repl is null?"Not yet measured":
-            $"{repl.Sum(r=>N(r.Value,"before")):0} → {repl.Sum(r=>N(r.Value,"after")):0} / {repl.Sum(r=>N(r.Value,"total")):0} passed";
-        var gpu=state["gpu"]; GpuName.Text=S(gpu,"name","GPU information unavailable");
+        ReplComparison.Text=repl is null?"—":
+            $"{repl.Sum(r=>N(r.Value,"before")):0} → {repl.Sum(r=>N(r.Value,"after")):0} / {repl.Sum(r=>N(r.Value,"total")):0}";
+        var gpu=state["gpu"]; GpuName.Text=S(gpu,"name","GPU information unavailable").Replace("NVIDIA GeForce ","");
         GpuMemory.Text=gpu is null?"":$"{N(gpu,"used_mb")/1024:0.0} / {N(gpu,"total_mb")/1024:0.0} GB VRAM";
         Vram.Value=N(gpu,"total_mb")>0?100*N(gpu,"used_mb")/N(gpu,"total_mb"):0;
         GpuUsage.Text=gpu is null?"":$"{S(gpu,"utilization")}% GPU · {S(gpu,"watts")} W";
@@ -199,6 +231,11 @@ public partial class MainWindow : Window
             panel.Children.Add(new ProgressBar{Height=10,Maximum=Math.Max(1,N(suite.Value,"total")),Value=N(suite.Value,"passed")}); Chart.Children.Add(panel);
         }
         ChartHint.Text=models is null?"Waiting for complete matched results. See current task progress above.":"Completed test results. Review language regressions before choosing a checkpoint.";
+    }
+    void CopyCode_Click(object sender,RoutedEventArgs e)
+    {
+        try { if(CopyCode.IsEnabled)Clipboard.SetText(displayedCode); }
+        catch(Exception ex){Notice.Text="Could not copy code: "+ex.Message;}
     }
     void Theme_Changed(object sender,SelectionChangedEventArgs e)
     {

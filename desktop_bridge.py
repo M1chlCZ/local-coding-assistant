@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-from focused_experiment import Experiment, open_experiment
+from focused_experiment import Experiment, open_experiment, read
 from focused_report import compare
 from qwen35_train import atomic_json, load_verified, sha256
 
@@ -85,11 +85,30 @@ def verdict(report):
                 gained=gained, lost=lost, languages=rows)
 
 
+def task_preview(path, state):
+    if not state.get('continuous'):
+        return None
+    folder=path/f"round-{int(state.get('cycle',1)):06d}"
+    identity=state.get('stage_progress',{}).get('task')
+    tasks=read(folder/'tasks.json',{})
+    task=next((t for t in tasks.get('train',[])+tasks.get('validation',[]) if t['id']==identity),None)
+    if not task or task.get('filename') not in task.get('editable',[]):
+        return None
+    code=task.get('files',{}).get(task['filename'],'')
+    phase=state.get('phase','').split('/')[-1]
+    if phase in ('collect','baseline','candidate'):
+        attempt=read(folder/(phase+'-attempt.json'),{})
+        if attempt.get('id')==identity:
+            code=attempt.get('answer',code)
+    return dict(filename=task['filename'],language=task['language'],code=code[:12000],truncated=len(code)>12000)
+
+
 def snapshot(name):
     path = session_path(name)
     experiment = open_experiment(path)
     value = experiment.snapshot()
     value['session'] = name
+    value['task_preview'] = task_preview(path,value)
     report = checked_report(path)
     value['quality'] = verdict(report)
     value['report'] = report

@@ -10,6 +10,23 @@ class DesktopBridgeTests(unittest.TestCase):
         for name in ('../escape', '/tmp/x', '.cache/learning/../x', 'a/b', ''):
             with self.assertRaises(ValueError): app.session_path(name)
 
+    def test_task_preview_contains_only_current_editable_code(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder=Path(d)/'round-000001';folder.mkdir()
+            task=dict(id='current',filename='main.py',language='python',editable=['main.py'],
+                      files={'main.py':'print(1)','hidden.py':'SECRET'},checks='SECRET')
+            (folder/'tasks.json').write_text(json.dumps(dict(train=[task],validation=[])))
+            state=dict(continuous=True,cycle=1,stage_progress=dict(task='current'),phase='round-000001/collect')
+            preview=app.task_preview(Path(d),state)
+            self.assertEqual(preview['code'],'print(1)')
+            self.assertNotIn('SECRET',str(preview))
+            (folder/'collect-attempt.json').write_text(json.dumps(dict(id='different',answer='wrong task')))
+            self.assertEqual(app.task_preview(Path(d),state)['code'],'print(1)')
+            (folder/'collect-attempt.json').write_text(json.dumps(dict(id='current',answer='print(2)')))
+            self.assertEqual(app.task_preview(Path(d),state)['code'],'print(2)')
+            state['stage_progress']['task']='unknown'
+            self.assertIsNone(app.task_preview(Path(d),state))
+
     def test_partial_results_never_claim_improvement(self):
         self.assertEqual(app.verdict(None)['label'], 'Not yet measured')
         self.assertEqual(app.verdict({'completed': False})['label'], 'Not yet measured')

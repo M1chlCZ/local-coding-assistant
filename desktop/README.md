@@ -130,9 +130,15 @@ retry with a delay.
 
 ## Read the result
 
+Home shows the current editable source with a copy button, completed first attempts,
+repairs, and verified REPL training rows. The compact toolbar keeps Pause and Stop visible.
+The Windows 11 dashboard uses Mica and translucent panels, and respects the system
+transparency setting. Detailed comparisons are in Results.
+
 **Not yet measured** means matched tests are not complete. Partial counts show progress.
-**Retained model unchanged** means the latest candidate was not accepted. Its gains and losses
-remain visible. A rejection does not stop the learning loop.
+**Retained model unchanged** means no candidate replaced the current model.
+**More verified examples needed** means collection continues before training.
+For a rejected candidate, its measured gains and losses remain visible. A rejection does not stop the loop.
 
 The 790 function tests cover five languages. These public tests may occur in model pretraining.
 They are reused for selection and do not establish general coding or agent quality. Fresh
