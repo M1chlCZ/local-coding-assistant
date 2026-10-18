@@ -142,6 +142,16 @@ class FocusedExperimentTests(unittest.TestCase):
             self.assertEqual(exp.trainer_failure(stage, 71, 100), expected)
         self.assertIsNone(exp.trainer_failure(dict(stage, train=False), 71, 100))
 
+    @unittest.skipUnless(Path('/proc/self/stat').exists(), 'Linux stage process test')
+    def test_invalid_stage_request_is_fatal_but_transient_failure_can_retry(self):
+        exp=self.create();exp.control('resume')
+        for code,error_type in [(2,ValueError),(1,RuntimeError)]:
+            stage=dict(exp.config['stages'][0],gpu=False,
+                       command=[sys.executable,'-c',f"import sys;print('request rejected');sys.exit({code})"])
+            with self.assertRaisesRegex(error_type,'request rejected'):
+                exp.execute_stage(stage)
+            self.assertEqual(exp.state['stage_index'],0)
+
     @unittest.skipUnless(Path('/proc/self/stat').exists(), 'Linux process ownership test')
     def test_failed_trainer_hung_in_cleanup_releases_its_process(self):
         module = self.module()

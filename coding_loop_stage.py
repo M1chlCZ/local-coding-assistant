@@ -10,6 +10,7 @@ import signal
 import subprocess
 import sys
 import time
+from urllib.error import HTTPError
 
 from coding_loop import promotion
 from focused_experiment import ROOT, read
@@ -134,9 +135,14 @@ def server(adapter, folder):
 
 def ask(conversation, temperature=0, seed=3407):
     from evaluation import request
-    responses = request('http://127.0.0.1:8090', '/batch',
-        {'conversations':[conversation], 'max_tokens':2048, 'temperature':temperature, 'seed':seed},
-        timeout=600)['responses']
+    try:
+        responses = request('http://127.0.0.1:8090', '/batch',
+            {'conversations':[conversation], 'max_tokens':2048, 'temperature':temperature, 'seed':seed},
+            timeout=600)['responses']
+    except HTTPError as error:
+        detail=error.read(4096).decode('utf-8',errors='replace')
+        error_type=ValueError if 400<=error.code<500 and error.code not in (408,429) else RuntimeError
+        raise error_type(f'Coding request rejected (HTTP {error.code}): {detail}') from error
     answer=responses[0]['choices'][0]['message'].get('content') or ''
     try:
         return source(answer)
@@ -174,12 +180,12 @@ def collect(folder, tasks, parent, phase, repair_turns=1):
             repair_attempts = 0
             # Only public example feedback is visible to the model, never hidden test results.
             if phase == 'collect' and not checked['passed']:
-                correction = list(conversation)
                 for index in range(repair_turns):
                     if checked['passed']: break
                     visible = check_program(task['language'], answer, visible_cases(task))
                     if visible['passed']: break
-                    correction += [{'role':'assistant','content':answer or '(empty answer)'}, {'role':'user',
+                    # Keep the task and latest failure; accumulating full programs overflows context.
+                    correction = conversation+[{'role':'assistant','content':answer or '(empty answer)'}, {'role':'user',
                         'content':'The public checks failed:\n'+visible['feedback']+'\nReturn the complete corrected program.'}]
                     key = 'correction' if index == 0 else f'correction-{index}'
                     if key not in attempt:
@@ -200,7 +206,7 @@ def collect(folder, tasks, parent, phase, repair_turns=1):
                     answer = attempt[key]
                     checked = check_program(task['language'],answer,task['cases'])
             saved['rows'].append(dict(id=task['id'], language=task['language'], passed=checked['passed'],
-                answer=answer, initial_answer=attempt['answer'], first_passed=first_passed,
+                answer=answer, initial_answer=attempt['answer'], attempts=attempt, first_passed=first_passed,
                 feedback=checked.get('feedback',''), corrected=bool(repair_messages), repair_attempts=repair_attempts,
                 **({'repair_messages':repair_messages} if repair_messages else {}),
                 sampled=sum(k.startswith('sample-') for k in attempt)))
@@ -526,4 +532,8 @@ def main():
     progress(folder,phase,1,1)
 
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    try: main()
+    except ValueError as error:
+        print(f'STAGE_INVALID: {error}',file=sys.stderr)
+        sys.exit(2)

@@ -1,11 +1,13 @@
 """Checked correction conversations and separate REPL evaluation contracts."""
 import contextlib
+import io
 import json
 from pathlib import Path
 import tempfile
 import sys
 import unittest
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 import coding_loop_stage as stage
 from coding_loop import CodingLoop
@@ -20,6 +22,34 @@ def task():
 
 
 class CorrectionTests(unittest.TestCase):
+    def test_repairs_keep_only_latest_failure_in_model_context(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder=Path(d);t=task();tasks=[t,dict(t,id='second')];atomic_json(folder/'tasks.json',dict(train=tasks))
+            answers=iter(['bad-1','bad-2','bad-3','fixed','fixed'])
+            def ask(messages):
+                self.assertLessEqual(len(messages),4,'Old full programs overflow the repair context')
+                return next(answers)
+            with patch.object(stage,'server',return_value=contextlib.nullcontext()), \
+                 patch.object(stage,'ask',side_effect=ask), \
+                 patch.object(stage,'check_program',side_effect=lambda *_args:dict(passed=_args[1]=='fixed',feedback='public failure')):
+                row=stage.collect(folder,tasks,None,'collect',repair_turns=3)['rows'][0]
+            self.assertTrue(row['passed'])
+            self.assertEqual(row['repair_attempts'],3)
+            self.assertEqual(row['repair_messages'][-3]['content'],'bad-3')
+            self.assertNotIn('bad-1',str(row['repair_messages']))
+            self.assertEqual(json.loads((folder/'collect-attempt.json').read_text())['id'],'second')
+            saved=json.loads((folder/'collect-rows.json').read_text())['rows'][0]
+            self.assertEqual(saved['attempts']['answer'],'bad-1')
+            self.assertEqual(saved['attempts']['correction'],'bad-2')
+            self.assertEqual(saved['attempts']['correction-1'],'bad-3')
+
+    def test_model_request_rejections_keep_reason_and_classify_retry(self):
+        for status,error_type in [(400,ValueError),(404,ValueError),(429,RuntimeError),(500,RuntimeError)]:
+            error=HTTPError('http://localhost/batch',status,'failure',{},io.BytesIO(b'{"error":"context too long"}'))
+            with patch('evaluation.request',side_effect=error):
+                with self.assertRaisesRegex(error_type,f'HTTP {status}.*context too long'):
+                    stage.ask([dict(role='user',content='code')])
+
     def test_multiple_repairs_keep_actual_failure_context_and_resume(self):
         with tempfile.TemporaryDirectory() as d:
             folder=Path(d);t=task();atomic_json(folder/'tasks.json',dict(train=[t]))

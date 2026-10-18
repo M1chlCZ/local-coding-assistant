@@ -239,7 +239,8 @@ class Experiment:
                 with log_path.open('rb') as log:
                     log.seek(max(offset, log_path.stat().st_size-6000))
                     tail = log.read().decode('utf-8', errors='replace')
-                raise RuntimeError(f'{stage["name"]} exited {process.returncode}: {tail}')
+                error_type=ValueError if process.returncode==2 else RuntimeError
+                raise error_type(f'{stage["name"]} exited {process.returncode}: {tail}')
             self.finish_stage()
             return True
         finally:

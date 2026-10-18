@@ -8,6 +8,8 @@ The earlier loop exported only the final passing program, even when collection n
 
 The new recipe records the original answer, up to three corrections using **public** execution feedback, and the successful correction conversation. Only the final correct assistant response receives loss; previous mistakes and test output are context. Hidden grading feedback never becomes a repair prompt. Independent sampled successes remain complete-code examples, without being mislabeled as successful corrections.
 
+Each repair prompt contains the original task, the latest failed program and its public-test feedback. Earlier full programs stay in the saved attempts instead of accumulating in the model context. This bounds history growth without cutting source code or the task description.
+
 ## REPL lessons and recursive evaluation
 
 For a small rotating sample of verified training programs, Studio executes four steps in the existing isolated compiler container: inspect the task, reproduce the visible failure, apply the verified repair and retest, then return the patch. The starting point is the student's failing answer when available. A lesson without a reproducible public failure is excluded. These are **executed demonstrations**, not a claim that the model independently discovered those actions.
@@ -30,5 +32,7 @@ These sources motivate an experiment. They do not establish a quality improvemen
 ## Operational behavior
 
 All runtime data, prompts, traces and model weights stay under the ignored `.cache` directory. The original worker owns the GPU lock and performs cleanup on Pause. The REPL uses the prepared `.cache/rlm-env` environment; model serving and adapter training use `.cache/qwen35-env`. New session preparation requires both environments. No dependency or model download occurs during the offline worker run.
+
+Invalid coding-stage requests stop with the server's error reason and require attention. Temporary server errors, request timeouts and rate limits remain retryable. A coding stage uses exit code 2 for invalid input so the worker does not repeatedly reload the model for a request that cannot succeed.
 
 Home shows first-attempt passes and verified repairs from the current collection, the number of tokenized REPL training rows, current task and accepted updates. The decision card explains lost passes by suite. A training-row count is not a count of independent tasks or evidence of better quality.
