@@ -11,7 +11,7 @@ A Windows desktop app for local AI fine-tuning on NVIDIA GPUs. Control WSL train
 
 ![Training Studio running on Windows 11 with live execution-repair progress](reports/training-studio-windows11.png)
 
-*Current Windows 11 interface, captured from the running 0.1.4-preview.2 app. Mica picks up the desktop colors; the displayed counts are live results.*
+*Current Windows 11 interface, captured from the running 0.1.4-preview.3 app. Mica picks up the desktop colors; the displayed counts are live results.*
 
 ## Windows training app
 

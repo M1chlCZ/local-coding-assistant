@@ -2,7 +2,7 @@
  <Grid Margin="24,18,24,20">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Margin="4,0,4,16">
-   <Border Width="54" Height="54" CornerRadius="9" Background="{DynamicResource PrimaryBrush}" Margin="0,0,18,0" DockPanel.Dock="Left"><Path Data="{StaticResource Iconconsole}" Fill="{DynamicResource PrimaryTextBrush}" Width="34" Height="34" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Training Studio"/></Border>
+   <Image Source="Assets/logo-icon.png" Width="54" Height="54" Margin="0,0,18,0" DockPanel.Dock="Left" AutomationProperties.Name="Training Studio logo"/>
    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center"><TextBlock Text="Training Studio" FontSize="28" FontWeight="Bold"/><TextBlock Text="Learn from mistakes. Verify every update." FontSize="15" Foreground="{DynamicResource MutedBrush}"/></StackPanel>
    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"><ComboBox x:Name="SessionPicker" MinWidth="220" MaxWidth="300" HorizontalAlignment="Right" SelectionChanged="Session_Changed" AutomationProperties.Name="Learning session"/><TextBlock x:Name="ConnectionBadge" Text="Connect your PC in Settings" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel>
   </DockPanel>
