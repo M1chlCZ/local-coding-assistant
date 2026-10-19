@@ -90,8 +90,10 @@ def evaluate_one(entry):
     if not check_program('python','print(1)')['passed']:
         raise RuntimeError('Independent runtime check failed')
     task=entry['task']
-    row=solve(task,'http://127.0.0.1:8090', instruction=entry.get('instruction',RECURSIVE)
-              if entry['condition']=='recursive' else '', **LIMITS)
+    row=solve(task,'http://127.0.0.1:8090',
+              mode='baseline' if entry.get('strict_ordinary') and entry['condition']=='ordinary' else 'rlm',
+              instruction=entry.get('instruction',RECURSIVE) if entry['condition']=='recursive'
+              else entry.get('ordinary_instruction',''), **LIMITS)
     if row.get('infrastructure_errors'):
         raise RuntimeError('Infrastructure failure: '+'; '.join(row['infrastructure_errors']))
     error=row.get('error','')
@@ -125,7 +127,9 @@ def evaluate(folder, label, adapter, suite):
     with server(adapter,target):
         for entry in entries[len(saved['rows']):]:
             task=target/'task.json'; result=target/'task-result.json'
-            atomic_json(task,dict(entry,instruction=config['instruction'])); result.unlink(missing_ok=True)
+            atomic_json(task,dict(entry,instruction=config['instruction'],
+                ordinary_instruction=config.get('ordinary_instruction',''),
+                strict_ordinary=config.get('strict_ordinary',False))); result.unlink(missing_ok=True)
             run_child([str(ROOT/'.cache/rlm-env/bin/python'),str(ROOT/'agent_pilot.py'),
                        'task','--folder',str(target)],LIMITS['seconds']+180)
             row=read(result)

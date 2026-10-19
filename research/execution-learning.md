@@ -165,3 +165,35 @@ Invalid coding-stage requests stop with the server's error reason and require at
 An unrecognized REPL response now receives explicit format feedback without executing it. The upstream agent's time and cell-error limits count as failed model attempts; they do not trigger worker retries. Existing experiments retain their frozen source and comparisons; these changes require a separate experiment.
 
 Home shows first-attempt passes and verified repairs from the current collection, the number of tokenized REPL training rows, current task and accepted updates. The decision card explains lost passes by suite. A training-row count is not a count of independent tasks or evidence of better quality.
+
+### Multi-file tasks without supplied tests (new finite trial)
+
+The failed confirmation exposed a mismatch in the previous lessons: their instruction still
+required `test_visible.py`, and their no-public-test variant inserted that file into context.
+The new `agent_multifile.py` curriculum starts with no test files. It derives a small scratch
+check from examples in the specification, executes the failure, repairs both the function
+and its caller, and retests in a fresh process. Recursive lessons pass supporting import
+files to the child, which executes its own checks before returning the patch. Context and
+private grading checks remain unchanged. These are executed authored demonstrations, not
+model-discovered solutions or reinforcement learning.
+
+The new finite recipe starts with a fresh adapter and optimizer on the retained base model.
+Training families come from the already verified train-only source snapshot; imported paths
+and callers vary. A new matched baseline uses the same corrected instructions as the
+candidate. Ordinary evaluation explicitly disables subcalls. Previously consumed tasks
+are development material only. Eight new private, authored multi-file tasks (four ordinary,
+four recursive, no supplied tests) are frozen before training and reserved until candidate
+selection. Their references and both individual defect controls must pass/fail as expected.
+
+Development and confirmation each require an ordinary REPL gain and a genuine recursive
+gain without lost functional, recursive, or required retention passes. Development also
+requires two distinct new repair families. Selection precedes confirmation, and the full
+matched 790-task retained-base audit remains mandatory before any promotion or full-loop
+restart from preparation and Collect. No success is inferred from collection, changed
+instructions, reference-policy canaries, or training loss. This is a small synthetic transfer
+experiment; it cannot establish production repository competence by itself.
+
+The design follows execution-verified task and trajectory construction from
+[SWE-smith](https://arxiv.org/abs/2504.21798) and the inspect/reproduce/repair/retest workflow
+described in [Anthropic's SWE-bench agent report](https://www.anthropic.com/engineering/swe-bench-sonnet).
+These sources motivate the experiment; their benchmark scores are not claims about this model.

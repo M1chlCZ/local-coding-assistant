@@ -40,7 +40,7 @@ def task_variant(original, visible):
     task = copy.deepcopy({key: original[key] for key in
         ('id', 'repository', 'split', 'prompt', 'files', 'editable', 'checks')})
     if not visible:
-        del task['files']['test_visible.py']
+        task['files'].pop('test_visible.py', None)
         task['prompt'] = task['prompt'].replace(PUBLIC_INSTRUCTION, '')
         task['prompt'] += ' No public test file is supplied; inspect the source and return the repair.'
     return task
@@ -84,7 +84,7 @@ def actions(task, reference, recursive, recovery=False):
     return plan
 
 
-def trajectory(original, recursive, visible, revision, *, plan=None, instruction=''):
+def trajectory(original, recursive, visible, revision, *, plan=None, instruction='', mode='rlm'):
     from rlm.clients.openai import OpenAIClient
     from rlm.core.types import ModelUsageSummary
     if not re.fullmatch('[a-f0-9]{40}', revision):
@@ -116,7 +116,7 @@ def trajectory(original, recursive, visible, revision, *, plan=None, instruction
     with patch.object(OpenAIClient, 'completion', side_effect=policy), \
          patch.object(OpenAIClient, 'get_last_usage', return_value=ModelUsageSummary(1, 1, 1)), \
          patch.object(agent.Sandbox, 'execute_code', observe):
-        result = agent.solve(task, 'http://127.0.0.1:1', mode='rlm', instruction=instruction, **LIMITS)
+        result = agent.solve(task, 'http://127.0.0.1:1', mode=mode, instruction=instruction, **LIMITS)
     if result.get('error') == 'RuntimeError: Cell output limit exceeded' and not result.get('infrastructure_errors'):
         raise TrajectoryOutputLimit(result, executions)
     valid = [action for action in plan if not action.get('invalid')]
