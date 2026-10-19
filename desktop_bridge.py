@@ -111,6 +111,9 @@ def task_preview(path, state):
 
 def agent_curriculum_status(path, state, config):
     """Read pilot evidence for display; never score partial results or control work."""
+    if state.get('phase') == 'prepare':
+        state['readiness'] = 'Preparing and verifying training functions. Quality is not yet measured.'
+        return
     if state.get('phase') == 'collect':
         state['readiness'] = 'Collecting executed student attempts and verified corrections. Quality is not yet measured.'
         return

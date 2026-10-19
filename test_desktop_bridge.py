@@ -188,6 +188,11 @@ class AgentCurriculumStatusTests(unittest.TestCase):
         self.assertEqual(value['quality']['label'], 'Not yet measured')
         self.assertNotIn('training_examples', value)
         self.assertIn('Collecting', value['readiness'])
+        self.state['phase']='prepare'
+        value=self.snapshot()
+        self.assertEqual(value['quality']['label'],'Not yet measured')
+        self.assertNotIn('training_examples',value)
+        self.assertIn('Preparing',value['readiness'])
         evidence = self.path/'curriculum/feasibility.json'
         self.state.update(phase='train-agent', stage_index=1, completed_stages=[
             dict(name='collect', result='curriculum/feasibility.json', sha256=app.sha256(evidence))])
