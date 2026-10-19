@@ -197,3 +197,11 @@ The design follows execution-verified task and trajectory construction from
 [SWE-smith](https://arxiv.org/abs/2504.21798) and the inspect/reproduce/repair/retest workflow
 described in [Anthropic's SWE-bench agent report](https://www.anthropic.com/engineering/swe-bench-sonnet).
 These sources motivate the experiment; their benchmark scores are not claims about this model.
+
+The first multi-file preparation stopped before collection or model evaluation: a source
+lesson's assertions accepted a no-op caller returning `None`. That snapshot is paused and
+preserved. The corrected preparation explicitly checks the reference, broken caller,
+specification examples, and each missing source edit. Non-discriminating lessons are
+excluded with recorded reasons; infrastructure errors still stop preparation. The corrected
+snapshot keeps the same recipe and the same eight unobserved confirmation tasks. This is
+a data-quality correction, not a failed or successful learning comparison.

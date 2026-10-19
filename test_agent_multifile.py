@@ -13,6 +13,21 @@ from test_agent_curriculum import LocalSandbox, REVISION
 
 
 class MultiFileTests(unittest.TestCase):
+    def test_preparation_excludes_checks_that_accept_a_no_op(self):
+        import recursive_agent as agent
+        entry=fixture()
+        entry['answer']=entry['answer'].replace('return x+1','return None')
+        name=entry['family']
+        entry['tests']='\n'.join(f'assert {name}({x}) is None' for x in range(7))
+        value=multifile.task(entry,0)
+        def grade(t,changes):return dict(passed=run({**t['files'],**changes},t['checks']).returncode==0)
+        with patch.object(agent,'grade',grade):
+            self.assertEqual(multifile.lesson_rejection(value),'private checks accept the broken caller')
+            self.assertIsNone(multifile.lesson_rejection(multifile.task(fixture(),0)))
+        with patch.object(agent,'grade',side_effect=RuntimeError('container unavailable')):
+            with self.assertRaisesRegex(RuntimeError,'container unavailable'):
+                multifile.lesson_rejection(value)
+
     @unittest.skipUnless(importlib.util.find_spec('rlm'),'Pinned upstream environment required')
     def test_real_actions_derive_checks_then_child_executes_both_file_repairs(self):
         import recursive_agent as agent

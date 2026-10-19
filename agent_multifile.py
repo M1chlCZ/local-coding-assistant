@@ -106,21 +106,45 @@ def mode_gains(before, after):
     return dict(passed=bool(ordinary and recursive and not lost),ordinary_gains=ordinary,recursive_gains=recursive,losses=lost)
 
 
+def lesson_rejection(value):
+    """Only lessons whose independent checks distinguish both repairs may teach actions."""
+    reference=value['reference_patch']
+    broken={p:value['files'][p] for p in value['editable']}
+    if not curriculum.agent.grade(value,reference)['passed']:
+        return 'reference fails private checks'
+    if curriculum.agent.grade(value,broken)['passed']:
+        return 'private checks accept the broken caller'
+    diagnostic=dict(value,checks=value['diagnostic'])
+    if not curriculum.agent.grade(diagnostic,reference)['passed']:
+        return 'reference fails specification examples'
+    if curriculum.agent.grade(diagnostic,broken)['passed']:
+        return 'specification examples accept the broken caller'
+    for omitted in value['editable']:
+        if curriculum.agent.grade(value,{p:s for p,s in reference.items() if p!=omitted})['passed']:
+            return 'private checks do not require both source repairs'
+    return None
+
+
 def prepare(folder, source, evaluation):
+    from coding_loop_stage import progress
     entries=json.loads(source.read_text());config=json.loads(evaluation.read_text())
     reserved=[e['task'] for suite in ('development','holdout') for e in config[suite]]+config['retention']
     entries=[e for e in entries if agent_tested.eligible(e,reserved)]
     if len(entries)<64:raise ValueError('Too few disjoint train-only families')
     folder.mkdir(parents=True,exist_ok=True)
-    values=[task(e,i) for i,e in enumerate(entries)]
-    for value in values:
-        if not curriculum.agent.grade(value,value['reference_patch'])['passed']:
-            raise ValueError('Reference failed: '+value['id'])
-        if curriculum.agent.grade(value,{p:value['files'][p] for p in value['editable']})['passed']:
-            raise ValueError('Negative control passed: '+value['id'])
+    values=[];excluded=[]
+    for i,entry in enumerate(entries):
+        value=task(entry,i)
+        progress(folder,'prepare',i,len(entries),task=value['id'])
+        reason=lesson_rejection(value)
+        if reason:excluded.append(dict(id=value['id'],reason=reason))
+        else:values.append(value)
+    atomic_json(folder/'excluded-lessons.json',excluded)
+    if len(values)<64:raise ValueError('Fewer than 64 lessons have discriminating checks')
     atomic_json(folder/'tasks.json',values)
     atomic_json(folder/'prepare.json',dict(completed=True,source_sha256=sha256(source),
-        evaluation_sha256=sha256(evaluation),tasks_sha256=sha256(folder/'tasks.json'),families=len(entries)))
+        evaluation_sha256=sha256(evaluation),tasks_sha256=sha256(folder/'tasks.json'),families=len(values),
+        excluded_sha256=sha256(folder/'excluded-lessons.json'),excluded_count=len(excluded)))
 
 
 def collect(folder, revision, anchors):
