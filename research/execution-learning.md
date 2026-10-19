@@ -129,6 +129,8 @@ One recipe starts from the previous recovery adapter with a fresh optimizer: ran
 
 The ordinary and recursive reference workflows have passed real-container checks, including child failure/success execution and exact parent application, with and without supplied tests. This validates lesson execution, not learning. The model comparison is still pending.
 
+Collection exposed another defect before training: one real student answer produced enough test output to exceed the sandbox's 8,192-character cell limit. The collector retried this deterministic failure instead of recording an excluded lesson. The corrected collector preserves the failed trace, exports no targets from it, and excludes the whole trajectory. Infrastructure errors still stop collection. The original frozen attempt stays paused and preserved; a separate corrected snapshot reuses the 128 saved student answers with unchanged evaluation tasks, budgets, recipe and minimum-family requirement. This is a collection repair, not a measured model improvement.
+
 [CodeRL](https://arxiv.org/abs/2207.01780) and [ReST-EM](https://arxiv.org/abs/2312.06585) provide primary research on execution-based feedback and filtering. Their methods and evaluated models differ from this supervised local experiment; they do not guarantee improvement here.
 
 All runtime data, prompts, traces and model weights stay under the ignored `.cache` directory. The original worker owns the GPU lock and performs cleanup on Pause. The REPL uses the prepared `.cache/rlm-env` environment; model serving and adapter training use `.cache/qwen35-env`. New session preparation requires both environments. No dependency or model download occurs during the offline worker run.

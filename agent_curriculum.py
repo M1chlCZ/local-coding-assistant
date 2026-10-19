@@ -21,6 +21,12 @@ LIMITS = dict(depth=2, calls=8, output_tokens=6144, seconds=240)
 INVALID_ACTION = '```python\nprint("This fence does not execute")\n```'
 
 
+class TrajectoryOutputLimit(ValueError):
+    def __init__(self, result, executions):
+        super().__init__(result['error'])
+        self.result, self.executions = result, executions
+
+
 def training_tasks():
     tasks = [task for task in json.loads(TASKS.read_text()) if task['split'] == 'train']
     if len(tasks) != 20 or len({task['repository'] for task in tasks}) != 20:
@@ -111,6 +117,8 @@ def trajectory(original, recursive, visible, revision, *, plan=None, instruction
          patch.object(OpenAIClient, 'get_last_usage', return_value=ModelUsageSummary(1, 1, 1)), \
          patch.object(agent.Sandbox, 'execute_code', observe):
         result = agent.solve(task, 'http://127.0.0.1:1', mode='rlm', instruction=instruction, **LIMITS)
+    if result.get('error') == 'RuntimeError: Cell output limit exceeded' and not result.get('infrastructure_errors'):
+        raise TrajectoryOutputLimit(result, executions)
     valid = [action for action in plan if not action.get('invalid')]
     codes = [action['response'][8:-4].strip() for action in valid]
     if (result.get('error') or result.get('infrastructure_errors')

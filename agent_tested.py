@@ -152,9 +152,13 @@ def collect(folder, revision, anchor_path, adapter):
                 expected.append(name)
                 if (folder/'traces'/name).exists():continue
                 progress(folder,'verify-trajectories',index,len(entries),task=name)
-                record=curriculum.trajectory(value,recursive,visible,revision,plan=actions(value,recursive,visible),
-                    instruction=INSTRUCTION if recursive else '')
-                if recursive and not recursive_success(record['result'],value):
+                try:
+                    record=curriculum.trajectory(value,recursive,visible,revision,plan=actions(value,recursive,visible),
+                        instruction=INSTRUCTION if recursive else '')
+                except curriculum.TrajectoryOutputLimit as error:
+                    record=dict(rows=[],result=error.result,executions=error.executions,
+                        excluded_reason='Cell output limit exceeded; whole failed trajectory excluded')
+                if recursive and not record.get('excluded_reason') and not recursive_success(record['result'],value):
                     raise ValueError('Child patch was not genuinely executed and applied')
                 record.update(family=entry['family'],recursive=recursive,start=start,visible=visible)
                 for row in record['rows']:
@@ -186,6 +190,13 @@ def finalize(folder, revision, anchor_path, tokenizer=None):
     rows,selected,excluded,measured=[],[],[],[]
     for name in sorted(files):
         record=json.loads((folder/'traces'/name).read_text());trace=record['result']['trace']
+        if record.get('excluded_reason'):
+            if (record['rows'] or record['result'].get('passed')
+                    or record['result'].get('error')!='RuntimeError: Cell output limit exceeded'
+                    or record['result'].get('infrastructure_errors')):
+                raise ValueError('Invalid output-limit exclusion evidence')
+            excluded.append(dict(file=name,reason=record['excluded_reason']))
+            continue
         targets=[c['messages']+[dict(role='assistant',content=c['response'])] for c in trace]
         if (targets!=[r['messages'] for r in record['rows']] or len(trace)!=record['result']['calls']
                 or [c['kind'] for c in trace]!=[r['origin'] for r in record['rows']]):

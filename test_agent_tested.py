@@ -85,6 +85,31 @@ class TaskTests(unittest.TestCase):
             path.write_text('{}')
             with self.assertRaisesRegex(ValueError,'changed'):
                 tested.finalize(folder,REVISION,folder/'unused',Tokenizer())
+            excluded=dict(excluded_reason='Cell output limit exceeded',rows=[],result=dict(
+                trace=[call],calls=1,passed=False,error='RuntimeError: Cell output limit exceeded',infrastructure_errors=[]))
+            path.write_text(json.dumps(excluded))
+            (folder/'collection.json').write_text(json.dumps(dict(completed=True,traces={'one.json':sha256(path)})))
+            with self.assertRaisesRegex(ValueError,'Fewer than 64'):
+                tested.finalize(folder,REVISION,folder/'unused',Tokenizer())
+            excluded['result']['infrastructure_errors']=['Docker failed']
+            path.write_text(json.dumps(excluded))
+            (folder/'collection.json').write_text(json.dumps(dict(completed=True,traces={'one.json':sha256(path)})))
+            with self.assertRaisesRegex(ValueError,'Invalid output-limit'):
+                tested.finalize(folder,REVISION,folder/'unused',Tokenizer())
+
+    @unittest.skipUnless(importlib.util.find_spec('rlm'),'Pinned upstream environment required')
+    def test_output_limit_preserves_failed_evidence_and_does_not_hide_infrastructure_errors(self):
+        task=tested.task(fixture())
+        result=dict(error='RuntimeError: Cell output limit exceeded',infrastructure_errors=[],trace=[],passed=False)
+        with patch.object(agent,'grade',return_value=dict(passed=False)),patch.object(agent,'solve',return_value=result):
+            with self.assertRaises(curriculum.TrajectoryOutputLimit) as failure:
+                curriculum.trajectory(task,False,True,REVISION,plan=[])
+            self.assertIs(failure.exception.result,result)
+            self.assertEqual(failure.exception.executions,[])
+            result['infrastructure_errors']=['Docker failed']
+            with self.assertRaises(ValueError) as failure:
+                curriculum.trajectory(task,False,True,REVISION,plan=[])
+            self.assertNotIsInstance(failure.exception,curriculum.TrajectoryOutputLimit)
 
     @unittest.skipUnless(importlib.util.find_spec('rlm'),'Pinned upstream environment required')
     def test_child_tests_execute_before_exact_patch_is_applied(self):
