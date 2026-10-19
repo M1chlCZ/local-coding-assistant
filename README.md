@@ -32,6 +32,8 @@ The **0.1.4 source preview** adds [execution learning](research/execution-learni
 
 A separate corrective-imitation experiment completed with **0/10 → 2/10 repairs**, including **0/5 → 2/5 ordinary REPL repairs**, but **0/5 → 0/5 recursive repairs**. Independent regrading confirmed the two gains. The recursive requirement failed, so no adapter was promoted and the full loop remains paused. Held-out confirmation and the full general-code audit were not run. See the [verified recovery result](reports/agent-recovery-pilot-20261019.json) and [failure diagnosis](research/execution-learning.md#completed-corrective-imitation-comparison).
 
+The next finite experiment adds [child-side execution and broader function coverage](research/execution-learning.md#execution-tested-recursive-distillation). It compares the starting recovery adapter with a newly trained adapter under identical instructions. No new learning gain is established yet; restarting from Collect still requires development gains, untouched confirmation tasks and a fresh full audit.
+
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
 ## Coding chat and agent launcher

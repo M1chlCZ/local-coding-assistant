@@ -13,6 +13,15 @@ from qwen35_train import atomic_json, sha256
 
 
 class PilotTests(unittest.TestCase):
+    def test_frozen_recursive_instruction_reaches_worker(self):
+        entry=dict(condition='recursive',instruction='Execute the supplied public tests in the child.',
+                   task=dict(id='repair',repository='repair',split='dev'))
+        row=dict(id='repair',passed=False,error='',elapsed_s=1,infrastructure_errors=[])
+        with patch('recursive_agent.solve',return_value=row) as solve, \
+             patch('polyglot_runtime.check_program',return_value={'passed':True}):
+            evaluate_one(entry)
+        self.assertEqual(solve.call_args.kwargs['instruction'],entry['instruction'])
+
     @unittest.skipUnless(importlib.util.find_spec('rlm'),'Pinned upstream environment required')
     def test_invalid_model_answer_is_distinct_from_broken_protocol(self):
         import recursive_agent as agent
@@ -189,6 +198,7 @@ class PilotTests(unittest.TestCase):
             save('candidate',after)
             save('candidate',after,False)
             self.assertFalse(comparison(root,'candidate','development')['pilot_passed'])
+
             save('candidate',after[:-1])
             with self.assertRaises(ValueError):comparison(root,'candidate','development')
             save('candidate',after)
@@ -196,6 +206,17 @@ class PilotTests(unittest.TestCase):
             atomic_json(root/'evaluation.json',dict(model_revision=revision,development=entries,retention=[dict(id='anchor')]))
             binding['evaluation_sha256']=sha256(root/'evaluation.json')
             save('baseline',before);save('candidate',after)
+            self.assertFalse(comparison(root,'candidate','development')['pilot_passed'])
+
+            config=json.loads((root/'evaluation.json').read_text())
+            config['baseline_adapter_sha256']='b'*64
+            atomic_json(root/'evaluation.json',config)
+            binding['evaluation_sha256']=sha256(root/'evaluation.json')
+            save('baseline',before);save('candidate',after)
+            with self.assertRaises(ValueError):comparison(root,'candidate','development')
+            report=json.loads((root/'baseline/development.json').read_text())
+            report['binding']['adapter_sha256']='b'*64
+            atomic_json(root/'baseline/development.json',report)
             self.assertFalse(comparison(root,'candidate','development')['pilot_passed'])
 
 

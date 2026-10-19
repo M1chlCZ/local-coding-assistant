@@ -78,7 +78,7 @@ def actions(task, reference, recursive, recovery=False):
     return plan
 
 
-def trajectory(original, recursive, visible, revision):
+def trajectory(original, recursive, visible, revision, *, plan=None, instruction=''):
     from rlm.clients.openai import OpenAIClient
     from rlm.core.types import ModelUsageSummary
     if not re.fullmatch('[a-f0-9]{40}', revision):
@@ -87,7 +87,8 @@ def trajectory(original, recursive, visible, revision):
     reference = agent.parse_patch(json.dumps(original['reference_patch']), task)
     if agent.grade(task, {name: task['files'][name] for name in task['editable']})['passed']:
         raise ValueError('The authored negative control must fail')
-    plan = actions(task, reference, recursive, recovery=visible and not recursive)
+    if plan is None:
+        plan = actions(task, reference, recursive, recovery=visible and not recursive)
     position, executions = 0, []
     execute = agent.Sandbox.execute_code
 
@@ -109,7 +110,7 @@ def trajectory(original, recursive, visible, revision):
     with patch.object(OpenAIClient, 'completion', side_effect=policy), \
          patch.object(OpenAIClient, 'get_last_usage', return_value=ModelUsageSummary(1, 1, 1)), \
          patch.object(agent.Sandbox, 'execute_code', observe):
-        result = agent.solve(task, 'http://127.0.0.1:1', mode='rlm', **LIMITS)
+        result = agent.solve(task, 'http://127.0.0.1:1', mode='rlm', instruction=instruction, **LIMITS)
     valid = [action for action in plan if not action.get('invalid')]
     codes = [action['response'][8:-4].strip() for action in valid]
     if (result.get('error') or result.get('infrastructure_errors')
@@ -121,6 +122,7 @@ def trajectory(original, recursive, visible, revision):
     expected_hashes = {name: hashlib.sha256(source.encode()).hexdigest() for name, source in reference.items()}
     if result.get('workspace_hashes') != expected_hashes or not agent.grade(task, result['patch'])['passed']:
         raise ValueError('Applied reference patch failed independent grading')
+    result['passed'] = True
     if recursive:
         queries = result.get('queries', [])
         if (len(queries) != 1 or not queries[0]['recursive']
@@ -173,7 +175,7 @@ def write_dataset(output, rows, binding):
     metadata = dict(schema_version=1, split='train', verification='local_execution',
         rows=len(rows), languages=dict(Counter(row['language'] for row in rows)),
         dataset_sha256=sha256(dataset), binding=binding,
-        scope='Executed authored reference policies plus optional verified anchors; not model-discovered solutions.')
+        scope='Executed reference policies plus verified training rows; not evidence of model-discovered solutions.')
     atomic_json(Path(str(dataset)+'.manifest.json'), metadata)
     load_verified(dataset, Path(str(dataset)+'.manifest.json'))
     return metadata

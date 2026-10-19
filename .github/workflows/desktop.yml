@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m unittest test_desktop_bridge test_focused_report test_focused_experiment test_coding_loop test_qwen35_training test_execution_repair test_loop_recipe test_teacher_data test_agent_curriculum test_agent_pilot test_agent_recovery test_training_feedback
+      - run: python -m unittest test_desktop_bridge test_focused_report test_focused_experiment test_coding_loop test_qwen35_training test_execution_repair test_loop_recipe test_teacher_data test_agent_curriculum test_agent_pilot test_agent_recovery test_agent_tested test_training_feedback
   windows:
     runs-on: windows-latest
     steps:

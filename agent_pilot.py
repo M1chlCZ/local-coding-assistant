@@ -90,7 +90,8 @@ def evaluate_one(entry):
     if not check_program('python','print(1)')['passed']:
         raise RuntimeError('Independent runtime check failed')
     task=entry['task']
-    row=solve(task,'http://127.0.0.1:8090', instruction=RECURSIVE if entry['condition']=='recursive' else '', **LIMITS)
+    row=solve(task,'http://127.0.0.1:8090', instruction=entry.get('instruction',RECURSIVE)
+              if entry['condition']=='recursive' else '', **LIMITS)
     if row.get('infrastructure_errors'):
         raise RuntimeError('Infrastructure failure: '+'; '.join(row['infrastructure_errors']))
     error=row.get('error','')
@@ -124,7 +125,7 @@ def evaluate(folder, label, adapter, suite):
     with server(adapter,target):
         for entry in entries[len(saved['rows']):]:
             task=target/'task.json'; result=target/'task-result.json'
-            atomic_json(task,entry); result.unlink(missing_ok=True)
+            atomic_json(task,dict(entry,instruction=config['instruction'])); result.unlink(missing_ok=True)
             run_child([str(ROOT/'.cache/rlm-env/bin/python'),str(ROOT/'agent_pilot.py'),
                        'task','--folder',str(target)],LIMITS['seconds']+180)
             row=read(result)
@@ -158,8 +159,12 @@ def comparison(folder, candidate, suite):
         weight_hash=sha256(adapter/'adapter_model.safetensors')
         before=read(before_path); after=read(after_path)
         common=dict(evaluation_sha256=sha256(config_path),suite=suite)
+        baseline_hash=config.get('baseline_adapter_sha256')
+        if baseline_hash is not None and (not isinstance(baseline_hash,str) or len(baseline_hash)!=64
+                or any(c not in '0123456789abcdef' for c in baseline_hash)):
+            raise ValueError('Invalid frozen baseline adapter digest')
         if (not isinstance(before,dict) or not isinstance(after,dict)
-                or before.get('binding')!=dict(common,adapter_sha256=None)
+                or before.get('binding')!=dict(common,adapter_sha256=baseline_hash)
                 or after.get('binding')!=dict(common,adapter_sha256=weight_hash)):
             raise ValueError('Comparison requires the original base and this completed candidate adapter')
     except (KeyError,TypeError,AttributeError,FileNotFoundError) as error:

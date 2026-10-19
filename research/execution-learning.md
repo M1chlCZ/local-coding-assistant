@@ -115,6 +115,22 @@ All five recursive attempts exhausted the shared eight-call budget. The inspecte
 
 The [verified public result](../reports/agent-recovery-pilot-20261019.json) records scores, recipe, failure counts and evidence hashes. Raw traces, training data, checkpoints and model weights remain private and preserved. This finite recipe is complete; it does not authorize restarting the continuous loop from Collect.
 
+### Execution-tested recursive distillation
+
+The next investigation found a concrete gap: the recovery dataset's 80 child targets across twenty families never execute the proposed repair. The parent sees failed tests, but the child has learned to return an untested algorithm. This is a plausible contributor to failure, not an isolated causal finding.
+
+`agent_tested.py` prepares 128 distinct training function families from the pinned, locally verified OpenCodeInstruct source. Two publisher assertions become public checks; the remaining assertions stay in independent grading. Benchmark names and text overlaps are excluded, along with reserved repair families and near copies. These filters cannot establish absence of semantic or pretraining overlap.
+
+For each family, the collector obtains one actual answer from the recovery adapter. Answers failing both public and private checks become additional repair starts. Declared stub starts provide coverage independently of student success. In every recursive lesson, the child reproduces the failure, implements and tests the reference repair, then returns its patch; the parent applies that exact patch and retests. Stub lessons cover tasks both with and without supplied tests. For the latter, a reference action creates public checks before repair. These are executed supervised demonstrations, not student-discovered solutions or reinforcement learning.
+
+Only complete trajectories fitting the existing action, context, time and call limits are eligible. At least 64 distinct families must retain all four ordinary/recursive and public/source-only stub variants. The mix also retains 150 verified multilingual code anchors. Actual failed student code remains visible as repair context; private grading feedback never becomes a prompt.
+
+One recipe starts from the previous recovery adapter with a fresh optimizer: rank 8, learning rate 0.00002, two epochs capped at 250 steps, accumulation 8, context 4,096 and seed 3407. Both the fresh baseline and candidate receive identical new instructions and inference settings. The required gain is at least two newly repaired development families, including a genuine recursive repair, with no lost passes. A qualifying candidate must be selected before the five untouched confirmation tasks. It must then pass those checks and a fresh complete 790-task comparison against the retained base with no lost base passes. Only then may a new continuous session start from preparation and Collect. The old adapter remains unpromoted.
+
+The ordinary and recursive reference workflows have passed real-container checks, including child failure/success execution and exact parent application, with and without supplied tests. This validates lesson execution, not learning. The model comparison is still pending.
+
+[CodeRL](https://arxiv.org/abs/2207.01780) and [ReST-EM](https://arxiv.org/abs/2312.06585) provide primary research on execution-based feedback and filtering. Their methods and evaluated models differ from this supervised local experiment; they do not guarantee improvement here.
+
 All runtime data, prompts, traces and model weights stay under the ignored `.cache` directory. The original worker owns the GPU lock and performs cleanup on Pause. The REPL uses the prepared `.cache/rlm-env` environment; model serving and adapter training use `.cache/qwen35-env`. New session preparation requires both environments. No dependency or model download occurs during the offline worker run.
 
 Invalid coding-stage requests stop with the server's error reason and require attention. Temporary server errors, request timeouts and rate limits remain retryable. A coding stage uses exit code 2 for invalid input so the worker does not repeatedly reload the model for a request that cannot succeed.
