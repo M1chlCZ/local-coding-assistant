@@ -58,15 +58,14 @@ def mix_rows(rows):
 
 
 def lesson_rows(task, answer):
-    from recursive_agent import SYSTEM
+    from recursive_agent import lesson_prompt
     from training_data import repair_calls
     if task['split'] != 'train' or task.get('kind') == 'teacher_function':
         raise ValueError('REPL lessons require registered training programs')
     original = copy.deepcopy(task)
     if answer.get('initial_answer') and answer.get('first_passed') is False:
         original['files'][task['filename']] = answer['initial_answer']
-    prompt = [dict(role='system', content=SYSTEM), dict(role='user', content=task['prompt']+
-        '\nThe repository and public tests are available in context. Inspect, repair, and test the code.')]
+    prompt = lesson_prompt(original)
     try:
         calls = repair_calls(original, [dict(kind='root', messages=prompt)],
                              {task['filename']: answer['answer']})
@@ -158,6 +157,10 @@ def evaluate_one(task):
     # The API timeout uses the remaining shared budget, so expiry is a scored attempt.
     if error.startswith('APITimeoutError:') and result['elapsed_s'] >= LIMITS['seconds']-1:
         error='TimeoutError: Model call reached the shared REPL deadline'
+    if error.startswith('TimeoutExceededError:'):
+        error='TimeoutError: '+error
+    if error.startswith('ErrorThresholdExceededError:'):
+        error='ValueError: '+error
     if error and not error.startswith(('ValueError:','JSONDecodeError:','TimeoutError:',
                                        'RuntimeError: Model call or output-token budget exhausted',
                                        'RuntimeError: Cell output limit exceeded')):

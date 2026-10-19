@@ -58,7 +58,7 @@ def manifest_path(path):
 
 def repair_calls(task, trace, patch):
     """Execute an inspect/fail/repair/retest trajectory for a regraded teacher patch."""
-    from recursive_agent import Sandbox, grade, parse_patch
+    from recursive_agent import Sandbox, grade, parse_patch, repl_feedback
     patch = parse_patch(json.dumps(patch), task)
     if not grade(task, patch)['passed']:
         raise ValueError('Repair no longer passes the registered functional checks')
@@ -98,7 +98,7 @@ def repair_calls(task, trace, patch):
             if index in (0, 3) and result.stderr:
                 raise ValueError('Derived repair trajectory failed to execute')
             messages += [{'role':'assistant','content':response},
-                         {'role':'user','content':'REPL output:\n\n'+result.stdout+result.stderr},
+                         {'role':'user','content':repl_feedback(result.stdout, result.stderr)},
                          {'role':'user','content':f'Turn {index+2}/8:'}]
     finally:
         environment.cleanup()

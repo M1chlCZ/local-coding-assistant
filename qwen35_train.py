@@ -96,6 +96,7 @@ def load_verified(dataset, manifest):
 
 def encode_rows(tokenizer, rows, max_length):
     """Only the final answer receives loss; oversized complete examples are reported."""
+    from recursive_agent import MAX_ACTION_TOKENS
     encoded, included, excluded = [], [], []
     for row in rows:
         messages = row['messages']
@@ -112,6 +113,9 @@ def encode_rows(tokenizer, rows, max_length):
         tokens = prompt + answer
         record = {'task_id': row['task_id'], 'language': row['language'],
                   'tokens': len(tokens), 'answer_tokens': len(answer)}
+        if row.get('example_kind') == 'executed_repl_repair' and len(answer) > MAX_ACTION_TOKENS:
+            excluded.append({**record, 'reason': 'exceeds_repl_action_without_truncation'})
+            continue
         if len(tokens) > max_length:
             excluded.append({**record, 'reason': 'exceeds_context_without_truncation'})
             continue

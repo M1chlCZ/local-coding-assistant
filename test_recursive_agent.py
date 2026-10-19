@@ -93,6 +93,34 @@ assert [call['kind'] for call in result['trace']] == ['root','subcall','subcall'
 assert all(isinstance(call['messages'], list) for call in result['trace'])
 assert result['calls'] == result['output_tokens'] == 3, 'Subcalls must share the root budget'
 assert not any(t.name.startswith('local-rlm-') for t in threading.enumerate()), 'Sandbox thread leaked'
+
+# Invalid fences must receive feedback without executing their contents.
+protocol_task=dict(id='protocol',repository='mock',split='train',prompt='Repair solver',
+                   files={'solver.py':'x=1\n'},editable=['solver.py'])
+responses=iter(['```python\nraise RuntimeError("must not execute")\n```',
+                '```repl\nanswer["content"] = {"solver.py":"x=2\\n"}; answer["ready"] = True\n```'])
+with mock_patch.object(OpenAIClient,'completion',side_effect=lambda *a,**k: next(responses)), \
+     mock_patch.object(OpenAIClient,'get_last_usage',return_value=ModelUsageSummary(1,1,1)):
+    corrected=agent.solve(protocol_task,'http://127.0.0.1:1',calls=3,seconds=10)
+assert corrected.get('patch')=={'solver.py':'x=2\n'},corrected.get('error')
+assert corrected['trace'][0]['messages']==agent.lesson_prompt(protocol_task)
+assert 'No REPL command was executed' in corrected['trace'][1]['messages'][-2]['content']
+for stdout,stderr in [('inspected\n',''),('','failure\n'),('out\n','error\n'),('','')]:
+    iteration=SimpleNamespace(response='```repl\npass\n```',code_blocks=[SimpleNamespace(
+        result=SimpleNamespace(stdout=stdout,stderr=stderr,locals={}))])
+    assert agent.format_iteration(iteration)[-1]['content']==agent.repl_feedback(stdout,stderr)
+import io
+from contextlib import redirect_stdout
+from rlm.utils.parsing import find_code_blocks
+feedback=agent.format_iteration(SimpleNamespace(response='wrong fence',code_blocks=[]))[-1]['content']
+large_context=dict(task='t'*10000,editable=['solver.py','second.py'],
+                   files={'solver.py':'x'*50000,'second.py':'y'*50000})
+for prompt in (agent.SYSTEM,feedback):
+    code=find_code_blocks(prompt)[0]
+    for context in ('x'*16000,large_context):
+        output=io.StringIO()
+        with redirect_stdout(output):exec(code,{'context':context})
+        assert len(output.getvalue())<=8192,'Protocol example exceeds the sandbox output cap'
 dev = next(task for task in json.loads(agent.TASKS.read_text()) if task['split'] == 'dev')
 with tempfile.TemporaryDirectory() as directory:
     output = Path(directory) / 'report.json'

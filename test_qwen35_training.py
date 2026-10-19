@@ -131,6 +131,18 @@ class TrainingTests(unittest.TestCase):
                 train.complete_checkpoint(incomplete, binding)
             self.assertFalse((incomplete / 'complete.json').exists())
 
+    def test_repl_targets_fit_the_runtime_action_budget_without_truncation(self):
+        from recursive_agent import MAX_ACTION_TOKENS
+        small, large, direct = row('small'), row('large'), row('direct')
+        for item in (small, large): item['example_kind']='executed_repl_repair'
+        small['messages'][-1]['content']='x'*(MAX_ACTION_TOKENS-1)
+        large['messages'][-1]['content']='x'*MAX_ACTION_TOKENS
+        direct['messages'][-1]['content']=large['messages'][-1]['content']
+        encoded, report=train.encode_rows(Tokenizer(),[small,large,direct],4096)
+        self.assertEqual([r['task_id'] for r in report['included']],['small','direct'])
+        self.assertEqual(report['excluded'][0]['reason'],'exceeds_repl_action_without_truncation')
+        self.assertEqual(sum(t!=-100 for t in encoded[0]['labels']),MAX_ACTION_TOKENS)
+
     def test_resume_contract_and_preload_recovery(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -119,7 +119,8 @@ class CorrectionTests(unittest.TestCase):
                 '```repl\nprint(context)\n```'),
                ([dict(role='user',content='REPL output: public failure')],
                 '```repl\nanswer["ready"] = True\n```')]
-        with patch('training_data.repair_calls',return_value=calls) as execute:
+        with patch('recursive_agent.lesson_prompt',return_value=calls[0][0]), \
+             patch('training_data.repair_calls',return_value=calls) as execute:
             rows=repl_learning.lesson_rows(t,dict(answer='fixed',initial_answer='bad',first_passed=False))
             self.assertEqual(len({r['task_id'] for r in rows}),2)
             self.assertTrue(all(r['example_kind']=='executed_repl_repair' for r in rows))
@@ -129,9 +130,11 @@ class CorrectionTests(unittest.TestCase):
 
     def test_lessons_that_do_not_reproduce_failure_are_excluded(self):
         import repl_learning
-        with patch('training_data.repair_calls',side_effect=ValueError('Visible tests do not reproduce the defect')):
+        with patch('recursive_agent.lesson_prompt',return_value=[]), \
+             patch('training_data.repair_calls',side_effect=ValueError('Visible tests do not reproduce the defect')):
             self.assertEqual(repl_learning.lesson_rows(task(),dict(answer='fixed')),[])
-        with patch('training_data.repair_calls',side_effect=RuntimeError('Docker unavailable')):
+        with patch('recursive_agent.lesson_prompt',return_value=[]), \
+             patch('training_data.repair_calls',side_effect=RuntimeError('Docker unavailable')):
             with self.assertRaises(RuntimeError):repl_learning.lesson_rows(task(),dict(answer='fixed'))
 
     def test_repl_results_resume_only_matching_tasks_weights_and_limits(self):
@@ -192,6 +195,16 @@ class CorrectionTests(unittest.TestCase):
         self.assertEqual(sum(r['example_kind']=='executed_repl_repair' for r in mixed),20)
         self.assertGreater(sum(r['example_kind']=='teacher_reference' for r in mixed),0)
         self.assertEqual(len({r['task_id'] for r in mixed}),len(mixed))
+
+    def test_upstream_agent_limits_are_scored_without_retrying_the_worker(self):
+        import repl_learning
+        for error in ('ErrorThresholdExceededError: three bad cells', 'TimeoutExceededError: deadline'):
+            result=dict(error=error, elapsed_s=4, calls=3, output_tokens=50, trace=[])
+            with patch('polyglot_runtime.check_program',return_value=dict(passed=True)), \
+                 patch('recursive_agent.solve',return_value=result):
+                checked=repl_learning.evaluate_one(task())
+                self.assertFalse(checked['passed'])
+                self.assertIn(error,checked['model_error'])
 
     def test_repl_child_timeout_allows_cleanup_before_failure(self):
         import repl_learning

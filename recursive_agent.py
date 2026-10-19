@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parent
 UPSTREAM = 'd04208afbad29ca675ab13478c40ee8bebc84bfe'
 TASKS = ROOT / 'research/rlm_tasks.json'
 CALL_ORIGIN = ContextVar('rlm_call_origin', default=None)
+MAX_ACTION_TOKENS = 1024
 SYSTEM = '''You are an English coding assistant with a persistent isolated Python REPL.
 The repository is in context['files'], a dictionary of relative paths to source text.
 The task is in context['task']; editable paths are in context['editable'].
@@ -33,7 +34,46 @@ Finish inside a repl block: answer['content'] = patch_dictionary; answer['ready'
 Do not modify the context to pretend a repair succeeded. Hidden tests grade your final patch.
 Do not print or return the whole repository. State no success without test evidence.
 Inspect the relevant code, make the repair, and finish within four turns when possible. Avoid repetitive exploratory tests.
+The variables context and answer already exist. Never initialize or replace context, or invent its contents.
+Start with this bounded inspection. Read additional relevant files or source sections as needed:
+```repl
+if isinstance(context, dict):
+    print(context['task'][:1500])
+    print(context['editable'][:20])
+    for name in context['editable'][:2]:
+        print(name, context['files'][name][:2000])
+else:
+    print(context[:4000])
+```
 '''
+
+
+def system_prompt(mode='rlm', instruction=''):
+    return SYSTEM + ('Use llm_query(prompt) or rlm_query(prompt) for focused analysis when useful. '
+                     'Pass selected source text and a clear question, not the whole context.\n' if mode=='rlm'
+                     else 'Subcalls are disabled. Analyze the files yourself in the REPL.\n') + instruction
+
+
+def lesson_prompt(task):
+    from rlm.core.rlm import QueryMetadata, build_rlm_system_prompt, build_user_prompt
+    context = dict(files=task['files'], editable=task['editable'], task=task['prompt'],
+                   **({'language': task['language']} if task.get('language') else {}))
+    return build_rlm_system_prompt(system_prompt(), QueryMetadata(context),
+        root_prompt=task['prompt'], orchestrator=False) + [build_user_prompt(max_iterations=8)]
+
+
+def repl_feedback(stdout, stderr):
+    return 'REPL output:\n' + ('\n\n'.join('\n'+part for part in (stdout, stderr) if part) or 'No output')
+
+
+def format_iteration(iteration):
+    from rlm.utils.parsing import format_iteration as original
+    messages = original(iteration)
+    if not iteration.code_blocks:
+        messages.append(dict(role='user', content='No REPL command was executed. Use an executable '
+            '```repl``` block, not a python block. context and answer already exist. '
+            'For example:\n```repl\nprint(context["editable"][:20] if isinstance(context, dict) else context[:4000])\n```'))
+    return messages
 
 
 def valid_path(name):
@@ -252,7 +292,7 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
 
         def completion(self, prompt, model=None):
             with budget.lock:
-                maximum = budget.reserve(1024)
+                maximum = budget.reserve(MAX_ACTION_TOKENS)
                 self.sampling_args['max_completion_tokens'] = maximum
                 self.client.timeout = budget.remaining()
                 response = super().completion(prompt, model)
@@ -298,10 +338,7 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
         environments.append(env)
         return env
 
-    system = SYSTEM + ('Use llm_query(prompt) or rlm_query(prompt) for focused analysis when useful. '
-                       'Pass selected source text and a clear question, not the whole context.\n' if mode=='rlm'
-                       else 'Subcalls are disabled. Analyze the files yourself in the REPL.\n')
-    system += instruction
+    system = system_prompt(mode, instruction)
     started = time.monotonic()
     row = {'id': task['id'], 'repository': task['repository'], 'split': task['split'],
            'mode': mode, 'depth': depth, 'passed': False}
@@ -309,6 +346,7 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
         # ponytail: scope sandbox, trace-origin and fallback patches to the pinned upstream; use public hooks if provided later.
         with patch.object(core, 'get_environment', environment), \
              patch.object(core, 'get_client', lambda backend, kwargs: LocalClient(**kwargs)), \
+             patch.object(core, 'format_iteration', format_iteration), \
              patch.object(RLM, '_spawn_completion_context', completion_context), \
              patch.object(RLM, '_subcall', subcall), \
              patch.object(LMRequestHandler, '_handle_single', single), \
@@ -319,7 +357,7 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                          'timeout': seconds}, environment='docker', max_depth=depth, max_iterations=8,
                          max_timeout=seconds, max_errors=3, max_concurrent_subcalls=1,
                          custom_system_prompt=system, orchestrator=False, logger=RLMLogger(),
-                         sampling_args={'temperature': 0, 'max_completion_tokens': 1024,
+                         sampling_args={'temperature': 0, 'max_completion_tokens': MAX_ACTION_TOKENS,
                          'extra_body': {'chat_template_kwargs': {'enable_thinking': False}}})
             result = runner.completion({'files': task['files'], 'editable': task['editable'],
                                         'task': task['prompt'], **({'language':task['language']} if task.get('language') else {})}, root_prompt=task['prompt'])
