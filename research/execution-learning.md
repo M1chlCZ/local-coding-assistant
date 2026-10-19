@@ -146,7 +146,15 @@ The completed matched comparison passed its development gate. Both models used t
 
 Roman numerals, header multimap and booking overlap were new genuine recursive successes. Edit distance also passed functional grading but did not meet the recursive execution criterion. There were no lost passes. Zero baseline passes in the retention subset cannot establish preservation of general coding ability.
 
-Training completed 250 steps on 2,166 rows from 576 complete trajectories across 128 families plus 150 coding anchors. Two whole output-limit failures contributed no targets. The selected adapter was frozen before the five untouched confirmation repairs began. Confirmation is running; a fresh complete 790-task retained-base/candidate audit is still required. The adapter has not been promoted and the full loop remains paused. See the [aggregate development evidence](../reports/agent-tested-development-20261019.json).
+Training completed 250 steps on 2,166 rows from 576 complete trajectories across 128 families plus 150 coding anchors. Two whole output-limit failures contributed no targets. The selected adapter was frozen before the five untouched confirmation repairs began. See the [aggregate development and confirmation evidence](../reports/agent-tested-development-20261019.json).
+
+### Held-out confirmation rejected the candidate
+
+The complete matched confirmation scored **0/5 before and 0/5 after**. Ordinary repairs remained 0/3 and genuine recursive repairs remained 0/2. The starting adapter returned three patches, all of which failed independent regrading; the candidate returned no final patch. Both runs completed under the frozen settings without infrastructure errors. The selected weight hash and selection-before-confirmation evidence remained intact.
+
+These five tasks contain multiple source files and no supplied public test file. Three candidate traces assumed `test_visible.py` existed and raised `KeyError`; two also used `child_reply` before it existed. Other traces contained repeated failed assertions, malformed code or an invalid JSON reply. This shows limited transfer beyond the demonstrated workflow, rather than a generally reliable recursive solver. It does not isolate one causal training defect.
+
+The required confirmation gain was absent, so the candidate was rejected. The full 790-task audit was not run after this failed gate, no adapter was promoted, and every full training loop remains paused. The five confirmation tasks are now used and cannot serve as untouched confirmation for further tuning. Checkpoints and private evidence are preserved; no additional recipe was launched.
 
 [CodeRL](https://arxiv.org/abs/2207.01780) and [ReST-EM](https://arxiv.org/abs/2312.06585) provide primary research on execution-based feedback and filtering. Their methods and evaluated models differ from this supervised local experiment; they do not guarantee improvement here.
 

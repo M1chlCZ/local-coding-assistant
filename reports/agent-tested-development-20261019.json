@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-10-19",
-  "status": "development_verified_confirmation_running",
+  "status": "rejected_after_heldout_confirmation",
   "method": "execution_tested_recursive_supervised_distillation",
   "model": "Qwen/Qwen3.5-4B",
   "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
@@ -274,11 +274,12 @@
     "retention_losses": [],
     "candidate_selected": true,
     "selected_before_heldout": true,
-    "heldout_status": "running",
-    "full_790_audit_status": "not_started",
+    "heldout_status": "completed_failed",
+    "full_790_audit_status": "not_run_confirmation_failed",
     "adapter_promoted": false,
     "full_loop_authorized": false,
-    "full_loop_restarted": false
+    "full_loop_restarted": false,
+    "reason": "Development gains did not transfer to the untouched confirmation tasks: 0/5 before and 0/5 after. The required confirmation gate failed."
   },
   "verification": {
     "completed": true,
@@ -299,10 +300,159 @@
     }
   },
   "limitations": [
-    "One small matched development comparison; confirmation and general-code audit remain incomplete.",
+    "One finite recipe improved development repairs but showed no gain on five untouched confirmation tasks.",
     "Ordinary REPL score did not improve. Three recursive repairs improved; the fourth new functional pass did not satisfy the recursive execution criterion.",
     "The 15-task retention subset has zero baseline passes and cannot establish preservation of general coding ability.",
     "This is supervised distillation from executed reference actions, not reinforcement learning.",
-    "Environment repairs, collection completion and training loss do not establish learning gains."
-  ]
+    "Environment repairs, collection completion and training loss do not establish learning gains.",
+    "The full 790-task audit was not run because confirmation failed. No adapter was promoted and the full loop remains paused."
+  ],
+  "confirmation": {
+    "completed": true,
+    "passed": false,
+    "baseline": {
+      "scores": {
+        "repairs": {
+          "passed": 0,
+          "total": 5
+        },
+        "ordinary_repl": {
+          "passed": 0,
+          "total": 3
+        },
+        "genuine_recursive": {
+          "passed": 0,
+          "total": 2
+        }
+      },
+      "returned_patches": 3,
+      "failures": {
+        "ErrorThresholdExceededError: Error threshold exceeded: 3 consecutive errors (limit: 3)": 2,
+        "Returned patch failed grading": 3
+      },
+      "tasks": [
+        {
+          "id": "support-opening",
+          "condition": "ordinary",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 3
+        },
+        {
+          "id": "delivery-routes",
+          "condition": "ordinary",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 8
+        },
+        {
+          "id": "release-ordering",
+          "condition": "ordinary",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 6
+        },
+        {
+          "id": "utf8-messages",
+          "condition": "recursive",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 8
+        },
+        {
+          "id": "ledger-rollback",
+          "condition": "recursive",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 6
+        }
+      ]
+    },
+    "candidate": {
+      "scores": {
+        "repairs": {
+          "passed": 0,
+          "total": 5
+        },
+        "ordinary_repl": {
+          "passed": 0,
+          "total": 3
+        },
+        "genuine_recursive": {
+          "passed": 0,
+          "total": 2
+        }
+      },
+      "returned_patches": 0,
+      "failures": {
+        "ErrorThresholdExceededError: Error threshold exceeded: 3 consecutive errors (limit: 3)": 3,
+        "RuntimeError: Model call or output-token budget exhausted": 1,
+        "JSONDecodeError: Expecting value: line 1 column 1 (char 0)": 1
+      },
+      "tasks": [
+        {
+          "id": "support-opening",
+          "condition": "ordinary",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 5
+        },
+        {
+          "id": "delivery-routes",
+          "condition": "ordinary",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 8
+        },
+        {
+          "id": "release-ordering",
+          "condition": "ordinary",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 4
+        },
+        {
+          "id": "utf8-messages",
+          "condition": "recursive",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 3
+        },
+        {
+          "id": "ledger-rollback",
+          "condition": "recursive",
+          "passed": false,
+          "recursive_passed": false,
+          "calls": 3
+        }
+      ]
+    },
+    "gained_families": [],
+    "lost": [],
+    "recursive_gains": [],
+    "recursive_losses": [],
+    "selected_candidate_sha256": "d071879b733fb990989bbb87f4a758060c4bd1614decb1cb489ddb7005e5c9f9",
+    "candidate_selected_before_heldout": true,
+    "verification": {
+      "completed": true,
+      "returned_patches_regraded": 3,
+      "frozen_sources_unchanged": true,
+      "infrastructure_errors": 0,
+      "evidence_sha256": {
+        "baseline/holdout.json": "e1f605877a99a0fb0e85a56c812841d51377d0cc530041e182ba9efe964070ac",
+        "candidate/holdout.json": "70b9d3ba4de04ea8fc2ba123b4e978248e09d8180ab03401aecc026689289242",
+        "candidate/holdout-verified.json": "68c9105454bd10a4cf9371264ac81954292a488e0ea5eded261aa3cccb2bedf1",
+        "candidate/holdout-final-review.json": "2246e70c21bf9c6831cc7acbcf194d621f694594e894298676697f40c31c1507",
+        "selected-candidate.json": "d5720368fda87913d3a0ebe2200c33e554510eb3e8c59a57d87158e238041038",
+        "confirmation_controller/config.json": "c63437ff6c022844d68bf825b477f4a64d46646c4f3fd596bc6ae352658d4992",
+        "confirmation_controller/comparison.json": "3b1ef54887bc7fbbcd3073024b69b2477b9813a282e34fede55a4d364334503e"
+      }
+    },
+    "diagnosis": [
+      "All five held-out tasks use multiple source files and supply no public test file.",
+      "Three candidate traces assume test_visible.py exists and fail with KeyError; two also use child_reply before it exists.",
+      "Other failures include repeated failed assertions, malformed generated code and a malformed JSON reply.",
+      "These observations indicate limited transfer beyond the training workflow; they do not isolate a single causal training defect."
+    ]
+  }
 }

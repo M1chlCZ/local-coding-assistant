@@ -11,7 +11,7 @@ A Windows desktop app for local AI fine-tuning on NVIDIA GPUs. Control WSL train
 
 ![Training Studio running on Windows 11 with muted dark translucent panels](reports/training-studio-windows11.png)
 
-*Windows 11 interface captured from the running 0.1.4-preview.5 app in Dark mode during the recovery baseline. A tinted Mica background, translucent slate panels and deeper code surfaces reduce bright areas. This earlier screenshot is retained because the post-comparison Windows capture returned blank frames. The completed result below shows two ordinary REPL gains and no recursive gain; the full loop remains paused.*
+*Windows 11 interface captured from the running 0.1.4-preview.5 app in Dark mode during the recovery baseline. A tinted Mica background, translucent slate panels and deeper code surfaces reduce bright areas. This earlier screenshot is retained because the post-comparison Windows capture returned blank frames. The latest experiment improved development repairs but failed held-out confirmation; the full loop remains paused.*
 
 ## Windows training app
 
@@ -32,7 +32,7 @@ The **0.1.4 source preview** adds [execution learning](research/execution-learni
 
 A separate corrective-imitation experiment completed with **0/10 → 2/10 repairs**, including **0/5 → 2/5 ordinary REPL repairs**, but **0/5 → 0/5 recursive repairs**. Independent regrading confirmed the two gains. The recursive requirement failed, so no adapter was promoted and the full loop remains paused. Held-out confirmation and the full general-code audit were not run. See the [verified recovery result](reports/agent-recovery-pilot-20261019.json) and [failure diagnosis](research/execution-learning.md#completed-corrective-imitation-comparison).
 
-The next finite experiment adds [child-side execution and broader function coverage](research/execution-learning.md#execution-tested-recursive-distillation). It compares the starting recovery adapter with a newly trained adapter under identical instructions. No new learning gain is established yet; restarting from Collect still requires development gains, untouched confirmation tasks and a fresh full audit.
+The subsequent [child-tested experiment](research/execution-learning.md#execution-tested-recursive-distillation) improved development repairs **2/10 → 6/10** and genuine recursive repairs **0/5 → 3/5** under matched instructions; ordinary REPL repairs stayed **2/5**. All returned patches were independently regraded. However, the selected candidate scored **0/5 → 0/5** on the five untouched confirmation repairs, so it was rejected. No full audit or restart followed the failed confirmation gate. See the [complete measured outcome](reports/agent-tested-development-20261019.json).
 
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
