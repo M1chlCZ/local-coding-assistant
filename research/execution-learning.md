@@ -1,6 +1,6 @@
 # Learning from execution
 
-Training Studio's new `execution_repair` recipe keeps the existing Qwen3.5-4B BF16 LoRA backend, isolated compiler containers and durable Pause/Resume controls. It changes what the model learns and how an update is compared.
+Training Studio keeps the Qwen3.5-4B BF16 LoRA backend, isolated compiler containers and durable Pause/Resume controls. The earlier `execution_repair` recipe and the separate parent/child curriculum below change training examples and evaluation, not the base model architecture.
 
 ## Why change the recipe
 
@@ -45,6 +45,26 @@ Round 1 gained 14 function passes and lost 19. Validation includes rotating prob
 Across the 40 completed REPL attempts, 33 contained no recognized executable block; none made a subcall. Unrecognized `python` fences previously received no feedback, so the model often repeated them until its budget expired. A separate two-task diagnostic on existing synthetic **training** fixtures improved command execution with an explicit inspection example, but still repaired 0/2 tasks. This is evidence of a protocol problem and limited agent capability, not evidence of successful learning. The continuous experiment was paused with its data and reports preserved.
 
 ## Operational behavior
+
+### Focused parent/child curriculum
+
+`agent_curriculum.py` builds a separate, finite experiment from twenty authored training families. Each family has sequential and recursive variants, with and without public test files. The policy executes in the real isolated REPL; a recursive child returns a patch which the parent applies and checks. Both parent and child actions become final-response training targets. A deliberately invalid fence is omitted as a target, while its actual feedback remains in the recovery conversation. Reference solutions and private grading checks are never inserted into the model's input.
+
+The first dataset contains 400 verified actions from 80 trajectories and 150 previously verified coding anchors. All 550 rows fit without truncation or exclusions. The largest action is 240 tokens; the largest complete trajectory uses 543 output tokens, including the deliberately invalid response. These are scripted reference demonstrations, not model-discovered solutions or reinforcement learning. The curriculum has Python agent actions; the anchors cover Python, Go, TypeScript, Rust and Dart.
+
+The pilot starts a fresh adapter from the pinned base model. Collection and token-budget verification completed before the finite experiment was registered in Studio, so its first displayed stage is training. It does not resume an old optimizer or reuse the old REPL lessons. Any subsequent continuous session must start with preparation and collection under its own bound recipe.
+
+`agent_pilot.py` freezes eight disjoint development repairs, fifteen separate coding-retention tasks and five confirmation repairs before training. Each model uses the same source hashes, task order, prompts and budgets. A recursive pass requires an executed child REPL returning the final patch, matching parent workspace contents and independent functional success. Text-only subcalls and unused proposals do not count. Captured child infrastructure failures invalidate the attempt instead of becoming model failures.
+
+The development gate requires two distinct newly repaired families, at least one newly successful recursive repair, and no lost functional, recursive or retention passes. The confirmation gate requires a new held-out repair with no lost passes. At most two finite recipes are declared in the frozen configuration. A small pilot never authorizes the full loop by itself; the retained general model still requires its complete matched audit. The original experiment and its checkpoints remain separate.
+
+The [RLM paper's training appendix](https://arxiv.org/html/2512.24601v3#A1) uses filtered teacher trajectories and documents how template errors harmed distillation. This local curriculum tests a smaller, authored action dataset on different coding tasks; its results must be measured independently.
+
+### Reply termination correction
+
+The first candidate exposed a separate inference defect: the pinned Qwen3.5 configuration stopped at document token 248044, while its [chat tokenizer](https://huggingface.co/Qwen/Qwen3.5-4B/blob/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/tokenizer_config.json) ends assistant turns with token 248046. The adapter could emit a valid action and then continue into invented conversation turns. The server now uses both termination tokens for generation and response accounting.
+
+The affected comparison was paused and preserved. The corrected comparison reruns both the base and the completed adapter with identical settings; an improvement from fixing inference is not counted as a training gain. Earlier benchmark baselines cannot authorize promotion under these changed generation conditions. The completed training data and adapter remain usable because the training targets already contained the correct turn terminator.
 
 All runtime data, prompts, traces and model weights stay under the ignored `.cache` directory. The original worker owns the GPU lock and performs cleanup on Pause. The REPL uses the prepared `.cache/rlm-env` environment; model serving and adapter training use `.cache/qwen35-env`. New session preparation requires both environments. No dependency or model download occurs during the offline worker run.
 

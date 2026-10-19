@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 import desktop_bridge as app
 
@@ -107,5 +108,157 @@ class RecipeTests(unittest.TestCase):
             with patch.object(app,'SESSIONS',root):
                 with self.assertRaisesRegex(ValueError,'conditions differ'):app.summarize('trial')
                 self.assertFalse((session/'comparison.json').exists())
+
+
+class AgentCurriculumStatusTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.path = self.root/'pilot'
+        self.path.mkdir()
+        self.config = dict(learning_method='agent_curriculum', inputs={}, stages=[
+            dict(name='train-agent', result='candidate-1/adapter/training.json', train=True),
+            dict(name='compare-agent', result='candidate-1/development.json')])
+        self.state = dict(continuous=False, phase='compare-agent', stage_index=1, status='running',
+                          stage_progress=dict(phase='load-model', completed=0, total=0, heartbeat_at=1))
+        rows = [dict(task_id=str(i), split='train', language='python',
+                     example_kind='executed_repl_repair' if i < 2 else 'complete_code',
+                     messages=[dict(role='user', content='Task'), dict(role='assistant', content='Action')],
+                     verification=dict(kind='local_execution', passed=True),
+                     provenance=dict(dataset='reference', revision='a'*40, source_row_sha256='b'*64))
+                for i in range(3)]
+        dataset = self.path/'curriculum/train.jsonl'
+        dataset.parent.mkdir()
+        dataset.write_text(''.join(json.dumps(row)+'\n' for row in rows))
+        self.bind(dataset)
+        manifest = self.write('curriculum/train.jsonl.manifest.json', dict(
+            schema_version=1, split='train', verification='local_execution', rows=3,
+            languages=dict(python=3), dataset_sha256=app.sha256(dataset)), frozen=True)
+        self.write('curriculum/feasibility.json', dict(passed=True, all_agent_actions_included=True,
+            complete_trajectories=True, dataset_sha256=app.sha256(dataset),
+            manifest_sha256=app.sha256(manifest)), frozen=True)
+        self.entries = [dict(condition=condition, task=dict(id=identity, editable=['solver.py'],
+            files={'solver.py':source, 'private.py':'SECRET'}, checks='SECRET', reference_patch='SECRET'))
+            for condition, identity, source in [('ordinary', 'first', 'return 1'), ('recursive', 'next', 'return 2')]]
+        self.write('evaluation.json', dict(development=self.entries, holdout=[], retention=[dict(id='anchor')]), frozen=True)
+        self.write('status.json', dict(completed_stages=[]))
+
+    def bind(self, file):
+        self.config['inputs'][str(file)] = app.sha256(file)
+
+    def write(self, name, value, frozen=False):
+        file = self.path/name
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(json.dumps(value))
+        if frozen:
+            self.bind(file)
+        return file
+
+    def results(self, completed=1, retention=0):
+        value = dict(binding=dict(evaluation_sha256=app.sha256(self.path/'evaluation.json'), suite='development'),
+            rows=[dict(id=e['task']['id'], condition=e['condition'], passed=True) for e in self.entries[:completed]],
+            retention=[dict(id='anchor', passed=True)] if retention else [])
+        self.write('candidate-1/development.json', value)
+        return value
+
+    def snapshot(self):
+        experiment = SimpleNamespace(config=self.config, snapshot=lambda:dict(self.state))
+        with patch.object(app, 'SESSIONS', self.root), patch.object(app, 'open_experiment', return_value=experiment), \
+                patch.object(app.subprocess, 'run', side_effect=OSError):
+            return app.snapshot('pilot')
+
+    def test_verified_scripted_counts_preserve_training_progress(self):
+        self.state.update(phase='train-agent', stage_index=0, stage_progress=dict(phase='train', step=10, max_steps=200))
+        before = {p:p.read_bytes() for p in self.path.rglob('*') if p.is_file()}
+        value = self.snapshot()
+        self.assertEqual((value['repl_examples'], value['training_examples']), (2, 3))
+        self.assertIn('verified scripted REPL training rows', value['readiness'])
+        self.assertEqual(value['stage_progress']['step'], 10)
+        for name in ('collected_examples', 'first_passes', 'repaired_examples', 'accepted_updates'):
+            self.assertNotIn(name, value)
+        self.assertEqual(before, {p:p.read_bytes() for p in self.path.rglob('*') if p.is_file()})
+
+    def test_saved_progress_uses_only_current_frozen_public_source_without_scoring(self):
+        self.results()
+        mutable = json.loads(json.dumps(self.entries[1]))
+        mutable['task']['files']['solver.py'] = 'SECRET mutable source'
+        self.write('candidate-1/task.json', mutable)
+        self.write('comparison.json', dict(completed=True))  # Controller has not bound a final report.
+        value = self.snapshot()
+        self.assertEqual(value['stage_progress'], dict(phase='repl-candidate', completed=1, total=3, task='next'))
+        self.assertEqual(value['task_preview']['code'], 'return 2')
+        self.assertNotIn('SECRET', str(value['task_preview']))
+        self.assertIsNone(value['report'])
+        self.assertEqual(value['quality']['label'], 'Not yet measured')
+        self.assertEqual(value['quality']['total'], 0)
+
+    def test_loading_is_preserved_until_first_task_but_first_task_shows_zero_completed(self):
+        self.assertEqual(self.snapshot()['stage_progress']['phase'], 'load-model')
+        self.write('candidate-1/task.json', self.entries[0])
+        value = self.snapshot()
+        self.assertEqual(value['stage_progress']['completed'], 0)
+        self.assertEqual(value['stage_progress']['total'], 3)
+        self.assertEqual(value['task_preview']['code'], 'return 1')
+
+    def test_stale_task_source_is_hidden_during_transition_and_retention(self):
+        self.results()
+        self.write('candidate-1/task.json', self.entries[0])
+        self.assertIsNone(self.snapshot()['task_preview'])
+        self.results(completed=2)
+        self.write('candidate-1/task.json', self.entries[1])
+        value = self.snapshot()
+        self.assertIsNone(value['task_preview'])
+        self.assertEqual(value['stage_progress']['task'], 'Retention checks')
+        self.assertEqual(value['stage_progress']['completed'], 2)
+        self.results(completed=2, retention=1)
+        value = self.snapshot()
+        self.assertEqual(value['stage_progress']['completed'], 3)
+        self.assertEqual(value['stage_progress']['task'], 'Comparison tasks completed')
+        self.assertEqual(value['quality']['total'], 0)
+
+    def test_changed_frozen_curriculum_is_rejected(self):
+        for name in ('curriculum/train.jsonl', 'curriculum/train.jsonl.manifest.json', 'curriculum/feasibility.json'):
+            file = self.path/name
+            original = file.read_bytes()
+            file.write_bytes(original+b' ')
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'display evidence changed'):
+                self.snapshot()
+            file.write_bytes(original)
+
+    def test_explicitly_bound_shared_curriculum_and_baseline_progress(self):
+        shared = self.root/'verified-curriculum'
+        (self.path/'curriculum').rename(shared)
+        (self.path/'curriculum').symlink_to(shared, target_is_directory=True)
+        self.config['stages'][1]['result'] = 'baseline/development.json'
+        self.write('baseline/development.json', self.results())
+        self.write('baseline/task.json', self.entries[1])
+        value = self.snapshot()
+        self.assertEqual((value['repl_examples'], value['training_examples']), (2, 3))
+        self.assertEqual(value['stage_progress']['phase'], 'repl-baseline')
+        self.assertEqual(value['task_preview']['code'], 'return 2')
+        del self.config['inputs'][str(self.path/'curriculum/train.jsonl')]
+        with self.assertRaisesRegex(ValueError, 'display evidence changed'):
+            self.snapshot()
+
+    def test_mismatched_or_unfinished_results_cannot_inflate_completed_count(self):
+        for change in ('binding', 'order', 'extra', 'retention', 'infrastructure'):
+            value = self.results()
+            if change == 'binding': value['binding']['evaluation_sha256'] = '0'*64
+            if change == 'order': value['rows'][0]['id'] = 'next'
+            if change == 'extra': value['rows'] *= 3
+            if change == 'retention': value['retention'] = [dict(id='anchor', passed=True)]
+            if change == 'infrastructure': value['rows'][0]['infrastructure_errors'] = ['Service unavailable']
+            self.write('candidate-1/development.json', value)
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'frozen comparison tasks'):
+                self.snapshot()
+
+    def test_other_recipes_and_outside_session_paths(self):
+        self.config['learning_method'] = 'other'
+        self.assertNotIn('repl_examples', self.snapshot())
+        self.config['learning_method'] = 'agent_curriculum'
+        self.config['stages'][1]['result'] = '../outside/development.json'
+        with self.assertRaisesRegex(ValueError, 'stay in its session'):
+            self.snapshot()
 
 if __name__=='__main__': unittest.main()

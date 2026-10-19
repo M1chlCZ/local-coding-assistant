@@ -25,7 +25,7 @@ MAX_ACTION_TOKENS = 1024
 SYSTEM = '''You are an English coding assistant with a persistent isolated Python REPL.
 The repository is in context['files'], a dictionary of relative paths to source text.
 The task is in context['task']; editable paths are in context['editable'].
-If context is a string, it is a recursive subtask. Inspect the text and return the requested analysis instead of a repository patch.
+If context is a string, it is a recursive subtask. Inspect it and return the requested result (analysis or JSON). Do not assume repository files exist in the child workspace.
 Inspect selected files by printing their contents. Execute Python only in ```repl``` blocks.
 Files also exist under /workspace on the Python import path. You can import and test them.
 Keep printed output short. Variables persist across cells. Do not use shell tools or network.
@@ -102,6 +102,8 @@ class Budget:
         self.deadline = time.monotonic() + seconds
         self.calls, self.output_tokens, self.input_tokens = 0, 0, 0
         self.trace = []
+        self.queries, self.executions = [], []
+        self.infrastructure_errors = []
         self.lock = threading.Lock()
 
     def remaining(self):
@@ -124,6 +126,8 @@ class Sandbox:
                  allow_queries=True, cell_seconds=20, budget=None, **kwargs):
         self.address, self.depth, self.subcall = lm_handler_address, depth, subcall_fn
         self.allow_queries, self.cell_seconds, self.budget = allow_queries, cell_seconds, budget
+        self.editable = context_payload.get('editable', []) if isinstance(context_payload, dict) else []
+        self.workspace_hashes = {}
         self.container = None
         self.process = None
         self.inbox = queue.Queue(maxsize=1)
@@ -218,12 +222,23 @@ class Sandbox:
             if frame.get('type') == 'result':
                 if set(frame) != {'type', 'stdout', 'stderr', 'final_answer'}:
                     raise ValueError('Invalid REPL result')
-                if (not all(isinstance(frame[k], str) and len(frame[k]) <= 8192 for k in ('stdout', 'stderr'))
-                        or frame['final_answer'] is not None and
-                        (not isinstance(frame['final_answer'], str) or len(frame['final_answer']) > 100000)):
+                if not all(isinstance(frame[k], str) and len(frame[k]) <= 8192 for k in ('stdout', 'stderr')):
                     raise ValueError('Invalid or oversized REPL output')
+                if (frame['final_answer'] is not None and
+                        (not isinstance(frame['final_answer'], str) or len(frame['final_answer']) > 100000)):
+                    raise ValueError('Invalid model final answer')
                 if 'Cell output limit exceeded' in frame['stderr']:
                     raise RuntimeError('Cell output limit exceeded')
+                if self.budget:
+                    self.budget.executions.append(dict(depth=self.depth, code=code,
+                        stderr=frame['stderr'], final_answer=frame['final_answer']))
+                if frame['final_answer'] is not None and self.editable:
+                    source = ('import pathlib,json,hashlib; print(json.dumps({name: '
+                              'hashlib.sha256(pathlib.Path("/workspace",name).read_bytes()).hexdigest() '
+                              'if pathlib.Path("/workspace",name).is_file() else None '
+                              'for name in '+repr([n for n in self.editable if valid_path(n)])+'}))')
+                    self.workspace_hashes = json.loads(subprocess.check_output(
+                        ['docker','exec',self.container,'python','-I','-c',source],text=True,timeout=10))
                 return REPLResult(stdout=frame['stdout'], stderr=frame['stderr'], locals={},
                                   execution_time=time.monotonic()-started, rlm_calls=calls,
                                   final_answer=frame['final_answer'])
@@ -234,7 +249,9 @@ class Sandbox:
             try:
                 if not self.allow_queries:
                     raise RuntimeError('Subcalls are disabled in the baseline')
-                if frame['recursive'] and self.subcall:
+                recursive = bool(frame['recursive'] and self.subcall)
+                first_execution = len(self.budget.executions) if self.budget else 0
+                if recursive:
                     result = self.subcall(frame['prompt'])
                 else:
                     reply = send_lm_request(self.address, LMRequest(prompt=frame['prompt'], depth=self.depth),
@@ -243,6 +260,9 @@ class Sandbox:
                         raise RuntimeError(reply.error or 'Subcall returned no completion')
                     result = reply.chat_completion
                 calls.append(result)
+                if self.budget:
+                    self.budget.queries.append(dict(recursive=recursive, response=result.response,
+                        execution_start=first_execution, execution_end=len(self.budget.executions)))
                 self._send({'response': result.response})
             except Exception as error:
                 self._send({'error': str(error)[:1000]})
@@ -295,7 +315,12 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                 maximum = budget.reserve(MAX_ACTION_TOKENS)
                 self.sampling_args['max_completion_tokens'] = maximum
                 self.client.timeout = budget.remaining()
-                response = super().completion(prompt, model)
+                try:
+                    response = super().completion(prompt, model)
+                except Exception as error:
+                    if not (type(error).__name__=='APITimeoutError' and budget.deadline-time.monotonic()<=1):
+                        budget.infrastructure_errors.append(f'{type(error).__name__}: {error}')
+                    raise
                 used = self.get_last_usage()
                 budget.input_tokens += used.total_input_tokens
                 budget.output_tokens += used.total_output_tokens
@@ -333,8 +358,22 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
         finally:
             CALL_ORIGIN.reset(token)
 
+    class ObservedSandbox(Sandbox):
+        def execute_code(self, code):
+            try:
+                return super().execute_code(code)
+            except Exception as error:
+                if (not isinstance(error, TimeoutError) and str(error)!='Cell output limit exceeded'
+                        and not (isinstance(error, ValueError) and str(error)=='Invalid model final answer')):
+                    budget.infrastructure_errors.append(f'{type(error).__name__}: {error}')
+                raise
+
     def environment(name, kwargs):
-        env = Sandbox(**kwargs, allow_queries=mode=='rlm', budget=budget)
+        try:
+            env = ObservedSandbox(**kwargs, allow_queries=mode=='rlm', budget=budget)
+        except Exception as error:
+            budget.infrastructure_errors.append(f'{type(error).__name__}: {error}')
+            raise
         environments.append(env)
         return env
 
@@ -363,14 +402,18 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                                         'task': task['prompt'], **({'language':task['language']} if task.get('language') else {})}, root_prompt=task['prompt'])
             row['answer'] = result.response
             row['patch'] = parse_patch(result.response, task)
+            row['workspace_hashes'] = {name:environments[0].workspace_hashes.get(name) for name in row['patch']}
     except Exception as error:
         row['error'] = f'{type(error).__name__}: {error}'
     finally:
         for env in environments:
             env.cleanup()
+    if budget.infrastructure_errors:
+        raise RuntimeError('Infrastructure failure: '+'; '.join(budget.infrastructure_errors))
     row.update(elapsed_s=round(time.monotonic()-started,3), calls=budget.calls,
                input_tokens=budget.input_tokens, output_tokens=budget.output_tokens,
-               trace=budget.trace)
+               trace=budget.trace, queries=budget.queries, executions=budget.executions,
+               infrastructure_errors=budget.infrastructure_errors)
     return row
 
 
@@ -396,6 +439,8 @@ def grade(task, changes):
         command[2:2] = ['--label','local-coding-assistant.owner='+os.environ['LCA_REPL_OWNER']]
     try:
         result = bounded_run(command+['python','-I','-S','-'], program, timeout=20)
+        if result['exit_code'] in (125, 126, 127):
+            raise RuntimeError('Grader container infrastructure failed: '+result['output'])
         return {'passed':result['exit_code']==0 and not result['output_limited']
                 and result['output'].strip().endswith(marker),
                 'feedback':result['output'].replace(marker, 'RLM_CHECKS_PASSED')}

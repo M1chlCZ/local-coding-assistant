@@ -181,6 +181,21 @@ class TrainingTests(unittest.TestCase):
 
 
 class ServerTests(unittest.TestCase):
+    def test_chat_turn_end_stops_before_an_invented_conversation(self):
+        from types import SimpleNamespace
+        from research.adapter_eval_server import completion
+        model=SimpleNamespace(generation_config=SimpleNamespace(eos_token_id=248044))
+        tokenizer=SimpleNamespace(eos_token_id=248046,
+            decode=lambda tokens,skip_special_tokens: ''.join({1:'```repl\nprint(1)\n```',2:'user: invented'}.get(t,'') for t in tokens))
+        endings=server.stop_tokens(model,tokenizer)
+        self.assertEqual(endings,[248044,248046])
+        response=completion(tokenizer,[1,248046,2],10,3,endings)
+        self.assertEqual(response['choices'][0]['message']['content'],'```repl\nprint(1)\n```')
+        self.assertEqual(response['choices'][0]['finish_reason'],'stop')
+        self.assertEqual(response['usage']['completion_tokens'],2)
+        model.generation_config.eos_token_id=[248044,248046]
+        self.assertEqual(server.stop_tokens(model,tokenizer),endings)
+
     def test_modes_batch_and_infrastructure_failures(self):
         calls = []
         def generate(data, adapter):

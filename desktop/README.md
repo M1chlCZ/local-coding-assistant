@@ -49,8 +49,9 @@ simultaneous training runs; pause the active experiment before starting another.
 
 The **Appearance** selector in Settings defaults to **System**, which follows Windows app
 light/dark settings. Choose **Light** or **Dark** to override it for Studio only.
-The choice is saved locally and applies without restarting. The native Windows Mica
-backdrop and translucent cards add subtle depth. Windows controls the backdrop;
+The choice is saved locally and applies without restarting. Dark uses muted slate panels
+and softer text; Light uses blue-gray surfaces instead of white cards. A tinted native Mica
+backdrop, raised toolbars and deeper code surfaces add subtle depth. Windows controls the backdrop;
 turning off transparency or using a contrast theme gives solid surfaces. Status polling keeps
 the experiment selector and controls steady; explicit actions still prevent duplicate clicks.
 

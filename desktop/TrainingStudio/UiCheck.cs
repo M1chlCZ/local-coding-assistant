@@ -83,7 +83,7 @@ public partial class MainWindow
     }
     internal static void CheckThemeContrast()
     {
-        foreach(string key in new[]{"CodeKeywordBrush","StepNumberTextBrush"})
+        foreach(string key in new[]{"CodeKeywordBrush","StepNumberTextBrush","BorderBrush","PositiveBrush","NegativeBrush"})
             if(Appearance.HighContrastColor(key)!=SystemColors.WindowTextColor)throw new IOException("High contrast hides "+key);
         if(Duration(172801)!="2d 00:00:01")throw new IOException("Learning clock wrapped after 24 hours");
         double Light(string key,byte backdrop=0)
@@ -103,7 +103,7 @@ public partial class MainWindow
                 if((Math.Max(a,b)+0.05)/(Math.Min(a,b)+0.05)<4.5)throw new IOException($"Low theme contrast: {text} on {background}");
             }
         }
-        foreach(var background in new[]{"WindowBrush","CardBrush","NoticeBrush","InsetBrush","StepBrush","QualityGoodBrush","QualityBadBrush","QualityMixedBrush","QualityNeutralBrush"})
+        foreach(var background in new[]{"WindowBrush","BackdropTintBrush","CardBrush","NoticeBrush","InsetBrush","StepBrush","QualityGoodBrush","QualityBadBrush","QualityMixedBrush","QualityNeutralBrush"})
         {
             Check("TextBrush",background);Check("MutedBrush",background);
         }

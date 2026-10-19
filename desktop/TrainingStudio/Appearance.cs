@@ -39,7 +39,7 @@ internal static class Appearance
         Application.Current.Dispatcher.BeginInvoke(()=>Apply(Mode));
     }
     internal static Color HighContrastColor(string key)=>key switch {
-        "TextBrush" or "MutedBrush" or "LogTextBrush" or "CodeKeywordBrush" or "StepNumberTextBrush"=>SystemColors.WindowTextColor,
+        "TextBrush" or "MutedBrush" or "LogTextBrush" or "CodeKeywordBrush" or "StepNumberTextBrush" or "BorderBrush" or "PositiveBrush" or "NegativeBrush"=>SystemColors.WindowTextColor,
         "PrimaryBrush"=>SystemColors.HighlightColor,
         "PrimaryTextBrush"=>SystemColors.HighlightTextColor,
         _=>SystemColors.WindowColor
@@ -60,18 +60,19 @@ internal static class Appearance
 #pragma warning restore WPF0001
         bool dark=IsDark;
         var colors=new (string key,string light,string dark)[]{
-            ("WindowBrush","#F4F7FC","#151B23"),("CardBrush","#E8FFFFFF","#E8202936"),
-            ("BorderBrush","#B3D9E1EC","#B349596D"),("TextBrush","#192637","#EDF2F8"),
-            ("MutedBrush","#455568","#B8C6D9"),("NoticeBrush","#E0E9EEF5","#E0283547"),
-            ("InsetBrush","#D9EDF2F7","#D9111923"),("StepBrush","#E0DFECFE","#F0253E5B"),
-            ("StepNumberBrush","#66758A","#56657A"),("StepNumberTextBrush","#FFFFFF","#FFFFFF"),
-            ("CodeKeywordBrush","#064DB6","#9BC7FF"),
-            ("ClearBrush","#00FFFFFF","#00202936"),
-            ("LogBrush","#EDF2F7","#111923"),("LogTextBrush","#24364B","#DDE6F3"),
-            ("QualityGoodBrush","#E0E7F4EC","#E0163E31"),("QualityBadBrush","#E0FCEDEC","#E04A242A"),
-            ("QualityMixedBrush","#E0FFF3DE","#E046361C"),("QualityNeutralBrush","#E0EDF1F7","#E027354A"),
-            ("PrimaryBrush","#145BC0","#84B9FF"),("PrimaryTextBrush","#FFFFFF","#092240"),
-            ("PositiveBrush","#2E7654","#79D7AA"),("NegativeBrush","#B43744","#FF969F")};
+            ("BackdropTintBrush","#E0DDE5EE","#CC141D27"),
+            ("WindowBrush","#DDE5EE","#141D27"),("CardBrush","#E8E4EBF2","#DE24303D"),
+            ("BorderBrush","#B3AABBCD","#805E748D"),("TextBrush","#192637","#D7E1EC"),
+            ("MutedBrush","#3B4D62","#B7C6D7"),("NoticeBrush","#E8D6E1ED","#E62B394B"),
+            ("InsetBrush","#E8D4DFE9","#DE101C29"),("StepBrush","#E8CCDEF4","#F029435E"),
+            ("StepNumberBrush","#5C6D82","#46576C"),("StepNumberTextBrush","#FFFFFF","#E4EBF3"),
+            ("CodeKeywordBrush","#064493","#99C2ED"),
+            ("ClearBrush","#00E4EBF2","#0024303D"),
+            ("LogBrush","#D4DFE9","#101C29"),("LogTextBrush","#24364B","#D0DDEB"),
+            ("QualityGoodBrush","#E8D5E7DA","#E51C3C33"),("QualityBadBrush","#E8EBD8D9","#E5442933"),
+            ("QualityMixedBrush","#E8EAE0CB","#E53D3528"),("QualityNeutralBrush","#E8D6E1ED","#E52A3748"),
+            ("PrimaryBrush","#1455A9","#8AB8EA"),("PrimaryTextBrush","#FFFFFF","#142B43"),
+            ("PositiveBrush","#2E7654","#88CBA9"),("NegativeBrush","#B43744","#EB9AA5")};
         foreach(var color in colors)
         {
             var brush=new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark?color.dark:color.light));

@@ -30,10 +30,23 @@ def sampling(data):
             if temperature else {'do_sample': False}), seed
 
 
+def stop_tokens(model, tokenizer):
+    # The model config may end documents while the chat template ends assistant turns.
+    configured = model.generation_config.eos_token_id
+    endings = list(configured) if isinstance(configured, (list, tuple)) else [configured]
+    if tokenizer.eos_token_id not in endings:
+        endings.append(tokenizer.eos_token_id)
+    endings = [token for token in endings if type(token) is int]
+    if not endings:
+        raise ValueError('Model and tokenizer have no generation stop token')
+    return endings
+
+
 def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, context, batch_size):
     import torch
     conversations, maximum = validate_batch(data, output_limit)
     options, seed = sampling(data)
+    endings = stop_tokens(model, tokenizer)
     if options['do_sample']:
         torch.manual_seed(seed)
     responses = []
@@ -49,9 +62,9 @@ def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, con
         mode = model.disable_adapter() if has_adapter and not use_adapter else contextlib.nullcontext()
         with mode, torch.inference_mode():
             out = model.generate(**inputs, **options, max_new_tokens=maximum,
-                                 pad_token_id=tokenizer.pad_token_id)
+                                 pad_token_id=tokenizer.pad_token_id, eos_token_id=endings)
         responses.extend(completion(tokenizer, tokens[padded:], int(mask.sum()), maximum,
-                                    model.generation_config.eos_token_id)
+                                    endings)
                          for tokens, mask in zip(out.tolist(), inputs['attention_mask']))
     return responses
 
@@ -137,6 +150,7 @@ def main():
     fast.for_inference(model)
     model.eval()
     model.config.use_cache = True
+    print('EVAL_STOP_TOKENS '+json.dumps(stop_tokens(model, tokenizer)), flush=True)
     def run(data, use_adapter):
         return generate(model, tokenizer, data, use_adapter, bool(args.adapter),
                         args.output_limit, args.context_length, args.batch_size)

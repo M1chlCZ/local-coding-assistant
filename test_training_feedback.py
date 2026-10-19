@@ -122,5 +122,20 @@ class FeedbackTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'infrastructure'):self.collect(solve=offline)
         self.assertEqual(len(self.calls),1)
 
+    def test_raised_infrastructure_preserves_attempts_and_correction_budget(self):
+        def pause_after_grade(task,patch):
+            self.pause=True
+            return self.grade(task,patch)
+        self.assertIsNone(self.collect(grade=pause_after_grade))
+        saved=self.attempt.read_bytes();self.pause=False
+        def offline(*args,**kwargs):raise RuntimeError('Infrastructure failure: child service unavailable')
+        with self.assertRaisesRegex(RuntimeError,'Infrastructure failure'):
+            self.collect(solve=offline)
+        self.assertEqual(self.attempt.read_bytes(),saved)
+        result=self.collect()
+        self.assertTrue(result['passed'])
+        self.assertEqual(result['retry_info']['attempts'],2)
+        self.assertEqual(len(self.calls),2)
+
 
 if __name__=='__main__':unittest.main()

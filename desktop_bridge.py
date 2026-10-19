@@ -103,12 +103,91 @@ def task_preview(path, state):
     return dict(filename=task['filename'],language=task['language'],code=code[:12000],truncated=len(code)>12000)
 
 
+def agent_curriculum_status(path, state, config):
+    """Read pilot evidence for display; never score partial results or control work."""
+    def local_file(name):
+        file = (path/name).resolve()
+        if not file.is_relative_to(path.resolve()):
+            raise ValueError('Pilot display evidence must stay in its session')
+        return file
+
+    def frozen_file(name):
+        # A pilot may reuse an immutable curriculum through an explicitly bound symlink.
+        file = path/name
+        if not file.is_file() or sha256(file) != config.get('inputs', {}).get(str(file)):
+            raise ValueError('Pilot display evidence changed: '+name)
+        return file
+
+    dataset = frozen_file('curriculum/train.jsonl')
+    manifest = frozen_file('curriculum/train.jsonl.manifest.json')
+    preflight = read(frozen_file('curriculum/feasibility.json'))
+    rows, metadata = load_verified(dataset, manifest)
+    if (metadata['verification'] != 'local_execution'
+            or any(preflight.get(key) is not True for key in
+                   ('passed', 'all_agent_actions_included', 'complete_trajectories'))
+            or preflight.get('dataset_sha256') != metadata['dataset_sha256']
+            or preflight.get('manifest_sha256') != sha256(manifest)):
+        raise ValueError('Pilot lessons require intact execution and trajectory evidence')
+    state['training_examples'] = len(rows)
+    state['repl_examples'] = sum(row.get('example_kind') == 'executed_repl_repair' for row in rows)
+    state['readiness'] = (f"{state['repl_examples']} verified scripted REPL training rows; "
+                          f"{len(rows)} training rows total. Waiting for a complete comparison.")
+
+    index = state['stage_index']
+    if index >= len(config['stages']):
+        return
+    stage = config['stages'][index]
+    result = local_file(stage.get('result', ''))
+    suite = result.stem
+    if stage.get('train') or suite not in ('development', 'holdout'):
+        return
+    evaluation_file = frozen_file('evaluation.json')
+    evaluation = read(evaluation_file)
+    expected = [(entry['condition'], entry['task']['id']) for entry in evaluation[suite]]
+    anchors = [task['id'] for task in evaluation['retention']] if suite == 'development' else []
+    saved = read(result, None)
+    completed, retention = [], []
+    if saved is not None:
+        binding = saved.get('binding', {})
+        completed, retention = saved.get('rows', []), saved.get('retention', [])
+        if (binding.get('evaluation_sha256') != sha256(evaluation_file) or binding.get('suite') != suite
+                or not isinstance(completed, list) or not isinstance(retention, list)
+                or any(not isinstance(row, dict) or type(row.get('passed')) is not bool
+                       or row.get('infrastructure_errors') for row in completed+retention)
+                or [(row.get('condition'), row.get('id')) for row in completed] != expected[:len(completed)]
+                or [row.get('id') for row in retention] != anchors[:len(retention)]
+                or (retention and len(completed) != len(expected))):
+            raise ValueError('Pilot progress does not match its frozen comparison tasks')
+    current = read(local_file(result.parent/'task.json'), {})
+    active = (len(completed) < len(expected) and
+              (current.get('condition'), current.get('task', {}).get('id')) == expected[len(completed)])
+    if saved is None and not active:
+        return  # No task has started yet; preserve the real model-loading status.
+    state['task_preview'] = None
+    progress = dict(phase='repl-baseline' if result.parent.name == 'baseline' else 'repl-candidate',
+                    completed=len(completed)+len(retention), total=len(expected)+len(anchors))
+    if active:
+        # Use frozen public source, not mutable task contents or private checks/answers.
+        task = evaluation[suite][len(completed)]['task']
+        progress['task'] = task['id']
+        filename = next((name for name in task.get('editable', []) if name in task.get('files', {})), None)
+        if filename:
+            code = task['files'][filename]
+            state['task_preview'] = dict(filename=filename, language=task.get('language', 'python'),
+                                         code=code[:12000], truncated=len(code)>12000)
+    elif len(completed) == len(expected):
+        progress['task'] = 'Retention checks' if len(retention) < len(anchors) else 'Comparison tasks completed'
+    state['stage_progress'] = progress
+
+
 def snapshot(name):
     path = session_path(name)
     experiment = open_experiment(path)
     value = experiment.snapshot()
     value['session'] = name
     value['task_preview'] = task_preview(path,value)
+    if experiment.config.get('learning_method') == 'agent_curriculum':
+        agent_curriculum_status(path, value, experiment.config)
     report = checked_report(path)
     value['quality'] = verdict(report)
     value['report'] = report

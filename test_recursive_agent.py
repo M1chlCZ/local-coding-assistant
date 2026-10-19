@@ -58,13 +58,15 @@ try:
     rejects(lambda: env.execute_code('print("x"*200000)'))
 finally:
     env.cleanup()
-env = agent.Sandbox(context_payload={}, cell_seconds=.3)
+env = agent.Sandbox(context_payload={})
+env.cell_seconds = .3
 try:
     rejects(lambda: env.execute_code('while True: pass'))
 finally:
     env.cleanup()
-env = agent.Sandbox(context_payload={}, cell_seconds=.3,
+env = agent.Sandbox(context_payload={},
                     subcall_fn=lambda prompt: SimpleNamespace(response='x' * 8000))
+env.cell_seconds = .3
 started = time.monotonic()
 try:
     rejects(lambda: env.execute_code('import os,json,time\n'
@@ -92,7 +94,29 @@ assert result.get('patch') == {'solver.py':'x=2\n'}, result.get('error')
 assert [call['kind'] for call in result['trace']] == ['root','subcall','subcall'], result['trace']
 assert all(isinstance(call['messages'], list) for call in result['trace'])
 assert result['calls'] == result['output_tokens'] == 3, 'Subcalls must share the root budget'
+assert [q['recursive'] for q in result['queries']] == [False, True]
+child=result['queries'][1]
+assert any(e['final_answer']=='child analysis' for e in
+           result['executions'][child['execution_start']:child['execution_end']])
+import hashlib
+assert result['workspace_hashes']['solver.py']==hashlib.sha256(b'x=1\n').hexdigest()
 assert not any(t.name.startswith('local-rlm-') for t in threading.enumerate()), 'Sandbox thread leaked'
+
+# Upstream catches child service errors; preserve them for fail-closed evaluation.
+responses=iter(['```repl\nchild = rlm_query("inspect text")\nanswer["content"] = {"solver.py":"x=2\\n"}; answer["ready"] = True\n```'])
+def service_failure(*unused, **kwargs):
+    try:return next(responses)
+    except StopIteration:raise ConnectionError('test child service unavailable')
+with mock_patch.object(OpenAIClient,'completion',side_effect=service_failure), \
+     mock_patch.object(OpenAIClient,'get_last_usage',return_value=ModelUsageSummary(1,1,1)):
+    try:
+        agent.solve(dict(id='child-error',repository='mock',split='train',prompt='Repair solver',
+                         files={'solver.py':'x=1\n'},editable=['solver.py']),
+                    'http://127.0.0.1:1',depth=2,calls=4,seconds=10)
+    except RuntimeError as error:
+        assert 'Infrastructure failure: ConnectionError: test child service unavailable' in str(error)
+    else:
+        raise AssertionError('Swallowed child infrastructure failure must abort the attempt')
 
 # Invalid fences must receive feedback without executing their contents.
 protocol_task=dict(id='protocol',repository='mock',split='train',prompt='Repair solver',
