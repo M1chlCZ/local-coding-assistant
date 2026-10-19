@@ -127,11 +127,26 @@ Only complete trajectories fitting the existing action, context, time and call l
 
 One recipe starts from the previous recovery adapter with a fresh optimizer: rank 8, learning rate 0.00002, two epochs capped at 250 steps, accumulation 8, context 4,096 and seed 3407. Both the fresh baseline and candidate receive identical new instructions and inference settings. The required gain is at least two newly repaired development families, including a genuine recursive repair, with no lost passes. A qualifying candidate must be selected before the five untouched confirmation tasks. It must then pass those checks and a fresh complete 790-task comparison against the retained base with no lost base passes. Only then may a new continuous session start from preparation and Collect. The old adapter remains unpromoted.
 
-The ordinary and recursive reference workflows have passed real-container checks, including child failure/success execution and exact parent application, with and without supplied tests. This validates lesson execution, not learning. The model comparison is still pending.
+The ordinary and recursive reference workflows passed real-container checks, including child failure/success execution and exact parent application, with and without supplied tests. These checks validated lesson execution; learning required the separate matched comparison below.
 
 Collection exposed another defect before training: one real student answer produced enough test output to exceed the sandbox's 8,192-character cell limit. The collector retried this deterministic failure instead of recording an excluded lesson. The corrected collector preserves the failed trace, exports no targets from it, and excludes the whole trajectory. Infrastructure errors still stop collection. The original frozen attempt stays paused and preserved; a separate corrected snapshot reuses the 128 saved student answers with unchanged evaluation tasks, budgets, recipe and minimum-family requirement. This is a collection repair, not a measured model improvement.
 
 The corrected attempt's preparation guard then caught a different source selection. Rescanning the shard admitted two functions whose publisher tests vary with random draws or set iteration order; six fresh executions reproduced both passing and failing outcomes for each. The saved student answers remained bound to the original 128 functions. All 128 original reference solutions passed a fresh independent execution check, and all 128 empty-solution controls failed with missing-function errors. The mismatched rescan was archived, the original saved preparation state was restored, and the same finite trial resumed. Frozen source files, stage scripts, evaluator, recipe and student answers were unchanged. No comparison score was available at this recovery point.
+
+### Verified development result on 2026-10-19
+
+The completed matched comparison passed its development gate. Both models used the same new instructions, frozen tasks and inference settings. The baseline was the unpromoted recovery adapter; it was evaluated afresh. All twelve returned patches were independently regraded, and all three recursive gains included actual child execution, passing child tests, and exact parent application.
+
+| Measure | Before | After |
+| --- | ---: | ---: |
+| All functional repairs | 2/10 | 6/10 |
+| Ordinary REPL repairs | 2/5 | 2/5 |
+| Genuine recursive repairs | 0/5 | 3/5 |
+| Small coding-retention subset | 0/15 | 0/15 |
+
+Roman numerals, header multimap and booking overlap were new genuine recursive successes. Edit distance also passed functional grading but did not meet the recursive execution criterion. There were no lost passes. Zero baseline passes in the retention subset cannot establish preservation of general coding ability.
+
+Training completed 250 steps on 2,166 rows from 576 complete trajectories across 128 families plus 150 coding anchors. Two whole output-limit failures contributed no targets. The selected adapter was frozen before the five untouched confirmation repairs began. Confirmation is running; a fresh complete 790-task retained-base/candidate audit is still required. The adapter has not been promoted and the full loop remains paused. See the [aggregate development evidence](../reports/agent-tested-development-20261019.json).
 
 [CodeRL](https://arxiv.org/abs/2207.01780) and [ReST-EM](https://arxiv.org/abs/2312.06585) provide primary research on execution-based feedback and filtering. Their methods and evaluated models differ from this supervised local experiment; they do not guarantee improvement here.
 

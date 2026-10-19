@@ -1,0 +1,308 @@
+{
+  "schema": 1,
+  "date": "2026-10-19",
+  "status": "development_verified_confirmation_running",
+  "method": "execution_tested_recursive_supervised_distillation",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "precision": "bf16",
+  "sources": {
+    "recursive_agent.py": "70d383928df914312752d0759bedb73a88217078513ae844342512e87110d7a4",
+    "rlm_worker.py": "749ec9efd3898d3a600ef254992accd9ca87ba1d67e49867a31a8c368dc514b8",
+    "evaluation.py": "5231f27e0ea1fa1f70fbee0129b2ffedddf28796c9abaa850ed4cc5ab0f99098",
+    "qwen35_server.py": "75cc88215e91f2c78772c9771db07310d0415043a5f2aa9809f139ad9b1368d8",
+    "qwen35_train.py": "6642260eb2a4e296cf7bda7cd15d5a8903b93d2c019d83a3a5184781578b5866",
+    "agent_pilot.py": "a98d8405bceb97acdf1b6398132579edf660032daa111017339df40ad628e3f7",
+    "coding_loop_stage.py": "75976477ec3a563ff6b310e935a9e93b89222f26c76b5d5b223e9942bd44c7b7",
+    "repl_learning.py": "4065bbbf84be05817088d82dcd319892a32a6b517dcdd37c5ed630c314021ac4",
+    "code_recipe.py": "fde047df51f8accaa53d7115be670caf2c2a91ece9512af892d69cd5fc5089c5",
+    "polyglot_runtime.py": "12bb9c61fc54aa2d0247795e2d1bb1c11d48a60b77d69c50441a78b8608380af",
+    "research/adapter_eval_server.py": "dddbfe182bbc3a2c48535d9ef0add1a2afc26e506b85cc95cc66f150da9f3afa",
+    "upstream_rlm": "f7df6af55027159b2f428ff98c9b19beb872618ee88aa8fef62c9498fa1e0562",
+    "upstream_parsing": "dd0a706c885ba5a820ecf81c9aa20e99457758108727f1900b045167998d03d6"
+  },
+  "limits": {
+    "depth": 2,
+    "calls": 8,
+    "output_tokens": 6144,
+    "seconds": 240
+  },
+  "gate": {
+    "distinct_gains": 2,
+    "recursive_gains": 1,
+    "max_losses": 0,
+    "holdout_gains": 1,
+    "max_recipes": 1
+  },
+  "recipe": {
+    "learning_rate": 2e-05,
+    "max_epochs": 2,
+    "max_steps": 250,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "gradient_accumulation": 8
+  },
+  "dataset": {
+    "rows": 2166,
+    "action_targets": 2016,
+    "verified_coding_anchors": 150,
+    "training_families": 128,
+    "selected_complete_trajectories": 576,
+    "genuine_student_start_trajectories": 64,
+    "whole_output_limit_exclusions": 2,
+    "selected_rows_excluded": 0,
+    "sha256": "da2a0ca72dfae73aacd8676b8deb7bd6bfa782fe69f9edc02a7743dc37dd2ba5",
+    "manifest_sha256": "540e4583923796c9f182e7775c1f1b3ebe44defc81d6258bba8d8fe352f9d7fc"
+  },
+  "training": {
+    "completed": true,
+    "steps": 250,
+    "fresh_optimizer": true,
+    "initial_adapter_sha256": "c8145d2f46615fb7befff6621ee523a25f77631e6f2d78cdf1dc256770c9c326",
+    "adapter_sha256": "d071879b733fb990989bbb87f4a758060c4bd1614decb1cb489ddb7005e5c9f9"
+  },
+  "baseline": {
+    "scores": {
+      "repairs": {
+        "passed": 2,
+        "total": 10
+      },
+      "ordinary_repl": {
+        "passed": 2,
+        "total": 5
+      },
+      "recursive_condition_functional": {
+        "passed": 0,
+        "total": 5
+      },
+      "genuine_recursive": {
+        "passed": 0,
+        "total": 5
+      },
+      "coding_retention": {
+        "passed": 0,
+        "total": 15
+      }
+    },
+    "returned_patches": 3,
+    "tasks": [
+      {
+        "id": "tuning-matrix-transpose",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-date-span",
+        "condition": "ordinary",
+        "passed": true,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-bounded-tail",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-nested-update",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-isbn-check",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-roman-numerals",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 4
+      },
+      {
+        "id": "tuning-edit-distance",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-header-multimap",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-idle-expiry",
+        "condition": "ordinary",
+        "passed": true,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-booking-overlap",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      }
+    ]
+  },
+  "candidate": {
+    "scores": {
+      "repairs": {
+        "passed": 6,
+        "total": 10
+      },
+      "ordinary_repl": {
+        "passed": 2,
+        "total": 5
+      },
+      "recursive_condition_functional": {
+        "passed": 4,
+        "total": 5
+      },
+      "genuine_recursive": {
+        "passed": 3,
+        "total": 5
+      },
+      "coding_retention": {
+        "passed": 0,
+        "total": 15
+      }
+    },
+    "returned_patches": 9,
+    "tasks": [
+      {
+        "id": "tuning-matrix-transpose",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 4
+      },
+      {
+        "id": "tuning-date-span",
+        "condition": "ordinary",
+        "passed": true,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-bounded-tail",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-nested-update",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-isbn-check",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 5
+      },
+      {
+        "id": "tuning-roman-numerals",
+        "condition": "recursive",
+        "passed": true,
+        "recursive_passed": true,
+        "calls": 5
+      },
+      {
+        "id": "tuning-edit-distance",
+        "condition": "recursive",
+        "passed": true,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-header-multimap",
+        "condition": "recursive",
+        "passed": true,
+        "recursive_passed": true,
+        "calls": 5
+      },
+      {
+        "id": "tuning-idle-expiry",
+        "condition": "ordinary",
+        "passed": true,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-booking-overlap",
+        "condition": "recursive",
+        "passed": true,
+        "recursive_passed": true,
+        "calls": 5
+      }
+    ]
+  },
+  "decision": {
+    "development_passed": true,
+    "gained_families": [
+      "tuning-booking-overlap",
+      "tuning-edit-distance",
+      "tuning-header-multimap",
+      "tuning-roman-numerals"
+    ],
+    "recursive_gains": [
+      "tuning-roman-numerals",
+      "tuning-header-multimap",
+      "tuning-booking-overlap"
+    ],
+    "lost": [],
+    "recursive_losses": [],
+    "retention_losses": [],
+    "candidate_selected": true,
+    "selected_before_heldout": true,
+    "heldout_status": "running",
+    "full_790_audit_status": "not_started",
+    "adapter_promoted": false,
+    "full_loop_authorized": false,
+    "full_loop_restarted": false
+  },
+  "verification": {
+    "completed": true,
+    "returned_patches_regraded": 12,
+    "frozen_sources_unchanged": true,
+    "training_data_independently_verified": true,
+    "evidence_sha256": {
+      "evaluation.json": "37992d049dc120b578551602f55340ee9814355c979ea9b85f963a4c94dfc70b",
+      "config.json": "1dacacd3c3c20b81e6d4c2dd4e3571e03a53bf7ff66b612b295fe293a40e49b2",
+      "runtime-binding.json": "f2fc4ef81ba40bea6114fbdc20f0cca610d577c3743275a671e83591785084bd",
+      "baseline/development.json": "70a55b17f040937207a59ca175d877c47edf6af1c0a37b0dfbba8f8b3c13d15a",
+      "candidate/development.json": "27496a6223c427f1a21fa05da02ebac100f9e9f414049fec21f7739aa79fa9ca",
+      "candidate/development-verified.json": "bb185d13e1c4224f9af888d439267e2f464849508587f5c8ae0a87002704ec6e",
+      "collection-verified.json": "21ad7c1abde838acd37df40db1f78a80159871e9775c57e2631cfc2e804409a2",
+      "candidate/adapter/training.json": "4a4c8c987805aab7f11050fe2430a27f238f4370dcfe401f5ecc519b3fa90e32",
+      "candidate/adapter/tokenization.json": "0ffa65cd3b96573ac189ce2aac059aadf6fbe2b1fcd8c8adccdd7d2a76308af3",
+      "selected-candidate.json": "d5720368fda87913d3a0ebe2200c33e554510eb3e8c59a57d87158e238041038"
+    }
+  },
+  "limitations": [
+    "One small matched development comparison; confirmation and general-code audit remain incomplete.",
+    "Ordinary REPL score did not improve. Three recursive repairs improved; the fourth new functional pass did not satisfy the recursive execution criterion.",
+    "The 15-task retention subset has zero baseline passes and cannot establish preservation of general coding ability.",
+    "This is supervised distillation from executed reference actions, not reinforcement learning.",
+    "Environment repairs, collection completion and training loss do not establish learning gains."
+  ]
+}
