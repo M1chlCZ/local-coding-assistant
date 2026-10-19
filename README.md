@@ -34,6 +34,8 @@ A separate corrective-imitation experiment completed with **0/10 → 2/10 repair
 
 The subsequent [child-tested experiment](research/execution-learning.md#execution-tested-recursive-distillation) improved development repairs **2/10 → 6/10** and genuine recursive repairs **0/5 → 3/5** under matched instructions; ordinary REPL repairs stayed **2/5**. All returned patches were independently regraded. However, the selected candidate scored **0/5 → 0/5** on the five untouched confirmation repairs, so it was rejected. No full audit or restart followed the failed confirmation gate. See the [complete measured outcome](reports/agent-tested-development-20261019.json).
 
+A new [multi-file trial](reports/agent-multifile-trial-20261019.json) is in progress. Its lessons start without test files, derive checks from the specification, and teach repairs across imported modules. Eight fresh confirmation tasks are reserved until candidate selection. No new model gain has been measured; the full loop remains paused pending ordinary REPL and recursive gains, fresh confirmation, and the complete matched general-code audit.
+
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
 ## Coding chat and agent launcher

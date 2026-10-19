@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "experiment": "agent-multifile-verified-20261019",
+  "status": "finite_trial_in_progress",
+  "snapshot": {
+    "snapshot_at": 1792445274.4958909,
+    "status": "running",
+    "phase": "prepare",
+    "failures": 0,
+    "worker_alive": true,
+    "preparation_checked": 24,
+    "preparation_total": 128
+  },
+  "source_commit": "5b324b22e64c50fc6be2700637a0a3e135967c4e",
+  "evaluation_sha256": "08535e55dabce9175217305de9713ef2673c6c00136eee92c451a569d7a006a8",
+  "fresh_holdout_sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52",
+  "method": "Executed multi-file demonstrations with specification-derived checks, no supplied test files, and supporting imports passed to child REPLs",
+  "training": {
+    "initial_adapter": null,
+    "optimizer": "fresh",
+    "learning_rate": 5e-05,
+    "rank": 8,
+    "max_epochs": 3,
+    "max_steps": 300,
+    "seed": 3407
+  },
+  "development": {
+    "tasks": 15,
+    "scope": "Previously consumed tasks; includes the five old confirmation tasks",
+    "before": null,
+    "after": null
+  },
+  "confirmation": {
+    "tasks": 8,
+    "ordinary": 4,
+    "recursive": 4,
+    "model_evaluation_started": false,
+    "before": null,
+    "after": null
+  },
+  "required_gates": [
+    "Two new development families, including ordinary REPL and genuine recursive gains, without losses",
+    "Select weights before fresh heldout use; ordinary and recursive confirmation gains without losses",
+    "Fresh complete matched 790-task retained-base/candidate audit; no lost base passes"
+  ],
+  "validation": {
+    "focused_tests": 30,
+    "skipped_tests": 1,
+    "native_reference_canaries": 2,
+    "fresh_fixture_isolated_checks": 32
+  },
+  "preparation_correction": "First snapshot paused before collection or model evaluation because a no-op passed source checks; corrected snapshot records and excludes non-discriminating lessons",
+  "learning_gain_established": false,
+  "full_loop_restarted": false,
+  "adapter_promoted": false,
+  "limitations": [
+    "Reference demonstrations and construction checks are not model gains.",
+    "Synthetic transfer tasks do not establish production repository competence.",
+    "The before/after comparison, fresh confirmation and full audit remain pending."
+  ]
+}
