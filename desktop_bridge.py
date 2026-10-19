@@ -189,6 +189,8 @@ def snapshot(name):
     if experiment.config.get('learning_method') == 'agent_curriculum':
         agent_curriculum_status(path, value, experiment.config)
     report = checked_report(path)
+    if experiment.config.get('learning_method') == 'agent_curriculum' and report is not None:
+        value['readiness'] = report.get('reason') or 'Comparison completed.'
     value['quality'] = verdict(report)
     value['report'] = report
     phase = value.get('phase', '')
@@ -196,7 +198,10 @@ def snapshot(name):
     log = path / (phase + '.log')
     value['log'] = tail(log) if phase in [s['name'] for s in experiment.config['stages']] and log.resolve().is_relative_to(path.resolve()) else ''
     value['checkpoints'] = []
-    markers = path.glob('round-*/adapter/checkpoint-*/complete.json') if value.get('continuous') else (path/'adapter').glob('**/complete.json')
+    adapters = [path/Path(s['result']).parent for s in experiment.config['stages'] if s.get('train')] or [path/'adapter']
+    markers = path.glob('round-*/adapter/checkpoint-*/complete.json') if value.get('continuous') else (
+        marker for adapter in adapters if adapter.resolve().is_relative_to(path.resolve())
+        for marker in adapter.glob('**/complete.json'))
     for marker in sorted(markers)[-12:]:
         if marker.is_symlink() or not marker.resolve().is_relative_to(path.resolve()):
             continue

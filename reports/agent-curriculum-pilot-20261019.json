@@ -1,0 +1,161 @@
+{
+  "schema": 1,
+  "date": "2026-10-19",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "precision": "bf16",
+  "generation_stop_tokens": [
+    248044,
+    248046
+  ],
+  "evaluation_sha256": "4ecb7e18c2d077388c70d4aa871ba3cca0208fd855a6d188a4b1e6dc51fb2150",
+  "sources": {
+    "recursive_agent.py": "9c881fe2a94799f3709a306fc1bf07a134a0669aa8fedf39e18f50872c91d96e",
+    "rlm_worker.py": "749ec9efd3898d3a600ef254992accd9ca87ba1d67e49867a31a8c368dc514b8",
+    "evaluation.py": "5231f27e0ea1fa1f70fbee0129b2ffedddf28796c9abaa850ed4cc5ab0f99098",
+    "qwen35_server.py": "75cc88215e91f2c78772c9771db07310d0415043a5f2aa9809f139ad9b1368d8",
+    "qwen35_train.py": "6642260eb2a4e296cf7bda7cd15d5a8903b93d2c019d83a3a5184781578b5866",
+    "agent_pilot.py": "3781e08c0e00bde3442c3b4bae51ef59167f6fa746ef8967e0dcb99625c18eb2",
+    "coding_loop_stage.py": "75976477ec3a563ff6b310e935a9e93b89222f26c76b5d5b223e9942bd44c7b7",
+    "repl_learning.py": "4065bbbf84be05817088d82dcd319892a32a6b517dcdd37c5ed630c314021ac4",
+    "code_recipe.py": "fde047df51f8accaa53d7115be670caf2c2a91ece9512af892d69cd5fc5089c5",
+    "polyglot_runtime.py": "12bb9c61fc54aa2d0247795e2d1bb1c11d48a60b77d69c50441a78b8608380af",
+    "research/adapter_eval_server.py": "dddbfe182bbc3a2c48535d9ef0add1a2afc26e506b85cc95cc66f150da9f3afa",
+    "upstream_rlm": "f7df6af55027159b2f428ff98c9b19beb872618ee88aa8fef62c9498fa1e0562",
+    "upstream_parsing": "dd0a706c885ba5a820ecf81c9aa20e99457758108727f1900b045167998d03d6"
+  },
+  "limits": {
+    "depth": 2,
+    "calls": 8,
+    "output_tokens": 6144,
+    "seconds": 240
+  },
+  "gate": {
+    "distinct_gains": 2,
+    "recursive_gains": 1,
+    "max_losses": 0,
+    "holdout_gains": 1,
+    "max_recipes": 2
+  },
+  "dataset": {
+    "rows": 550,
+    "executed_action_rows": 400,
+    "trajectories": 80,
+    "authored_training_families": 20,
+    "verified_coding_anchors": 150,
+    "agent_action_language": "python",
+    "sha256": "a209d43fb0fedc25e4589227f56e0fae3067e757bbae0881d567742dccbc8cf9",
+    "manifest_sha256": "c2cd126ae1eb6734edacab6078b5d222e3958e898c8d98aebbcf1a9bbb110090"
+  },
+  "baseline": {
+    "scores": {
+      "repairs": {
+        "passed": 0,
+        "total": 8
+      },
+      "recursive_repairs": {
+        "passed": 0,
+        "total": 4
+      },
+      "coding_retention": {
+        "passed": 0,
+        "total": 15
+      }
+    },
+    "report_sha256": "04d231ef9b92de567e064db55ae08ebad1da05916512ec75153eef0974a49fcd"
+  },
+  "candidates": [
+    {
+      "label": "candidate-1",
+      "recipe": {
+        "learning_rate": 5e-05,
+        "max_epochs": 3,
+        "max_steps": 200,
+        "rank": 8,
+        "seed": 3407,
+        "max_length": 4096,
+        "gradient_accumulation": 8
+      },
+      "fresh_base": true,
+      "completed_steps": 200,
+      "included_rows": 550,
+      "excluded_rows": 0,
+      "scores": {
+        "repairs": {
+          "passed": 0,
+          "total": 8
+        },
+        "recursive_repairs": {
+          "passed": 0,
+          "total": 4
+        },
+        "coding_retention": {
+          "passed": 0,
+          "total": 15
+        }
+      },
+      "failure_counts": {
+        "returned_patch_failed_independent_tests": 2,
+        "action_budget_exhausted": 5,
+        "consecutive_repl_errors": 1
+      },
+      "pilot_passed": false,
+      "adapter_sha256": "fc4d05050d036560238a20e9849fa274f723140e739b231e4e7bc239b08a4810",
+      "report_sha256": "d7af91c1fd539b239f3731a44cdd6fe274f438187e5e9a0b1fd7875dcf8515f8",
+      "comparison_sha256": "6cb7762caeaa2ab03de27c2502cc1e76430c6b5a2e77ac1e1e4889f41da30965",
+      "verification_sha256": "f9c8c984f523563b8449917ee1a2ba946744865a509341abb38704cabc98980c",
+      "returned_patches_independently_regraded": 2
+    },
+    {
+      "label": "candidate-2",
+      "recipe": {
+        "learning_rate": 0.0001,
+        "max_epochs": 3,
+        "max_steps": 200,
+        "rank": 8,
+        "seed": 3407,
+        "max_length": 4096,
+        "gradient_accumulation": 8
+      },
+      "fresh_base": true,
+      "completed_steps": 200,
+      "included_rows": 550,
+      "excluded_rows": 0,
+      "scores": {
+        "repairs": {
+          "passed": 0,
+          "total": 8
+        },
+        "recursive_repairs": {
+          "passed": 0,
+          "total": 4
+        },
+        "coding_retention": {
+          "passed": 0,
+          "total": 15
+        }
+      },
+      "failure_counts": {
+        "returned_patch_failed_independent_tests": 1,
+        "action_budget_exhausted": 7
+      },
+      "pilot_passed": false,
+      "adapter_sha256": "7b8339c92d19178e9ebca88358da78d57a98394e2157f190a5b1a98988ac05ec",
+      "report_sha256": "d707d26c6327423edf04918b5d93b6500a8469a57571a9309446b88618affd46",
+      "comparison_sha256": "42b22f06756af3334c728c290b934c8946a78b6d5793fce6219113df00f6a5b9",
+      "verification_sha256": "8e6a5256e74728edad5b0c11e1007f3cd0b2388d3c2818b9ddb205ee6df6fd62",
+      "returned_patches_independently_regraded": 1
+    }
+  ],
+  "outcome": "rejected_no_demonstrated_gain",
+  "full_loop_restarted": false,
+  "heldout_confirmation_run": false,
+  "full_general_code_audit_run": false,
+  "limitations": [
+    "These are small development checks, not a general capability benchmark.",
+    "All models scored zero on the 15 coding-retention tasks; this subset cannot establish retained general coding ability.",
+    "The five held-out repairs and fresh 790-task audit were not run because neither development candidate qualified.",
+    "Earlier baselines used different generation termination and cannot be substituted.",
+    "Private prompts, traces, datasets and model weights are excluded from this public summary."
+  ]
+}

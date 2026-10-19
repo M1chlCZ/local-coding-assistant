@@ -125,13 +125,14 @@ public partial class MainWindow : Window
     {
         var q=state["quality"]!;
         bool continuous=state["continuous"]?.GetValue<bool>()==true;
+        bool finished=S(state,"status")=="completed";
         QualityTitle.Text=continuous && N(state,"accepted_updates")==0?"No update accepted yet":S(q,"label");
         QualityCard.SetResourceReference(Border.BackgroundProperty,"CardBrush");
         QualityDetail.Text=N(q,"total")>0?$"Latest comparison: {N(q,"before"):0} → {N(q,"after"):0} / {N(q,"total"):0} passed. {N(q,"gained"):0} gained · {N(q,"lost"):0} lost.":"Candidates must pass matched checks.";
         string phase=S(state["stage_progress"],"phase",S(state,"phase")).Split('/').Last();
         string stage=S(state,"phase").Split('/').Last();
         if(phase=="evaluate")phase=stage;
-        Activity.Text=phase switch {
+        Activity.Text=finished?"Experiment completed":phase switch {
             "prepare" or "validate-source"=>"Checking new examples",
             "verify-teacher"=>"Checking published teacher examples",
             "load-model" or "load_model" or "load_runtime"=>"Loading the model",
@@ -145,9 +146,9 @@ public partial class MainWindow : Window
             "repl-candidate"=>"Checking candidate REPL skills",
             "gate" or "finish"=>"Comparing the results",
             "saved"=>"Progress saved",_=>"Working on this learning cycle"};
-        ActivityDetail.Text="Live counts appear as tasks finish. REPL counts are verified training rows.";
+        ActivityDetail.Text=finished?"Scheduled checks are complete. REPL counts are verified training rows.":"Live counts appear as tasks finish. REPL counts are verified training rows.";
         var p=state["stage_progress"];
-        CurrentTask.Text=S(p,"task","Preparing the next task");
+        CurrentTask.Text=finished?"Comparison completed":S(p,"task","Preparing the next task");
         CurrentTask.ToolTip=CurrentTask.Text;
         var preview=state["task_preview"];
         CurrentTask.Text=S(preview,"filename",CurrentTask.Text);
@@ -157,7 +158,7 @@ public partial class MainWindow : Window
         CodeLines.Text=string.Join("\n",Enumerable.Range(1,Math.Min(8,displayedCode.Split('\n').Length)));
         CodePreview.Inlines.Clear();
         string snippet=string.Join("\n",displayedCode.Replace("\t","    ").Split('\n').Take(8));
-        if(snippet.Length==0){CodeLines.Text="";snippet="Source preview appears when a coding task starts.";}
+        if(snippet.Length==0){CodeLines.Text="";snippet=finished?"Experiment finished. Results and checkpoints remain saved.":"Source preview appears when a coding task starts.";}
         foreach(string part in Regex.Split(snippet,@"(\b(?:def|return|import|from|if|else|for|while|class|func|package|fn|let|const|var|int|void|print|pub|use|std)\b)")) {
             var run=new Run(part);
             if(Regex.IsMatch(part,@"^[a-z]+$"))run.SetResourceReference(TextElement.ForegroundProperty,"CodeKeywordBrush");
@@ -168,7 +169,7 @@ public partial class MainWindow : Window
         RepairedCount.Text=observed?$"{N(state,"repaired_examples"):0}":"—";
         ReplCount.Text=N(state,"training_examples")>0?$"{N(state,"repl_examples"):0}":"—";
         AcceptedCount.Text=$"{N(state,"accepted_updates"):0} accepted updates";
-        int current=stage switch {"prepare"=>0,"collect" or "export"=>1,"train"=>2,"finish"=>4,_=>3};
+        int current=finished?4:stage switch {"prepare"=>0,"collect" or "export"=>1,"train" or "train-agent"=>2,"finish"=>4,_=>3};
         for(int i=0;i<Pipeline.Children.Count;i++) {
             var step=(Border)Pipeline.Children[i];
             step.SetResourceReference(Border.BackgroundProperty,i==current?"StepBrush":"ClearBrush");
@@ -180,9 +181,9 @@ public partial class MainWindow : Window
         double done=N(p,"completed"),total=N(p,"total");
         if(total<=0){done=N(p,"step");total=N(p,"max_steps");}
         StageProgress.IsIndeterminate=total<=0 && S(state,"status")=="running";
-        StageProgress.Value=total>0?100*done/total:0;
+        StageProgress.Value=finished?100:total>0?100*done/total:0;
         string units=phase is "train" or "saved"?"training steps":phase.Contains("audit") || phase.Contains("repl-") || phase is "baseline" or "candidate"?"tests":"examples";
-        ProgressText.Text=total>0?$"{done:0} of {total:0} {units}":"Preparing this step…";
+        ProgressText.Text=finished?"All scheduled checks finished":total>0?$"{done:0} of {total:0} {units}":"Preparing this step…";
         if(p?["language"] is not null)ProgressText.Text+=" · "+CultureInfo.InvariantCulture.TextInfo.ToTitleCase(S(p,"language"));
         if(S(state,"status")=="running" && N(p,"heartbeat_at")>0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds()-N(p,"heartbeat_at")>120)
             ProgressText.Text+=" · This step is taking longer. Details are in Activity.";
@@ -213,6 +214,7 @@ public partial class MainWindow : Window
         DecisionReason.Text=reasons?.Count>0?string.Join(". ",reasons.Select(r=>r!.ToString())):
             S(report,"decision",S(state,"readiness","Waiting for a complete comparison."));
         var repl=report?["comparisons"]?["training_effect"]?["repl"]?.AsObject();
+        if(repl is null && report?["pilot_gate"] is not null)repl=report["comparisons"]?["training_effect"]?["repairs"]?.AsObject();
         ReplComparison.Text=repl is null?"—":
             $"{repl.Sum(r=>N(r.Value,"before")):0} → {repl.Sum(r=>N(r.Value,"after")):0} / {repl.Sum(r=>N(r.Value,"total")):0}";
         var gpu=state["gpu"]; GpuName.Text=S(gpu,"name","GPU information unavailable").Replace("NVIDIA GeForce ","");
@@ -230,7 +232,7 @@ public partial class MainWindow : Window
             panel.Children.Add(new TextBlock{Text=$"{model.Key.Replace('-',' ')} · {suite.Key}     {N(suite.Value,"passed"):0}/{N(suite.Value,"total"):0}",Margin=new Thickness(0,0,0,5)});
             panel.Children.Add(new ProgressBar{Height=10,Maximum=Math.Max(1,N(suite.Value,"total")),Value=N(suite.Value,"passed")}); Chart.Children.Add(panel);
         }
-        ChartHint.Text=models is null?"Waiting for complete matched results. See current task progress above.":"Completed test results. Review language regressions before choosing a checkpoint.";
+        ChartHint.Text=report is null?"Waiting for complete matched results. See current task progress above.":"Completed test results. Review language regressions before choosing a checkpoint.";
     }
     void CopyCode_Click(object sender,RoutedEventArgs e)
     {

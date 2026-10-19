@@ -11,7 +11,7 @@ A Windows desktop app for local AI fine-tuning on NVIDIA GPUs. Control WSL train
 
 ![Training Studio running on Windows 11 with muted dark translucent panels](reports/training-studio-windows11.png)
 
-*Windows 11 interface captured from the running 0.1.4-preview.4 app in Dark mode during a finite REPL pilot: 400 verified scripted REPL training rows, 550 total training rows, and live matched comparison progress. Results were not yet complete. A tinted Mica background, translucent slate panels and deeper code surfaces reduce bright areas.*
+*Windows 11 interface captured from the running 0.1.4-preview.5 app in Dark mode after the finite REPL pilot completed. Its 400 scripted REPL training rows did not produce a measured gain: 0/8 repairs before and after training, with no accepted update. A tinted Mica background, translucent slate panels and deeper code surfaces reduce bright areas.*
 
 ## Windows training app
 
@@ -28,7 +28,7 @@ It requires a prepared WSL backend. Model files and private data stay on your PC
 The loop collects answers that pass code tests, trains a small adapter, and compares its results with the retained model.
 Rejected updates do not replace the retained model or end the loop. More training does not guarantee better code.
 
-The **0.1.4 source preview** adds [execution learning](research/execution-learning.md): successful correction conversations, executed REPL repair lessons, a capped multilingual training mix, and matched recursive-agent checks before accepting an update. Its Windows 11 dashboard shows the current task, repair counts and rejection reasons, with Mica and translucent panels. Existing experiments and checkpoints stay separate. A model-quality improvement has not yet been established for this recipe.
+The **0.1.4 source preview** adds [execution learning](research/execution-learning.md): successful correction conversations, executed REPL repair lessons, a capped multilingual training mix, and matched recursive-agent checks before accepting an update. Its Windows 11 dashboard shows the current task, repair counts and rejection reasons, with Mica and translucent panels. Existing experiments and checkpoints stay separate. Both predeclared parent/child training settings completed with **0/8 repairs and 0/4 recursive repairs**, matching the base model. Neither qualified; the full learning loop remains paused. See the [measured pilot results](reports/agent-curriculum-pilot-20261019.json).
 
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 

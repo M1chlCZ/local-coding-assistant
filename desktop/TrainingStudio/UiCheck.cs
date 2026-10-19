@@ -48,6 +48,15 @@ public partial class MainWindow
             if(DecisionTitle.Text!="Previous update rejected")throw new IOException("Rejected candidate was not identified");
             latest["report"]!["accepted"]=true;Render(latest);
             if(DecisionTitle.Text!="Update accepted")throw new IOException("Accepted candidate was not identified");
+            latest["continuous"]=false;latest["status"]="completed";latest["phase"]="completed";
+            latest["stage_progress"]=null;latest["task_preview"]=null;
+            latest["report"]=System.Text.Json.Nodes.JsonNode.Parse("""{"pilot_gate":{},"comparisons":{"training_effect":{"repairs":{"python":{"before":0,"after":0,"total":8}}}}}""");
+            Render(latest);
+            if(Activity.Text!="Experiment completed" || CurrentTask.Text!="Comparison completed" ||
+                ProgressText.Text!="All scheduled checks finished" || StageProgress.Value!=100 || ReplComparison.Text!="0 → 0 / 8" || ChartHint.Text.StartsWith("Waiting"))
+                throw new IOException("Completed pilot shows stale progress or omits its measured REPL result");
+            latest["report"]!["pilot_gate"]=null;Render(latest);
+            if(ReplComparison.Text!="—")throw new IOException("Direct repair tests were mislabeled as REPL results");
         } finally {latest=saved;Render(saved!);UpdateControls();}
     }
     internal async Task CheckRefreshBehavior()

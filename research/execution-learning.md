@@ -64,7 +64,23 @@ The [RLM paper's training appendix](https://arxiv.org/html/2512.24601v3#A1) uses
 
 The first candidate exposed a separate inference defect: the pinned Qwen3.5 configuration stopped at document token 248044, while its [chat tokenizer](https://huggingface.co/Qwen/Qwen3.5-4B/blob/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/tokenizer_config.json) ends assistant turns with token 248046. The adapter could emit a valid action and then continue into invented conversation turns. The server now uses both termination tokens for generation and response accounting.
 
-The affected comparison was paused and preserved. The corrected comparison reruns both the base and the completed adapter with identical settings; an improvement from fixing inference is not counted as a training gain. Earlier benchmark baselines cannot authorize promotion under these changed generation conditions. The completed training data and adapter remain usable because the training targets already contained the correct turn terminator.
+The affected comparison was paused and preserved. The corrected comparison reran both the base and the completed adapter with identical settings; an improvement from fixing inference is not counted as a training gain. Earlier benchmark baselines cannot authorize promotion under these changed generation conditions. The completed training data and adapter remain usable because the training targets already contained the correct turn terminator.
+
+### Completed parent/child pilot on 2026-10-19
+
+Both predeclared recipes finished 200 training steps from the base model with all 550 rows included and no exclusions. The second recipe reused the exact frozen development suite and complete corrected baseline; it did not continue the first adapter or its optimizer. Only the declared learning rate changed.
+
+| Model | Learning rate | Repairs | Genuine recursive repairs | Coding-retention subset |
+| --- | --- | --- | --- | --- |
+| Base | — | 0/8 | 0/4 | 0/15 |
+| Candidate 1 | 0.00005 | 0/8 | 0/4 | 0/15 |
+| Candidate 2 | 0.0001 | 0/8 | 0/4 | 0/15 |
+
+The four recursive repairs are a subset of the eight repairs. Candidate 1 returned two patches, both of which failed independent tests; five other attempts exhausted the action budget and one reached the consecutive-error limit. Candidate 2 returned one failing patch and exhausted the action budget on its seven other attempts. Independent verification checked the complete task order, source/model/data bindings, runtime binding and child-patch evidence, and reran every returned patch through the isolated grader.
+
+**No candidate qualified, no adapter was promoted, and the full loop was not restarted.** The five held-out confirmation repairs and fresh 790-task audit were not run because the development gate failed. The 15-task retention subset also had no baseline passes, so it cannot establish preserved general coding ability. This is a negative result for these two small supervised recipes, not proof that recursive training cannot work.
+
+The [public result summary](../reports/agent-curriculum-pilot-20261019.json) contains scores, settings, failure counts and evidence hashes. Private examples, traces and model weights remain local. Both completed experiments and checkpoints are preserved; earlier continuous sessions remain paused and the GPU lock is released. Studio shows the completed verdict and REPL result instead of a pending-comparison message, and lists the finite pilot's saved checkpoints.
 
 All runtime data, prompts, traces and model weights stay under the ignored `.cache` directory. The original worker owns the GPU lock and performs cleanup on Pause. The REPL uses the prepared `.cache/rlm-env` environment; model serving and adapter training use `.cache/qwen35-env`. New session preparation requires both environments. No dependency or model download occurs during the offline worker run.
 

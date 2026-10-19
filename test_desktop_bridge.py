@@ -193,6 +193,25 @@ class AgentCurriculumStatusTests(unittest.TestCase):
         self.assertEqual(value['quality']['label'], 'Not yet measured')
         self.assertEqual(value['quality']['total'], 0)
 
+    def test_completed_pilot_shows_only_the_bound_decision(self):
+        self.state.update(status='completed', stage_index=2, phase='completed')
+        report = dict(completed=True, reason='Pilot gain requirement not met',
+                      inputs={'evaluation.json':app.sha256(self.path/'evaluation.json')},
+                      comparisons=dict(training_effect={}))
+        file = self.write('comparison.json', report)
+        self.assertIn('Waiting for a complete comparison', self.snapshot()['readiness'])
+        self.write('status.json', dict(completed_stages=[dict(result='comparison.json', sha256=app.sha256(file))]))
+        self.assertEqual(self.snapshot()['readiness'], report['reason'])
+        report['reason'] = 'Unbound result'
+        self.write('comparison.json', report)
+        with self.assertRaisesRegex(ValueError, 'Completed comparison changed'):
+            self.snapshot()
+
+    def test_finite_pilot_lists_checkpoints_from_its_training_stage(self):
+        marker = self.write('candidate-1/adapter/checkpoint-25/complete.json', dict(completed=True))
+        self.assertEqual(self.snapshot()['checkpoints'], [dict(
+            path='candidate-1/adapter/checkpoint-25', saved_at=marker.stat().st_mtime)])
+
     def test_loading_is_preserved_until_first_task_but_first_task_shows_zero_completed(self):
         self.assertEqual(self.snapshot()['stage_progress']['phase'], 'load-model')
         self.write('candidate-1/task.json', self.entries[0])
