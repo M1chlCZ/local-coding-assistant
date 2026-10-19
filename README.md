@@ -11,7 +11,7 @@ A Windows desktop app for local AI fine-tuning on NVIDIA GPUs. Control WSL train
 
 ![Training Studio running on Windows 11 with muted dark translucent panels](reports/training-studio-windows11.png)
 
-*Windows 11 interface captured from the running 0.1.4-preview.5 app in Dark mode during the new recovery experiment. Collection produced 278 verified corrective REPL targets and 150 coding anchors; the fresh baseline is running and no improvement has been established. A tinted Mica background, translucent slate panels and deeper code surfaces reduce bright areas.*
+*Windows 11 interface captured from the running 0.1.4-preview.5 app in Dark mode during the recovery baseline. A tinted Mica background, translucent slate panels and deeper code surfaces reduce bright areas. This earlier screenshot is retained because the post-comparison Windows capture returned blank frames. The completed result below shows two ordinary REPL gains and no recursive gain; the full loop remains paused.*
 
 ## Windows training app
 
@@ -30,7 +30,7 @@ Rejected updates do not replace the retained model or end the loop. More trainin
 
 The **0.1.4 source preview** adds [execution learning](research/execution-learning.md): successful correction conversations, executed REPL repair lessons, a capped multilingual training mix, and matched recursive-agent checks before accepting an update. Its Windows 11 dashboard shows the current task, repair counts and rejection reasons, with Mica and translucent panels. Existing experiments and checkpoints stay separate. Both predeclared parent/child training settings completed with **0/8 repairs and 0/4 recursive repairs**, matching the base model. Neither qualified; the full learning loop remains paused. See the [measured pilot results](reports/agent-curriculum-pilot-20261019.json).
 
-A separate recovery experiment now collects actual student attempts and verified corrective continuations, with shorter parent/child workflows and a fresh matched baseline. Its [failure diagnosis and evaluation gates](research/execution-learning.md#why-both-recipes-failed-and-the-recovery-experiment) distinguish learning gains from the corrected REPL working directory. No improvement is claimed while that comparison is incomplete.
+A separate corrective-imitation experiment completed with **0/10 → 2/10 repairs**, including **0/5 → 2/5 ordinary REPL repairs**, but **0/5 → 0/5 recursive repairs**. Independent regrading confirmed the two gains. The recursive requirement failed, so no adapter was promoted and the full loop remains paused. Held-out confirmation and the full general-code audit were not run. See the [verified recovery result](reports/agent-recovery-pilot-20261019.json) and [failure diagnosis](research/execution-learning.md#completed-corrective-imitation-comparison).
 
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 

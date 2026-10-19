@@ -1,0 +1,309 @@
+{
+  "schema": 1,
+  "date": "2026-10-19",
+  "method": "student_state_corrective_imitation",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "precision": "bf16",
+  "generation_stop_tokens": [
+    248044,
+    248046
+  ],
+  "matched_repl_working_directory": "/workspace",
+  "sources": {
+    "recursive_agent.py": "70d383928df914312752d0759bedb73a88217078513ae844342512e87110d7a4",
+    "rlm_worker.py": "749ec9efd3898d3a600ef254992accd9ca87ba1d67e49867a31a8c368dc514b8",
+    "evaluation.py": "5231f27e0ea1fa1f70fbee0129b2ffedddf28796c9abaa850ed4cc5ab0f99098",
+    "qwen35_server.py": "75cc88215e91f2c78772c9771db07310d0415043a5f2aa9809f139ad9b1368d8",
+    "qwen35_train.py": "6642260eb2a4e296cf7bda7cd15d5a8903b93d2c019d83a3a5184781578b5866",
+    "agent_pilot.py": "3781e08c0e00bde3442c3b4bae51ef59167f6fa746ef8967e0dcb99625c18eb2",
+    "coding_loop_stage.py": "75976477ec3a563ff6b310e935a9e93b89222f26c76b5d5b223e9942bd44c7b7",
+    "repl_learning.py": "4065bbbf84be05817088d82dcd319892a32a6b517dcdd37c5ed630c314021ac4",
+    "code_recipe.py": "fde047df51f8accaa53d7115be670caf2c2a91ece9512af892d69cd5fc5089c5",
+    "polyglot_runtime.py": "12bb9c61fc54aa2d0247795e2d1bb1c11d48a60b77d69c50441a78b8608380af",
+    "research/adapter_eval_server.py": "dddbfe182bbc3a2c48535d9ef0add1a2afc26e506b85cc95cc66f150da9f3afa",
+    "upstream_rlm": "f7df6af55027159b2f428ff98c9b19beb872618ee88aa8fef62c9498fa1e0562",
+    "upstream_parsing": "dd0a706c885ba5a820ecf81c9aa20e99457758108727f1900b045167998d03d6"
+  },
+  "limits": {
+    "depth": 2,
+    "calls": 8,
+    "output_tokens": 6144,
+    "seconds": 240
+  },
+  "gate": {
+    "distinct_gains": 2,
+    "recursive_gains": 1,
+    "max_losses": 0,
+    "holdout_gains": 1,
+    "max_recipes": 1
+  },
+  "recipe": {
+    "learning_rate": 5e-05,
+    "max_epochs": 3,
+    "max_steps": 200,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "gradient_accumulation": 8
+  },
+  "dataset": {
+    "rows": 428,
+    "corrective_repl_targets": 278,
+    "verified_coding_anchors": 150,
+    "executed_trajectories": 80,
+    "selected_complete_trajectories": 79,
+    "excluded_complete_trajectories": 1,
+    "selected_rows_excluded": 0,
+    "training_families": 20,
+    "student_prefixes": 40,
+    "student_prefixes_with_execution_error": 29,
+    "sha256": "2c741a51ff597b66d99dedc4c6a504a50602442fb4d3612ab270fc4cec2d010a",
+    "manifest_sha256": "2766a7c84e4f4506144d7691e5fb8b03a30de5c7e0c0b2a4e89a402b06a075fb"
+  },
+  "training": {
+    "completed": true,
+    "steps": 162,
+    "included_rows": 428,
+    "excluded_rows": 0,
+    "fresh_base": true,
+    "adapter_sha256": "c8145d2f46615fb7befff6621ee523a25f77631e6f2d78cdf1dc256770c9c326"
+  },
+  "baseline": {
+    "scores": {
+      "repairs": {
+        "passed": 0,
+        "total": 10
+      },
+      "ordinary_repl": {
+        "passed": 0,
+        "total": 5
+      },
+      "recursive": {
+        "passed": 0,
+        "total": 5
+      },
+      "coding_retention": {
+        "passed": 0,
+        "total": 15
+      }
+    },
+    "returned_patches": 0,
+    "failures": {
+      "ErrorThresholdExceededError: Error threshold exceeded: 3 consecutive errors (limit: 3)": 2,
+      "RuntimeError: Model call or output-token budget exhausted": 8
+    },
+    "tasks": [
+      {
+        "id": "tuning-matrix-transpose",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 4
+      },
+      {
+        "id": "tuning-date-span",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-bounded-tail",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-nested-update",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-isbn-check",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-roman-numerals",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-edit-distance",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 4
+      },
+      {
+        "id": "tuning-header-multimap",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-idle-expiry",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-booking-overlap",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      }
+    ]
+  },
+  "candidate": {
+    "scores": {
+      "repairs": {
+        "passed": 2,
+        "total": 10
+      },
+      "ordinary_repl": {
+        "passed": 2,
+        "total": 5
+      },
+      "recursive": {
+        "passed": 0,
+        "total": 5
+      },
+      "coding_retention": {
+        "passed": 0,
+        "total": 15
+      }
+    },
+    "returned_patches": 3,
+    "failures": {
+      "RuntimeError: Model call or output-token budget exhausted": 7,
+      "Returned patch failed grading": 1
+    },
+    "tasks": [
+      {
+        "id": "tuning-matrix-transpose",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-date-span",
+        "condition": "ordinary",
+        "passed": true,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-bounded-tail",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-nested-update",
+        "condition": "ordinary",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-isbn-check",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-roman-numerals",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-edit-distance",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-header-multimap",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      },
+      {
+        "id": "tuning-idle-expiry",
+        "condition": "ordinary",
+        "passed": true,
+        "recursive_passed": false,
+        "calls": 2
+      },
+      {
+        "id": "tuning-booking-overlap",
+        "condition": "recursive",
+        "passed": false,
+        "recursive_passed": false,
+        "calls": 8
+      }
+    ]
+  },
+  "decision": {
+    "development_passed": false,
+    "gained_families": [
+      "tuning-date-span",
+      "tuning-idle-expiry"
+    ],
+    "recursive_gains": [],
+    "lost": [],
+    "recursive_losses": [],
+    "retention_losses": [],
+    "candidate_selected": false,
+    "adapter_promoted": false,
+    "full_loop_authorized": false,
+    "full_loop_restarted": false,
+    "heldout_performed": false,
+    "full_790_audit_performed": false,
+    "reason": "Two ordinary REPL repairs improved, but no recursive repair succeeded; the development gate failed."
+  },
+  "verification": {
+    "completed": true,
+    "returned_patches_regraded": 3,
+    "frozen_sources_unchanged": true,
+    "training_data_independently_verified": true,
+    "evidence_sha256": {
+      "evaluation.json": "db055792b8eb48044e863b0d3f511813fdb5d6d5eee36903acb2e9ed695ea367",
+      "config.json": "0ae30227f954cb100200312d67a1bb1a0c5e5f072ce4a2e352fdcf7a9b6840d2",
+      "runtime-binding.json": "1edb2b96b423ae3b9d945f1a2fceb80d5f8521600e20f5e65e53503141eab6ec",
+      "baseline/development.json": "ca8a43256b4d32e6e7b8a5026a17251b9fad705730478a389f72a27afd6c575f",
+      "candidate/development.json": "c84f96b0eb441746422af753bce6e1a06f4e493b6bad375cfa3d6cc87ab6c2d5",
+      "candidate/development-verified.json": "260d49ac729975fde7fc0b2fc1036965137930ca276e332572a8e89890428354",
+      "collection-verified.json": "4bb174f5c467bb1e4cb9e79a772fb9e79d1b2e771d3dee2b341ebe0a1a12570c",
+      "candidate/adapter/training.json": "356154279e528e29a000ee429be36676e6d25fd6f4a47aef5074532e4e1a4608",
+      "candidate/adapter/tokenization.json": "f934b390e5dd39ec42279d174cf131a287241d50c756b8cfc22afb721cd83f7b",
+      "comparison.json": "91008a17f41a239123208a1e3c732fdaaf4101819b0a89cbd74d3f55c096e3fa"
+    }
+  },
+  "limitations": [
+    "One finite corrective-imitation recipe on authored development tasks; no broad capability claim.",
+    "The recursive tasks are a subset of the ten repairs.",
+    "The 15-task retention subset has no baseline passes and cannot establish preservation of general coding ability.",
+    "Held-out confirmation and the full matched 790-task audit were not run after development rejection.",
+    "Environment repairs, training loss and collection success are not learning gains."
+  ]
+}

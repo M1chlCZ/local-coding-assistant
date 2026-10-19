@@ -96,7 +96,24 @@ This is supervised corrective imitation, not reinforcement learning or model-dis
 
 The new experiment freezes ten development repairs (the previous eight plus two additional development families), including five recursive tasks, before collection. It runs a fresh matched baseline, one declared training recipe and the candidate comparison. The five confirmation repairs remain unused until candidate selection. A development gain still needs confirmation and a fresh complete matched general-code audit before any continuous loop can start from preparation and Collect. Collection success and training loss are not evaluation results.
 
-Collection finished all 80 declared trajectories. Seventy-nine complete trajectories fit the training and inference limits; one whole trajectory was excluded because its student response exceeded the action/context preflight. The resulting dataset has 278 corrective REPL targets and 150 verified coding anchors, with student-state coverage across all twenty training families. All 428 selected rows fit without truncation. The fresh before/after comparison is still pending.
+Collection finished all 80 declared trajectories. Seventy-nine complete trajectories fit the training and inference limits; one whole trajectory was excluded because its student response exceeded the action/context preflight. The resulting dataset has 278 corrective REPL targets and 150 verified coding anchors, with student-state coverage across all twenty training families. All 428 selected rows fit without truncation. Independent collection checks verified target masking, family separation, all trace hashes, and fresh execution of all twenty reference repairs and their failing controls. Forty trajectories contained actual student prefixes; twenty-nine of those prefixes contained an execution error. These checks validate the data, not model quality.
+
+### Completed corrective-imitation comparison
+
+The single declared recipe completed 162 steps from a fresh base adapter at learning rate 0.00005 and rank 8. Three epochs determined the effective step count below the 200-step cap. All 428 rows were included, with no truncation or selected-row exclusions.
+
+| Model | All repairs | Ordinary REPL repairs | Genuine recursive repairs | Coding-retention subset |
+| --- | --- | --- | --- | --- |
+| Fresh matched base | 0/10 | 0/5 | 0/5 | 0/15 |
+| Corrective-imitation candidate | 2/10 | 2/5 | 0/5 | 0/15 |
+
+The ordinary and recursive columns partition the ten repair tasks. The candidate repaired the date-span and idle-expiry development families, each in two REPL calls. Independent verification checked the complete matched task order, frozen sources, runtime, data and adapter bindings, and regraded all three returned patches. Two passed; the third failed. This demonstrates a small ordinary REPL gain on these authored development tasks, with no demonstrated recursive gain.
+
+All five recursive attempts exhausted the shared eight-call budget. The inspected child requests now include task and source, but the proposed algorithms remain incorrect: an ISBN proposal omits the checksum, a Roman-numeral proposal uses incorrect symbols, and an edit-distance proposal raises an index error. After public tests reject these patches, the parent repeats inspection, delegation or application until its budget expires. The other two unsuccessful ordinary attempts also exhaust the budget. Better protocol execution has not yet produced reliable recursive problem solving.
+
+**The development gate failed because it required at least one newly successful recursive repair.** No candidate was selected or promoted, and every full learning loop remains paused. The five held-out repairs and fresh matched 790-task audit were not run after this rejection. No losses were observed in the small development comparison, but the retention subset had no baseline passes and cannot establish preserved general coding ability. The working-directory repair applied to both models and is not counted as a gain.
+
+The [verified public result](../reports/agent-recovery-pilot-20261019.json) records scores, recipe, failure counts and evidence hashes. Raw traces, training data, checkpoints and model weights remain private and preserved. This finite recipe is complete; it does not authorize restarting the continuous loop from Collect.
 
 All runtime data, prompts, traces and model weights stay under the ignored `.cache` directory. The original worker owns the GPU lock and performs cleanup on Pause. The REPL uses the prepared `.cache/rlm-env` environment; model serving and adapter training use `.cache/qwen35-env`. New session preparation requires both environments. No dependency or model download occurs during the offline worker run.
 
