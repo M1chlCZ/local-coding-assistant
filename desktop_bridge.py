@@ -59,6 +59,12 @@ def checked_report(path):
             raise ValueError('Completed comparison changed; result is not trusted')
     if report.get('completed') is not True:
         return None
+    gate = report.get('pilot_gate')
+    if gate and gate.get('completed') is True and 'comparisons' not in report:
+        report = dict(report, inputs=gate.get('inputs'), reason=gate.get('reason'),
+            comparisons=dict(training_effect=dict(repairs=dict(python=dict(
+                before=gate['before'], after=gate['after'], total=gate['total'],
+                gained=gate['gained_families'], lost=gate['lost'])))))
     if not report.get('inputs'):
         raise ValueError('Comparison has no bound evidence')
     for name, digest in report['inputs'].items():
@@ -105,16 +111,34 @@ def task_preview(path, state):
 
 def agent_curriculum_status(path, state, config):
     """Read pilot evidence for display; never score partial results or control work."""
+    if state.get('phase') == 'collect':
+        state['readiness'] = 'Collecting executed student attempts and verified corrections. Quality is not yet measured.'
+        return
+
     def local_file(name):
         file = (path/name).resolve()
         if not file.is_relative_to(path.resolve()):
             raise ValueError('Pilot display evidence must stay in its session')
         return file
 
+    bindings = dict(config.get('inputs', {}))
+    collected = next((stage for stage in state.get('completed_stages', [])
+                      if stage.get('result') == 'curriculum/feasibility.json'), None)
+    if collected:
+        evidence = local_file('curriculum/feasibility.json')
+        if not evidence.is_file() or sha256(evidence) != collected.get('sha256'):
+            raise ValueError('Pilot display evidence changed: collection result')
+        saved = read(evidence)
+        for name, digest in [('curriculum/feasibility.json', collected['sha256']),
+                             ('curriculum/train.jsonl', saved.get('dataset_sha256')),
+                             ('curriculum/train.jsonl.manifest.json', saved.get('manifest_sha256'))]:
+            local_file(name)
+            bindings[str(path/name)] = digest
+
     def frozen_file(name):
         # A pilot may reuse an immutable curriculum through an explicitly bound symlink.
         file = path/name
-        if not file.is_file() or sha256(file) != config.get('inputs', {}).get(str(file)):
+        if not file.is_file() or sha256(file) != bindings.get(str(file)):
             raise ValueError('Pilot display evidence changed: '+name)
         return file
 
@@ -130,7 +154,8 @@ def agent_curriculum_status(path, state, config):
         raise ValueError('Pilot lessons require intact execution and trajectory evidence')
     state['training_examples'] = len(rows)
     state['repl_examples'] = sum(row.get('example_kind') == 'executed_repl_repair' for row in rows)
-    state['readiness'] = (f"{state['repl_examples']} verified scripted REPL training rows; "
+    kind = 'corrective' if metadata.get('binding', {}).get('construction') == 'student_state_corrective_imitation' else 'scripted'
+    state['readiness'] = (f"{state['repl_examples']} verified {kind} REPL training rows; "
                           f"{len(rows)} training rows total. Waiting for a complete comparison.")
 
     index = state['stage_index']

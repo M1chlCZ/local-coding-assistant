@@ -149,7 +149,7 @@ class Sandbox:
                             'import pathlib,sys;pathlib.Path("/workspace/worker.py").write_text(sys.stdin.read())'],
                            input=(ROOT / 'rlm_worker.py').read_text(), text=True,
                            check=True, capture_output=True, timeout=10)
-            self.process = subprocess.Popen(['docker', 'exec', '-i', self.container, 'python', '-I', '-u',
+            self.process = subprocess.Popen(['docker', 'exec', '-i', '-w', '/workspace', self.container, 'python', '-I', '-u',
                                              '/workspace/worker.py'], stdin=subprocess.PIPE,
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self.reader = threading.Thread(target=self._read, daemon=True, name='local-rlm-reader')

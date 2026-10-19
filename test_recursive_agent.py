@@ -54,6 +54,8 @@ try:
     first = env.execute_code('value = 41; print(context["files"]["solver.py"])')
     assert 'x=1' in first.stdout
     assert env.execute_code('print(value+1)').stdout.strip() == '42'
+    relative = env.execute_code("from pathlib import Path; print(Path.cwd()); print(Path('solver.py').read_text())")
+    assert not relative.stderr and relative.stdout.strip() == '/workspace\nx=1'
     assert env.execute_code('import solver; print(solver.x)').stdout.strip() == '1'
     rejects(lambda: env.execute_code('print("x"*200000)'))
 finally:

@@ -179,6 +179,26 @@ class AgentCurriculumStatusTests(unittest.TestCase):
             self.assertNotIn(name, value)
         self.assertEqual(before, {p:p.read_bytes() for p in self.path.rglob('*') if p.is_file()})
 
+    def test_collection_is_unscored_and_completed_collection_binds_its_dataset(self):
+        self.config['stages'].insert(0, dict(name='collect', result='curriculum/feasibility.json'))
+        for file in (self.path/'curriculum').iterdir():
+            self.config['inputs'].pop(str(file))
+        self.state.update(phase='collect', stage_index=0)
+        value = self.snapshot()
+        self.assertEqual(value['quality']['label'], 'Not yet measured')
+        self.assertNotIn('training_examples', value)
+        self.assertIn('Collecting', value['readiness'])
+        evidence = self.path/'curriculum/feasibility.json'
+        self.state.update(phase='train-agent', stage_index=1, completed_stages=[
+            dict(name='collect', result='curriculum/feasibility.json', sha256=app.sha256(evidence))])
+        self.assertEqual(self.snapshot()['training_examples'], 3)
+        for file in (self.path/'curriculum').iterdir():
+            original = file.read_bytes()
+            file.write_bytes(original+b' ')
+            with self.subTest(file=file.name), self.assertRaisesRegex(ValueError, 'display evidence changed'):
+                self.snapshot()
+            file.write_bytes(original)
+
     def test_saved_progress_uses_only_current_frozen_public_source_without_scoring(self):
         self.results()
         mutable = json.loads(json.dumps(self.entries[1]))
@@ -205,6 +225,20 @@ class AgentCurriculumStatusTests(unittest.TestCase):
         report['reason'] = 'Unbound result'
         self.write('comparison.json', report)
         with self.assertRaisesRegex(ValueError, 'Completed comparison changed'):
+            self.snapshot()
+
+    def test_compact_pilot_gate_has_bound_evidence_and_measured_counts(self):
+        self.state.update(status='completed', stage_index=2, phase='completed')
+        gate = dict(completed=True, before=0, after=2, total=10, gained_families=['a','b'], lost=[],
+            reason='Confirmation still required', inputs={'evaluation.json':app.sha256(self.path/'evaluation.json')})
+        file = self.write('comparison.json', dict(completed=True, pilot_gate=gate, full_loop_authorized=False))
+        self.write('status.json', dict(completed_stages=[dict(result='comparison.json',sha256=app.sha256(file))]))
+        value = self.snapshot()
+        self.assertEqual((value['quality']['before'],value['quality']['after'],value['quality']['total']), (0,2,10))
+        self.assertEqual(value['readiness'], gate['reason'])
+        self.assertFalse(value['report']['full_loop_authorized'])
+        self.write('evaluation.json', dict(changed=True))
+        with self.assertRaisesRegex(ValueError, 'Comparison evidence changed'):
             self.snapshot()
 
     def test_finite_pilot_lists_checkpoints_from_its_training_stage(self):
