@@ -135,6 +135,24 @@ class StructuredOutputTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec('xgrammar'), 'Optional XGrammar environment required')
 class GrammarIntegrationTests(unittest.TestCase):
+    def test_declared_property_order_keeps_tool_name_before_arguments(self):
+        import torch
+        import xgrammar as xgr
+        from structured_output import StructuredOutput
+        from research.tool_protocol import schema
+        info = xgr.TokenizerInfo([chr(i) for i in range(128)]+['<end>'],
+                                 stop_token_ids=[128], vocab_size=129)
+        engine = StructuredOutput.__new__(StructuredOutput)
+        engine.compiler = xgr.GrammarCompiler(info, max_threads=2, cache_enabled=False)
+        processor = engine.processor(schema(False))
+        tokens = [0]
+        for character in '{"tool":"finish","path":"","text":""}':
+            scores = processor(torch.tensor([tokens]), torch.zeros(1, 129))
+            self.assertTrue(torch.isfinite(scores[0, ord(character)]), repr(character))
+            tokens.append(ord(character))
+        scores = processor(torch.tensor([tokens]), torch.zeros(1, 129))
+        self.assertTrue(torch.isfinite(scores[0, 128]))
+
     def test_actual_cpu_masks_escape_roundtrip_and_fresh_matchers(self):
         import torch
         import xgrammar as xgr

@@ -119,6 +119,7 @@ class StructuredOutput:
 
     def processor(self, schema):
         from xgrammar.contrib.hf import LogitsProcessor
-        compiled = self.compile(json.dumps(schema, sort_keys=True, allow_nan=False))
+        # XGrammar emits properties in schema order; keep tool names ahead of their arguments.
+        compiled = self.compile(json.dumps(schema, allow_nan=False))
         # Matchers contain generated-token state and must never survive a generate() call.
         return LogitsProcessor(compiled)

@@ -40,6 +40,8 @@ The [short-action recovery trial](research/execution-learning.md#short-repl-acti
 
 The Qwen evaluation server also has optional [schema-constrained JSON output](research/structured-output.md), using XGrammar. Its completed four-task comparison used the same retained BASE weights and identical prompts: both modes produced valid JSON on 4/4 tasks, while functional repairs fell from 2/4 to 1/4 with constraints. All eight patches were independently regraded. Constraints remain opt-in and disabled by default; this comparison establishes no REPL or recursive learning gain.
 
+A deeper [DeepSeek source review](research/deepseek-protocol.md) adds an isolated explicit-action experiment and fixes schema-property ordering, so an action name can precede its arguments. It compares three interfaces on six new public multi-file canaries using retained BASE only. No training gain or Collect restart is claimed.
+
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
 ## Coding chat and agent launcher

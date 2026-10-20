@@ -1,0 +1,134 @@
+[
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "protocol-dev-tag-index",
+      "repository": "protocol-dev/tag-index",
+      "split": "dev",
+      "prompt": "Repair norm.py and tags.py. normalize(text) strips surrounding whitespace and casefolds. tags(values) returns nonempty normalized strings once each, preserving first appearance. Do not mutate values. Example: [\" A \", \"a\", \"\", \"B\"] gives [\"a\", \"b\"]. No test files are supplied.",
+      "files": {
+        "norm.py": "def normalize(text):\n    return text.upper()\n",
+        "tags.py": "from norm import normalize\ndef tags(values):\n    return [normalize(v) for v in values]\n"
+      },
+      "editable": [
+        "norm.py",
+        "tags.py"
+      ],
+      "checks": "from norm import normalize\nfrom tags import tags\nassert normalize(\" Straße \")==\"strasse\"\nx=[\" A \",\"a\",\"\", \" \",\"B\",\"b\"]\nassert tags(x)==[\"a\",\"b\"]\nassert x==[\" A \",\"a\",\"\", \" \",\"B\",\"b\"]\nassert tags([])==[]",
+      "reference_patch": {
+        "norm.py": "def normalize(text):\n    return text.strip().casefold()\n",
+        "tags.py": "from norm import normalize\ndef tags(values):\n    result = []\n    for value in values:\n        value = normalize(value)\n        if value and value not in result:\n            result.append(value)\n    return result\n"
+      }
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "protocol-dev-duration-total",
+      "repository": "protocol-dev/duration-total",
+      "split": "dev",
+      "prompt": "Repair duration.py and total.py. parse_ms(text) accepts a nonnegative ASCII integer followed immediately by lowercase ms or s, permitting whitespace only around the whole input. Return integer milliseconds. Reject everything else with ValueError. total_ms(values) sums parse_ms over values; an empty list gives 0. Example: [\" 2s \", \"15ms\"] gives 2015. No tests supplied.",
+      "files": {
+        "duration.py": "def parse_ms(text):\n    return int(text.strip().rstrip(\"ms\"))\n",
+        "total.py": "from duration import parse_ms\ndef total_ms(values):\n    return len([parse_ms(v) for v in values])\n"
+      },
+      "editable": [
+        "duration.py",
+        "total.py"
+      ],
+      "checks": "from duration import parse_ms\nfrom total import total_ms\nassert parse_ms(\" 2s \")==2000\nassert parse_ms(\"15ms\")==15\nassert total_ms([\"2s\",\"15ms\",\"0s\"])==2015\nassert total_ms([])==0\nfor value in (\"-1s\",\"1.2s\",\"1 s\",\"3MS\",\"2\",\"٣s\"):\n    try: parse_ms(value)\n    except ValueError: pass\n    else: raise AssertionError(value)",
+      "reference_patch": {
+        "duration.py": "import re\ndef parse_ms(text):\n    m = re.fullmatch(r\"([0-9]+)(ms|s)\", text.strip())\n    if not m:\n        raise ValueError(\"invalid duration\")\n    return int(m[1]) * (1000 if m[2] == \"s\" else 1)\n",
+        "total.py": "from duration import parse_ms\ndef total_ms(values):\n    return sum(parse_ms(v) for v in values)\n"
+      }
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "protocol-dev-query-pairs",
+      "repository": "protocol-dev/query-pairs",
+      "split": "dev",
+      "prompt": "Repair decode.py and query.py. decode(value) URL-decodes percent escapes and maps plus to space, using standard-library unquote_plus semantics. query(text) splits on &, ignores empty segments, splits each segment at its first =, decodes key/value, and returns a dictionary of lists retaining every value in encounter order. A missing = means an empty value. Example: a=1&a=2&hello+world=x%2By gives {\"a\":[\"1\",\"2\"],\"hello world\":[\"x+y\"]}. No supplied tests.",
+      "files": {
+        "decode.py": "def decode(value):\n    return value\n",
+        "query.py": "from decode import decode\ndef query(text):\n    result = {}\n    for part in text.split(\"&\"):\n        if part:\n            key, _, value = part.partition(\"=\")\n            result[decode(key)] = [decode(value)]\n    return result\n"
+      },
+      "editable": [
+        "decode.py",
+        "query.py"
+      ],
+      "checks": "from decode import decode\nfrom query import query\nassert decode(\"a%2Bb+c\")==\"a+b c\"\nassert query(\"a=1&a=2&hello+world=x%2By\")=={\"a\":[\"1\",\"2\"],\"hello world\":[\"x+y\"]}\nassert query(\"&flag&&=x&a=b=c&flag=\")=={\"flag\":[\"\",\"\"],\"\":[\"x\"],\"a\":[\"b=c\"]}\nassert query(\"\")=={}",
+      "reference_patch": {
+        "decode.py": "from urllib.parse import unquote_plus\ndef decode(value):\n    return unquote_plus(value)\n",
+        "query.py": "from decode import decode\ndef query(text):\n    result = {}\n    for part in text.split(\"&\"):\n        if part:\n            key, _, value = part.partition(\"=\")\n            result.setdefault(decode(key), []).append(decode(value))\n    return result\n"
+      }
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "protocol-dev-severity-counts",
+      "repository": "protocol-dev/severity-counts",
+      "split": "dev",
+      "prompt": "Repair level.py and counts.py. level(text) strips whitespace and casefolds; warn maps to warning. Return info, warning, error, or None for any other text. counts(values, minimum) returns all three keys with counts of recognized levels at or above the inclusive minimum in the order info < warning < error. minimum is one of those three canonical strings. Do not mutate inputs. Example counts([\" INFO \",\"WARN\",\"error\",\"unknown\"],\"warning\") gives {\"info\":0,\"warning\":1,\"error\":1}. No supplied tests.",
+      "files": {
+        "level.py": "def level(text):\n    return text if text in (\"info\", \"warning\", \"error\") else None\n",
+        "counts.py": "from level import level\ndef counts(values, minimum):\n    order = [\"info\", \"warning\", \"error\"]\n    result = dict.fromkeys(order, 0)\n    for text in values:\n        value = level(text)\n        if value is not None and order.index(value) > order.index(minimum):\n            result[value] += 1\n    return result\n"
+      },
+      "editable": [
+        "level.py",
+        "counts.py"
+      ],
+      "checks": "from level import level\nfrom counts import counts\nassert level(\" WARN \")==\"warning\"\nassert level(\"other\") is None\nx=[\" INFO \",\"WARN\",\"error\",\"unknown\"]\nassert counts(x,\"warning\")=={\"info\":0,\"warning\":1,\"error\":1}\nassert counts(x,\"info\")=={\"info\":1,\"warning\":1,\"error\":1}\nassert counts([],\"error\")=={\"info\":0,\"warning\":0,\"error\":0}\nassert x==[\" INFO \",\"WARN\",\"error\",\"unknown\"]",
+      "reference_patch": {
+        "level.py": "def level(text):\n    value = text.strip().casefold()\n    if value == \"warn\":\n        value = \"warning\"\n    return value if value in (\"info\", \"warning\", \"error\") else None\n",
+        "counts.py": "from level import level\ndef counts(values, minimum):\n    order = [\"info\", \"warning\", \"error\"]\n    result = dict.fromkeys(order, 0)\n    for text in values:\n        value = level(text)\n        if value is not None and order.index(value) >= order.index(minimum):\n            result[value] += 1\n    return result\n"
+      }
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "protocol-dev-range-cover",
+      "repository": "protocol-dev/range-cover",
+      "split": "dev",
+      "prompt": "Repair ranges.py and coverage.py. merge(ranges) accepts pairs of integer inclusive endpoints, normalizes reversed pairs, sorts them, merges overlapping OR adjacent intervals, and returns a list of (start,end) tuples. Do not mutate the input. covered(ranges) returns how many distinct integers are covered. Empty input gives [] and 0. Example [(5,3),(1,2),(8,8)] merges to [(1,5),(8,8)] and covers 6 integers. No supplied tests.",
+      "files": {
+        "ranges.py": "def merge(ranges):\n    return sorted(ranges)\n",
+        "coverage.py": "from ranges import merge\ndef covered(ranges):\n    return sum(end-start for start,end in merge(ranges))\n"
+      },
+      "editable": [
+        "ranges.py",
+        "coverage.py"
+      ],
+      "checks": "from ranges import merge\nfrom coverage import covered\nx=[(5,3),(1,2),(8,8)]\nassert merge(x)==[(1,5),(8,8)]\nassert covered(x)==6\nassert x==[(5,3),(1,2),(8,8)]\nassert merge([])==[]\nassert covered([])==0\nassert merge([(-2,1),(0,3),(5,5),(4,4)])==[(-2,5)]\nassert covered([(1,1),(1,1)])==1",
+      "reference_patch": {
+        "ranges.py": "def merge(ranges):\n    result = []\n    for start, end in sorted((min(a,b),max(a,b)) for a,b in ranges):\n        if result and start <= result[-1][1] + 1:\n            result[-1] = (result[-1][0], max(end,result[-1][1]))\n        else:\n            result.append((start,end))\n    return result\n",
+        "coverage.py": "from ranges import merge\ndef covered(ranges):\n    return sum(end-start+1 for start,end in merge(ranges))\n"
+      }
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "protocol-dev-config-flags",
+      "repository": "protocol-dev/config-flags",
+      "split": "dev",
+      "prompt": "Repair flag.py and config.py. flag(value, default=False) accepts a string or None: strip whitespace and casefold; true/yes/1/on gives True, false/no/0/off gives False; None and any other string give default. defaults is a dictionary of boolean defaults. read_flags(values, defaults) returns exactly the defaults keys, using values strings where present and each key's own default for missing or invalid values. Neither input is mutated; ignore extra keys in values. No tests supplied.",
+      "files": {
+        "flag.py": "def flag(value, default=False):\n    return bool(value)\n",
+        "config.py": "from flag import flag\ndef read_flags(values, defaults):\n    return {key: flag(value) for key,value in values.items()}\n"
+      },
+      "editable": [
+        "flag.py",
+        "config.py"
+      ],
+      "checks": "from flag import flag\nfrom config import read_flags\nassert flag(\" OFF \",True) is False\nassert flag(\"yes\") is True\nassert flag(\"???\",True) is True\nassert flag(None,True) is True\nv={\"a\":\"no\",\"c\":\"???\",\"extra\":\"yes\"};d={\"a\":True,\"b\":True,\"c\":True}\nassert read_flags(v,d)=={\"a\":False,\"b\":True,\"c\":True}\nassert v=={\"a\":\"no\",\"c\":\"???\",\"extra\":\"yes\"} and d=={\"a\":True,\"b\":True,\"c\":True}\nassert read_flags({},{})=={}",
+      "reference_patch": {
+        "flag.py": "def flag(value, default=False):\n    if value is None:\n        return default\n    value = value.strip().casefold()\n    if value in (\"true\",\"yes\",\"1\",\"on\"):\n        return True\n    if value in (\"false\",\"no\",\"0\",\"off\"):\n        return False\n    return default\n",
+        "config.py": "from flag import flag\ndef read_flags(values, defaults):\n    return {key: flag(values.get(key), default) for key,default in defaults.items()}\n"
+      }
+    }
+  }
+]
