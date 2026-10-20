@@ -76,7 +76,7 @@ class RecipeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d); data=root/'input.jsonl'; data.write_text('{}\n')
             Path(str(data)+'.manifest.json').write_text('{}')
-            for name in ('focused_experiment.py','focused_evaluation.py','qwen35_train.py','qwen35_server.py',
+            for name in ('focused_experiment.py','focused_evaluation.py','qwen35_train.py','qwen35_server.py','structured_output.py',
                          'desktop_bridge.py','focused_report.py','focused_data.py','focused_replay.py','train_adapter.py','training_data.py','evaluation.py',
                          'launcher.py','polyglot_runtime.py','research/polyglot_benchmark.py',
                          'research/adapter_eval_server.py','.cache/rlm-env/bin/python',

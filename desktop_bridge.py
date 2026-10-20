@@ -277,7 +277,7 @@ def prepare(request):
             raise ValueError('Prepare the Qwen3.5 CUDA backend and benchmark runtime first: ' + str(required))
     # Keep the source and private data immutable for the duration of an experiment.
     sources = [ROOT / name for name in ('focused_experiment.py','focused_evaluation.py',
-        'qwen35_train.py','qwen35_server.py','desktop_bridge.py','focused_report.py','focused_data.py','focused_replay.py',
+        'qwen35_train.py','qwen35_server.py','structured_output.py','desktop_bridge.py','focused_report.py','focused_data.py','focused_replay.py',
         'train_adapter.py','training_data.py','evaluation.py','launcher.py','polyglot_runtime.py',
         'research/polyglot_benchmark.py','research/adapter_eval_server.py')]
     inputs = {str(p): sha256(p) for p in sources}

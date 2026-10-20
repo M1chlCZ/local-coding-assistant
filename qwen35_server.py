@@ -8,6 +8,7 @@ from pathlib import Path
 
 from qwen35_train import MODEL, load_model, read_json, sha256, validate_revision
 from research.adapter_eval_server import completion, validate_batch
+from structured_output import response_schema, check_response, StructuredOutput
 
 
 def validate_adapter(path, model, revision):
@@ -42,9 +43,13 @@ def stop_tokens(model, tokenizer):
     return endings
 
 
-def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, context, batch_size):
-    import torch
+def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, context, batch_size,
+             structured=None):
     conversations, maximum = validate_batch(data, output_limit)
+    schema = response_schema(data)
+    if schema is not None and structured is None:
+        raise ValueError('Start the server with --structured-output for structured requests')
+    import torch
     options, seed = sampling(data)
     endings = stop_tokens(model, tokenizer)
     if options['do_sample']:
@@ -60,16 +65,20 @@ def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, con
             raise ValueError(f'Input and output exceed the {context}-token context; no truncation applied')
         inputs = inputs.to('cuda')
         mode = model.disable_adapter() if has_adapter and not use_adapter else contextlib.nullcontext()
+        constraints = {} if schema is None else {'logits_processor': [structured.processor(schema)]}
         with mode, torch.inference_mode():
-            out = model.generate(**inputs, **options, max_new_tokens=maximum,
+            out = model.generate(**inputs, **options, **constraints, max_new_tokens=maximum,
                                  pad_token_id=tokenizer.pad_token_id, eos_token_id=endings)
         responses.extend(completion(tokenizer, tokens[padded:], int(mask.sum()), maximum,
                                     endings)
                          for tokens, mask in zip(out.tolist(), inputs['attention_mask']))
+    if schema is not None:
+        for response in responses:
+            check_response(response, schema)
     return responses
 
 
-def make_handler(generate_fn, model_id, revision, has_adapter):
+def make_handler(generate_fn, model_id, revision, has_adapter, structured_outputs=False):
     state = {'mode': 'base'}
 
     class Handler(BaseHTTPRequestHandler):
@@ -90,7 +99,8 @@ def make_handler(generate_fn, model_id, revision, has_adapter):
                 return
             self.send_json({'status': 'ok', 'model': model_id, 'revision': revision,
                             'precision': 'bf16', 'adapter': state['mode'] == 'adapter',
-                            'adapter_available': has_adapter})
+                            'adapter_available': has_adapter,
+                            'structured_outputs': structured_outputs})
 
         def do_POST(self):
             try:
@@ -134,6 +144,8 @@ def main():
     parser.add_argument('--output-limit', type=int, choices=(1024, 2048), default=1024)
     parser.add_argument('--context-length', type=int, choices=(2048, 4096, 8192), default=8192)
     parser.add_argument('--batch-size', type=int, choices=(1, 2), default=1)
+    parser.add_argument('--structured-output', action='store_true',
+                        help='Enable optional XGrammar JSON constraints; never changes text requests')
     args = parser.parse_args()
     validate_revision(args.model, args.revision)
     if not 1024 <= args.port <= 65535:
@@ -150,12 +162,15 @@ def main():
     fast.for_inference(model)
     model.eval()
     model.config.use_cache = True
+    structured = (StructuredOutput(tokenizer, model.get_output_embeddings().weight.shape[0],
+                                  stop_tokens(model, tokenizer)) if args.structured_output else None)
     print('EVAL_STOP_TOKENS '+json.dumps(stop_tokens(model, tokenizer)), flush=True)
     def run(data, use_adapter):
         return generate(model, tokenizer, data, use_adapter, bool(args.adapter),
-                        args.output_limit, args.context_length, args.batch_size)
+                        args.output_limit, args.context_length, args.batch_size, structured)
     server = HTTPServer(('127.0.0.1', args.port),
-                        make_handler(run, args.model, args.revision, bool(args.adapter)))
+                        make_handler(run, args.model, args.revision, bool(args.adapter),
+                                     args.structured_output))
     print(f'EVAL_READY http://127.0.0.1:{args.port}', flush=True)
     server.serve_forever()
 

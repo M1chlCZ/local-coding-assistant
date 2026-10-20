@@ -68,7 +68,7 @@ def run(args):
         tasks = {l: rows[:args.smoke_limit] for l, rows in tasks.items()}
     args.output.mkdir(parents=True, exist_ok=True)
     sources = ('focused_evaluation.py', 'research/polyglot_benchmark.py', 'polyglot_runtime.py',
-               'evaluation.py', 'qwen35_server.py', 'qwen35_train.py', 'research/adapter_eval_server.py',
+               'evaluation.py', 'qwen35_server.py', 'structured_output.py', 'qwen35_train.py', 'research/adapter_eval_server.py',
                'focused_replay.py', 'focused_data.py')
     from polyglot_runtime import image
     model = QWEN35 if args.engine == 'qwen35' else 'Qwen/Qwen3-4B'

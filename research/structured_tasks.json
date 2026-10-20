@@ -1,0 +1,44 @@
+[
+  {
+    "id": "format-fixed-literal",
+    "repository": "format-fixed-literal",
+    "split": "format_canary",
+    "prompt": "Implement message() in solution.py. Return exactly these two lines, with no newline after the second: first line is C:\\new\\tools, second line is He said \"kůň\".",
+    "editable": ["solution.py"],
+    "files": {"solution.py": "def message():\n    return ''\n"},
+    "checks": "from solution import message\nassert message() == 'C:\\\\new\\\\tools\\nHe said \"kůň\"'\n"
+  },
+  {
+    "id": "format-field-escaping",
+    "repository": "format-field-escaping",
+    "split": "format_canary",
+    "prompt": "Implement escape_field(text) in solution.py. Replace each original backslash with two backslashes, each tab with the two characters backslash and t, each newline with backslash and n, and each carriage return with backslash and r. Preserve every other character, including quotes and Unicode. Do not escape the backslashes introduced by replacements.",
+    "editable": ["solution.py"],
+    "files": {"solution.py": "def escape_field(text):\n    return text\n"},
+    "checks": "from solution import escape_field\nassert escape_field('') == ''\nassert escape_field('a\\\\b\\t\"kůň\"\\n\\r') == 'a\\\\\\\\b\\\\t\"kůň\"\\\\n\\\\r'\nassert escape_field('\\\\n\\n') == '\\\\\\\\n\\\\n'\n"
+  },
+  {
+    "id": "format-json-lines",
+    "repository": "format-json-lines",
+    "split": "format_canary",
+    "prompt": "Repair both files. codec.encode(value) must produce compact JSON with sorted object keys and literal Unicode characters. api.render(values) must use codec.encode for each value and join results with one newline. Return an empty string for empty input and never add a final newline.",
+    "editable": ["codec.py", "api.py"],
+    "files": {
+      "codec.py": "def encode(value):\n    return str(value)\n",
+      "api.py": "from codec import encode\n\ndef render(values):\n    return ','.join(encode(value) for value in values)\n"
+    },
+    "checks": "from codec import encode\nfrom api import render\nimport json\nvalues = [{'z': 'kůň\\n\"x\"', 'a': '\\\\path'}, [True, None]]\nexpected = [json.dumps(v, ensure_ascii=False, sort_keys=True, separators=(',', ':')) for v in values]\nassert [encode(v) for v in values] == expected\nassert render(values) == '\\n'.join(expected)\nassert render([]) == ''\nassert [json.loads(line) for line in render(values).splitlines()] == values\n"
+  },
+  {
+    "id": "format-normalized-records",
+    "repository": "format-normalized-records",
+    "split": "format_canary",
+    "prompt": "Repair both files. keys.normalize(text) must strip leading/trailing whitespace, casefold, and join whitespace-separated words with one hyphen. api.unique_keys(values) must call normalize and return nonempty normalized keys in first-seen order, removing duplicates without changing the input list.",
+    "editable": ["keys.py", "api.py"],
+    "files": {
+      "keys.py": "def normalize(text):\n    return text.lower()\n",
+      "api.py": "from keys import normalize\n\ndef unique_keys(values):\n    return [normalize(value) for value in values]\n"
+    },
+    "checks": "from keys import normalize\nfrom api import unique_keys\nassert normalize('  A\\t B\\n') == 'a-b'\nassert normalize('Straße') == 'strasse'\nx = [' A  B ', 'a-b', '  ', 'Straße', 'STRASSE', 'kůň']\noriginal = list(x)\nassert unique_keys(x) == ['a-b', 'strasse', 'kůň']\nassert x == original\nassert unique_keys([]) == []\n"
+  }
+]

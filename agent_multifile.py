@@ -24,7 +24,7 @@ INSTRUCTION = ORDINARY + ('For a root task (context is a dictionary), delegate o
     'then return the JSON patch through answer content. Do not delegate further. '
     'The parent must parse the actual child response, apply it, run its own checks, and finish.\n')
 SOURCES = ('agent_multifile.py','agent_curriculum.py','agent_tested.py','agent_pilot.py',
-    'recursive_agent.py','rlm_worker.py','qwen35_train.py','qwen35_server.py','teacher_data.py')
+    'recursive_agent.py','rlm_worker.py','qwen35_train.py','qwen35_server.py','structured_output.py','teacher_data.py')
 
 
 def task(entry, index):

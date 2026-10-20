@@ -118,7 +118,7 @@ def collect(folder, revision, anchor_path, adapter):
     if prepared['source_sha256']!=sha256(folder/'source.json'):
         raise ValueError('Prepared teacher functions changed')
     sources=('agent_tested.py','agent_curriculum.py','agent_pilot.py','recursive_agent.py','rlm_worker.py',
-             'coding_loop_stage.py','teacher_data.py','qwen35_server.py','qwen35_train.py')
+             'coding_loop_stage.py','teacher_data.py','qwen35_server.py','structured_output.py','qwen35_train.py')
     binding=dict(revision=revision,policy_model_revision=REVISION,
         policy_adapter_sha256=sha256(adapter/'adapter_model.safetensors'),
         sources={n:sha256(ROOT/n) for n in sources},anchors_sha256=sha256(anchor_path),

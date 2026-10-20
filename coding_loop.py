@@ -8,7 +8,7 @@ from qwen35_train import atomic_json, sha256
 PHASES = ('prepare', 'collect', 'export', 'baseline', 'train', 'candidate', 'gate',
           'audit-parent', 'audit-candidate', 'finish')
 SOURCES = ('coding_loop.py', 'coding_loop_stage.py', 'focused_experiment.py', 'focused_evaluation.py', 'focused_report.py',
-           'qwen35_train.py', 'qwen35_server.py', 'polyglot_data.py', 'polyglot_runtime.py',
+           'qwen35_train.py', 'qwen35_server.py', 'structured_output.py', 'polyglot_data.py', 'polyglot_runtime.py',
            'code_recipe.py', 'recursive_agent.py', 'evaluation.py', 'training_data.py', 'train_adapter.py',
            'teacher_data.py', 'focused_data.py', 'repl_learning.py', 'rlm_worker.py',
            'research/polyglot_benchmark.py', 'research/adapter_eval_server.py',

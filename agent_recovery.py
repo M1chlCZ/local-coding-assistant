@@ -165,7 +165,7 @@ def collect(folder, revision, anchor_path):
     folder.mkdir(parents=True, exist_ok=True)
     (folder/'traces').mkdir(exist_ok=True)
     sources = ('agent_recovery.py','agent_curriculum.py','agent_pilot.py','recursive_agent.py',
-               'rlm_worker.py','qwen35_server.py','qwen35_train.py','research/repair_tasks.json')
+               'rlm_worker.py','qwen35_server.py','structured_output.py','qwen35_train.py','research/repair_tasks.json')
     binding = dict(revision=revision, policy_model_revision=REVISION, policy_adapter=None,
         sources={n:sha256(ROOT/n) for n in sources}, anchors_sha256=sha256(anchor_path), limits=LIMITS)
     path = folder/'binding.json'

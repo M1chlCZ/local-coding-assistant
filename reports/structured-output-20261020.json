@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "status": "implemented_comparison_queued",
+  "feature": "Optional schema-constrained JSON output in the Qwen3.5 BF16 evaluation server",
+  "default_enabled": false,
+  "dependencies": {
+    "xgrammar": "0.2.2",
+    "jsonschema": "4.26.0"
+  },
+  "validation": {
+    "linux_targeted_tests": 65,
+    "passed": 65,
+    "skipped": 0,
+    "actual_cpu_token_mask_checks": true,
+    "qwen_tokenizer_roundtrip": {
+      "model": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "vocab_size": 248320,
+      "tokens": 22,
+      "passed": true
+    },
+    "isolated_fixture_controls": {
+      "tasks": 4,
+      "broken_rejected": 4,
+      "reference_passed": 4,
+      "missing_individual_edits_rejected": 4
+    }
+  },
+  "same_weight_comparison": {
+    "completed": false,
+    "tasks_per_mode": 4,
+    "scope": "Public direct-patch format canaries, including two multi-file repairs",
+    "ordinary_repl_evaluated": false,
+    "recursive_solving_evaluated": false,
+    "reserved_learning_holdouts_used": false,
+    "plain": null,
+    "constrained": null,
+    "wait_reason": "Active frozen learning experiment and its required checks retain GPU priority"
+  },
+  "model_learning_gain_established": false,
+  "full_loop_authorized": false,
+  "full_loop_restarted": false
+}

@@ -18,7 +18,7 @@ RECURSIVE = ('For the root repository task (context is a dictionary), '
              'Apply that patch in the parent workspace, run available public tests, and return it. '
              'For a child subtask (context is a string), analyze only the supplied source and return '
              'the requested JSON patch; no further delegation or repository filesystem is required.\n')
-SOURCES = ('recursive_agent.py', 'rlm_worker.py', 'repl_actions.py', 'evaluation.py', 'qwen35_server.py',
+SOURCES = ('recursive_agent.py', 'rlm_worker.py', 'repl_actions.py', 'evaluation.py', 'qwen35_server.py', 'structured_output.py',
            'qwen35_train.py', 'agent_pilot.py', 'coding_loop_stage.py', 'repl_learning.py',
            'code_recipe.py', 'polyglot_runtime.py', 'research/adapter_eval_server.py')
 
