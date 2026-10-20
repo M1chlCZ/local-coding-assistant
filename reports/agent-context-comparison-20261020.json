@@ -120,5 +120,5 @@
     "Two base repairs satisfy the strict tested-REPL criterion; neither is retained by the candidate."
   ],
   "decision": "Reject this candidate; preserve evidence and checkpoints, keep full training paused, no additional recipe",
-  "format_comparison": "Separate authorized same-weight comparison remains pending; cannot authorize restart"
+  "format_comparison": "Completed separately: JSON validity4/4 in both modes, functional2/4 plain versus1/4 constrained; no restart authorization"
 }

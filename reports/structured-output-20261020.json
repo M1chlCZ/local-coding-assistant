@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "implemented_comparison_queued",
+  "status": "completed_no_benefit_on_four_public_canaries",
   "feature": "Optional schema-constrained JSON output in the Qwen3.5 BF16 evaluation server",
   "default_enabled": false,
   "dependencies": {
@@ -27,17 +27,73 @@
     }
   },
   "same_weight_comparison": {
-    "completed": false,
+    "completed": true,
     "tasks_per_mode": 4,
     "scope": "Public direct-patch format canaries, including two multi-file repairs",
     "ordinary_repl_evaluated": false,
     "recursive_solving_evaluated": false,
     "reserved_learning_holdouts_used": false,
-    "plain": null,
-    "constrained": null,
-    "wait_reason": "Active frozen learning experiment and its required checks retain GPU priority"
+    "plain": {
+      "format_valid": 4,
+      "syntax_valid": 3,
+      "functional_passed": 2
+    },
+    "constrained": {
+      "format_valid": 4,
+      "syntax_valid": 3,
+      "functional_passed": 1
+    },
+    "functional_gains": [],
+    "functional_losses": [
+      "format-normalized-records"
+    ],
+    "regraded_patches": 8,
+    "grading_mismatches": 0,
+    "identical_prompts_verified": true,
+    "source_runtime_bindings_verified": true,
+    "input_hashes": {
+      "results.json": "107e5c95f958fe61da44085e4f6446423bf17874ee44ac664e00091f23483cec",
+      "summary.json": "a4f84494cda4b0fb12171d5e7df368f5d5abc4a789ce5e7a40c5c30f79c30a41",
+      "binding.json": "68a78e793a702ef58025f32312c5a5db57f6e6d025d4b7630c0816358ab3d50c"
+    },
+    "independent_review_sha256": "706dca662bd7f5b3857e9b3185fdf9817aa30365cfab7b34377cba9e96607081",
+    "binding": {
+      "model": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "adapter": null,
+      "precision": "bf16",
+      "max_tokens": 1024,
+      "context": 8192,
+      "temperature": 0,
+      "generation_batch_size": 1,
+      "sources": {
+        "research/structured_compare.py": "dda37b9e0c388a369ad2a03681e142126764289de2556afe0d7d71b2d203d508",
+        "research/structured_tasks.json": "ee12bdd29205832692363d1e40c5227a045049c81be3764f102a467bcc15340b",
+        "structured_output.py": "ab9a4f1f9995107e79a0501824d45f82b6dae69d4ddc9b1d1aefb769d7a33c8a",
+        "qwen35_server.py": "353e1bed1ef175fc12fa1acdb5e3b9f0e9f47ca2a52ac5e7cc68ce54fe05c5f4",
+        "qwen35_train.py": "6642260eb2a4e296cf7bda7cd15d5a8903b93d2c019d83a3a5184781578b5866",
+        "recursive_agent.py": "0d45d292287ab1bcb58e476d8bb9efa5631e6bd0591af5d8b450813f2467af46",
+        "evaluation.py": "5231f27e0ea1fa1f70fbee0129b2ffedddf28796c9abaa850ed4cc5ab0f99098",
+        "research/adapter_eval_server.py": "dddbfe182bbc3a2c48535d9ef0add1a2afc26e506b85cc95cc66f150da9f3afa",
+        "requirements-structured.txt": "740ff45686a4162635360f5c0bb66db86c4233b58fb255213d8c3869756f1731"
+      },
+      "runtime": {
+        "torch": "2.14.0+cu130",
+        "transformers": "5.17.0",
+        "unsloth": "2026.10.3",
+        "xgrammar": "0.2.2",
+        "jsonschema": "4.26.0"
+      }
+    },
+    "source_commit": "a5596fa9b04279cea09f3ffa6b9b12db320d881e"
   },
   "model_learning_gain_established": false,
   "full_loop_authorized": false,
-  "full_loop_restarted": false
+  "full_loop_restarted": false,
+  "decision": "Keep schema constraints opt-in and disabled by default; this small comparison shows no format gain and one functional loss",
+  "limitations": [
+    "Four public tasks on one retained BASE checkpoint with deterministic generation; not a general performance estimate.",
+    "Both modes returned valid JSON for every task; syntax failed once per mode and functional correctness remains separate.",
+    "No REPL, recursive learning or reserved held-out tasks were evaluated in this format comparison."
+  ]
 }

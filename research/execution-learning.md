@@ -341,5 +341,7 @@ This candidate is rejected. No weights were selected for confirmation, none of t
 eight reserved tasks were model-evaluated, and the conditional 790-task audit was
 not started. The original and repaired comparison evidence and checkpoints are
 preserved. Full training remains paused, with no further recipe launched.
-The separately authorized same-weight format comparison is still required; it
-cannot establish learning gains or authorize a restart.
+The separately authorized same-weight format comparison also completed: both modes
+produced valid JSON on 4/4 public tasks, but functional repairs were 2/4 plain and
+1/4 constrained. All eight patches were independently regraded. This small format
+test establishes no learning gain and does not authorize a restart.

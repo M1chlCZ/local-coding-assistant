@@ -38,7 +38,7 @@ The [multi-file trial](reports/agent-multifile-trial-20261019.json) completed an
 
 The [short-action recovery trial](research/execution-learning.md#short-repl-actions-and-recovery-imitation) completed a [fresh matched comparison](reports/agent-context-comparison-20261020.json) after its context-overflow repair. Functional repairs fell from 5/15 to 0/15, strictly tested ordinary REPL repairs from 2/8 to 0/8, and genuine recursive repairs stayed 0/7. All 277 generations and 12 returned root/child patches were independently checked. The candidate was rejected; the eight reserved confirmation tasks remain unused, and the full loop stays paused.
 
-The Qwen evaluation server also has optional [schema-constrained JSON output](research/structured-output.md), using XGrammar. Text requests keep their existing behavior. Its separate same-weight format comparison is queued behind the frozen learning experiment; it cannot establish REPL or recursive learning gains.
+The Qwen evaluation server also has optional [schema-constrained JSON output](research/structured-output.md), using XGrammar. Its completed four-task comparison used the same retained BASE weights and identical prompts: both modes produced valid JSON on 4/4 tasks, while functional repairs fell from 2/4 to 1/4 with constraints. All eight patches were independently regraded. Constraints remain opt-in and disabled by default; this comparison establishes no REPL or recursive learning gain.
 
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 

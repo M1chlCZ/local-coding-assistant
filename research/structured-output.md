@@ -96,6 +96,29 @@ The integration passed 65 targeted checks in the separate Linux environment, inc
 actual CPU grammar masks, multiple stop tokens, Unicode/escaping, padded vocabulary,
 fresh matchers, bounded requests, truncation and existing server/experiment regressions.
 A separate CPU round trip with the pinned Qwen3.5 tokenizer passed. These checks do not
-constitute a model before/after result. The GPU comparison is queued behind the active
-frozen learning trial and its required checks.
-See the [validation and pending comparison record](../reports/structured-output-20261020.json).
+constitute a model before/after result.
+
+The separate GPU comparison is complete. It ran once after the learning candidate
+failed its development gate and released the GPU. All eight responses were independently
+checked against the schema, compiled and regraded in the isolated Docker environment,
+including the two responses containing invalid Python. Source/runtime bindings, task
+order, identical prompt hashes and token counts matched the frozen comparison.
+
+| Measure | Plain | Schema constrained |
+| --- | ---: | ---: |
+| Complete valid JSON matching the schema | 4/4 | 4/4 |
+| Valid Python syntax | 3/4 | 3/4 |
+| Functional repairs | 2/4 | 1/4 |
+
+There were no functional gains and one loss, on the public normalized-records task.
+The constrained answer joined words with `" - "` instead of `"-"`, violating the
+requirement. The fixed-literal task returned the same invalid Python in both modes,
+even though its enclosing JSON was valid. All responses ended normally within the
+output budget; no truncated answer was counted as success.
+
+This small deterministic comparison provides no evidence of a format benefit on
+these tasks and records a functional regression. Constraints remain opt-in and
+disabled by default. Four public direct-patch tasks do not establish general model
+quality, REPL ability, recursive learning or throughput. The eight reserved learning
+tasks remain unused, and the full training loop remains paused.
+See the [complete aggregate results](../reports/structured-output-20261020.json).
