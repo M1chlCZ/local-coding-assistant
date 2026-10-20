@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "experiment": "agent-context-20261020",
-  "status": "prepared_for_fresh_matched_evaluation",
+  "experiment": "agent-context-verified-20261020",
+  "status": "running_fresh_matched_baseline",
   "method": "Same frozen short-action candidate; exact server-tokenized context budgeting in both fresh evaluation arms",
   "training_repeated": false,
   "source_experiment": "agent-actions-20261020",
@@ -63,5 +63,8 @@
   ],
   "model_learning_gain_established": false,
   "full_loop_authorized": false,
-  "full_loop_restarted": false
+  "full_loop_restarted": false,
+  "source_commit": "6332a1be8e08e68bd693538bd869f05b484baced",
+  "evaluation_sha256": "7553a35f039c7b5d47914d0e05cfeeb0e39b5ba24ad11e02cefc253325a85ee1",
+  "startup_note": "First controller snapshot preserved after nested GPU-lock failure before any model comparison; corrected controller delegates locking to existing evaluator"
 }

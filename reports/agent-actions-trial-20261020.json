@@ -58,5 +58,5 @@
   "context_failures": 2,
   "training_completed": true,
   "training_steps": 300,
-  "successor_evaluation": "agent-context-20261020"
+  "successor_evaluation": "agent-context-verified-20261020"
 }
