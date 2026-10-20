@@ -38,10 +38,17 @@ state = {'__builtins__': __builtins__, 'answer': {'content': '', 'ready': False}
 state['llm_query_batched'] = lambda prompts, model=None: [query(p, model) for p in prompts]
 state['rlm_query_batched'] = lambda prompts, model=None: [query(p, model, True) for p in prompts]
 state['SHOW_VARS'] = lambda: {k: type(v).__name__ for k, v in state.items() if not k.startswith('_')}
+actions = None
 for line in wire_in:
     request = json.loads(line)
     if 'context' in request:
         state['context'] = request['context']
+        if request.get('action_api'):
+            sys.path.insert(0, '/workspace')
+            from repl_actions import Workspace
+            actions = Workspace(request['context'], state['answer'],
+                                query=lambda prompt: query(prompt, recursive=True))
+            state.update(actions.bindings())
         if isinstance(request['context'], dict):
             for name, content in request['context'].get('files', {}).items():
                 path = pathlib.PurePosixPath(name)
@@ -54,6 +61,7 @@ for line in wire_in:
         send({'type': 'result', 'stdout': '', 'stderr': '', 'final_answer': None})
         continue
     stdout, stderr = Output(), Output()
+    first_check = len(actions.checks) if actions else 0
     try:
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             exec(request['code'], state, state)
@@ -65,4 +73,5 @@ for line in wire_in:
     answer = state.get('answer', {})
     final = answer.get('content') if isinstance(answer, dict) and answer.get('ready') else None
     send({'type': 'result', 'stdout': stdout.getvalue(), 'stderr': stderr.getvalue(),
-          'final_answer': json.dumps(final) if isinstance(final, dict) else final})
+          'final_answer': json.dumps(final) if isinstance(final, dict) else final,
+          **({'checks': actions.checks[first_check:]} if actions else {})})

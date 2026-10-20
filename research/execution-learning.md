@@ -243,3 +243,36 @@ development prerequisite failed. All older loops remain paused; no full-loop res
 or additional recipe followed. Private examples, traces and checkpoints are preserved.
 The all-zero small retention result provides no positive evidence of retained general
 coding ability.
+
+### Short REPL actions and recovery imitation
+
+A new authorized trial addresses the malformed Python/JSON and repeated-error failures.
+The optional action interface keeps the Python REPL but removes nested JSON construction
+from source edits and child transport. The model still inspects source, writes the repair,
+and supplies its own assertions. Small helpers validate editable paths and Python syntax,
+run checks in fresh processes, transport the actual child result, and serialize changed
+files only after a successful check on those exact files. They supply no solutions or tests.
+The retained base and candidate use identical helpers, prompts and budgets; improvements
+from changing the interface alone cannot count as training gains.
+
+The new curriculum executes short actions and recovery from syntax failures, an incorrect
+implementation, and a missing caller edit. Deliberately failed proposals remain in the
+conversation history but are masked from training targets. Checks must reject the broken
+repository and each missing edit. Complete trajectories, including masked observations,
+must fit the inference and training limits. Source families remain separate from evaluation;
+150 verified multilingual source-code anchors remain in the training mix. One fresh
+retained-base adapter and optimizer use rank 8, learning rate 5e-5, three epochs capped at
+300 steps, accumulation 8, sequence length 4096, and seed 3407.
+
+Portable tests and six actual isolated parent/child reference canaries passed. These are
+pipeline checks, not model results. The eight previously frozen multi-file confirmation
+tasks have never been evaluated by either model and remain reserved for candidate selection.
+Development still requires gains in ordinary REPL and genuine recursive solving, at least
+two new families, and no lost passes. Confirmation must gain in both modes without losses,
+followed by a fresh complete matched 790-task retained-base audit with no lost base passes.
+The full loop stays paused until every requirement passes. This remains a small synthetic,
+Python repository experiment; broad repository competence is unproven.
+
+The interface choice is informed by the tool-design observations in
+[Anthropic's agent report](https://www.anthropic.com/engineering/swe-bench-sonnet).
+It is a hypothesis to test here, not evidence that this model has improved.

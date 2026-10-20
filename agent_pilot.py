@@ -18,7 +18,7 @@ RECURSIVE = ('For the root repository task (context is a dictionary), '
              'Apply that patch in the parent workspace, run available public tests, and return it. '
              'For a child subtask (context is a string), analyze only the supplied source and return '
              'the requested JSON patch; no further delegation or repository filesystem is required.\n')
-SOURCES = ('recursive_agent.py', 'rlm_worker.py', 'evaluation.py', 'qwen35_server.py',
+SOURCES = ('recursive_agent.py', 'rlm_worker.py', 'repl_actions.py', 'evaluation.py', 'qwen35_server.py',
            'qwen35_train.py', 'agent_pilot.py', 'coding_loop_stage.py', 'repl_learning.py',
            'code_recipe.py', 'polyglot_runtime.py', 'research/adapter_eval_server.py')
 
@@ -77,11 +77,33 @@ def recursive_success(row, task):
             executions = row['executions'][query['execution_start']:query['execution_end']]
             completed = any(not e['stderr'] and e['final_answer'] is not None
                             and parse_patch(e['final_answer'],task)==proposal for e in executions)
-            if completed and proposal==row['patch']:
+            checked = True
+            if row.get('action_api'):
+                checks = [c for e in executions for c in e.get('checks', [])]
+                checked = bool(checks and any(c['returncode'] != 0 and c['assertions'] for c in checks)
+                    and checks[-1]['returncode'] == 0 and checks[-1]['assertions']
+                    and checks[-1]['before'] == checks[-1]['after']
+                    and all(checks[-1]['after'].get(p)==h for p,h in hashes.items()) and tested_repl(row))
+            if completed and checked and proposal==row['patch']:
                 return True
         except (ValueError, KeyError, TypeError):
             continue
     return False
+
+
+def tested_repl(row):
+    if not row.get('passed') or not row.get('patch'):
+        return False
+    hashes={p:hashlib.sha256(s.encode()).hexdigest() for p,s in row['patch'].items()}
+    if row.get('workspace_hashes')!=hashes:
+        return False
+    child_indices={i for q in row.get('queries',[]) if q.get('recursive')
+                   for i in range(q['execution_start'],q['execution_end'])}
+    checks=[c for i,e in enumerate(row.get('executions',[])) if i not in child_indices
+            for c in e.get('checks',[])]
+    return bool(checks and checks[-1]['returncode']==0 and checks[-1]['assertions']
+        and checks[-1]['before']==checks[-1]['after']
+        and all(checks[-1]['after'].get(p)==h for p,h in hashes.items()))
 
 
 def evaluate_one(entry):
@@ -90,10 +112,11 @@ def evaluate_one(entry):
     if not check_program('python','print(1)')['passed']:
         raise RuntimeError('Independent runtime check failed')
     task=entry['task']
+    limits=entry.get('limits',LIMITS)
     row=solve(task,'http://127.0.0.1:8090',
               mode='baseline' if entry.get('strict_ordinary') and entry['condition']=='ordinary' else 'rlm',
               instruction=entry.get('instruction',RECURSIVE) if entry['condition']=='recursive'
-              else entry.get('ordinary_instruction',''), **LIMITS)
+              else entry.get('ordinary_instruction',''), action_api=entry.get('action_api',False), **limits)
     if row.get('infrastructure_errors'):
         raise RuntimeError('Infrastructure failure: '+'; '.join(row['infrastructure_errors']))
     error=row.get('error','')
@@ -101,11 +124,13 @@ def evaluate_one(entry):
               'ErrorThresholdExceededError:', 'RuntimeError: Model call or output-token budget exhausted',
               'RuntimeError: Cell output limit exceeded')
     if error and not error.startswith(expected) and not (
-            error.startswith('APITimeoutError:') and row['elapsed_s']>=LIMITS['seconds']-1):
+            error.startswith('APITimeoutError:') and row['elapsed_s']>=limits['seconds']-1):
         raise RuntimeError('Infrastructure failure: '+error)
     if row.get('patch'):
         row.update(grade(task,row['patch']))
     row.update(condition=entry['condition'], recursive_passed=recursive_success(row,task))
+    if entry.get('action_api'):
+        row['repl_passed']=tested_repl(row)
     return row
 
 
@@ -129,9 +154,10 @@ def evaluate(folder, label, adapter, suite):
             task=target/'task.json'; result=target/'task-result.json'
             atomic_json(task,dict(entry,instruction=config['instruction'],
                 ordinary_instruction=config.get('ordinary_instruction',''),
-                strict_ordinary=config.get('strict_ordinary',False))); result.unlink(missing_ok=True)
+                strict_ordinary=config.get('strict_ordinary',False),action_api=config.get('action_api',False),
+                limits=config.get('limits',LIMITS))); result.unlink(missing_ok=True)
             run_child([str(ROOT/'.cache/rlm-env/bin/python'),str(ROOT/'agent_pilot.py'),
-                       'task','--folder',str(target)],LIMITS['seconds']+180)
+                       'task','--folder',str(target)],config.get('limits',LIMITS)['seconds']+180)
             row=read(result)
             if row['id']!=entry['task']['id']:raise ValueError('Task result mismatch')
             saved['rows'].append(row); atomic_json(path,saved)

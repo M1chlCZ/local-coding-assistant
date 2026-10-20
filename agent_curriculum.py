@@ -84,7 +84,8 @@ def actions(task, reference, recursive, recovery=False):
     return plan
 
 
-def trajectory(original, recursive, visible, revision, *, plan=None, instruction='', mode='rlm'):
+def trajectory(original, recursive, visible, revision, *, plan=None, instruction='', mode='rlm',
+               action_api=False, limits=None):
     from rlm.clients.openai import OpenAIClient
     from rlm.core.types import ModelUsageSummary
     if not re.fullmatch('[a-f0-9]{40}', revision):
@@ -95,6 +96,7 @@ def trajectory(original, recursive, visible, revision, *, plan=None, instruction
         raise ValueError('The authored negative control must fail')
     if plan is None:
         plan = actions(task, reference, recursive, recovery=visible and not recursive)
+    limits = limits or LIMITS
     position, executions = 0, []
     execute = agent.Sandbox.execute_code
 
@@ -116,16 +118,21 @@ def trajectory(original, recursive, visible, revision, *, plan=None, instruction
     with patch.object(OpenAIClient, 'completion', side_effect=policy), \
          patch.object(OpenAIClient, 'get_last_usage', return_value=ModelUsageSummary(1, 1, 1)), \
          patch.object(agent.Sandbox, 'execute_code', observe):
-        result = agent.solve(task, 'http://127.0.0.1:1', mode=mode, instruction=instruction, **LIMITS)
+        result = agent.solve(task, 'http://127.0.0.1:1', mode=mode, instruction=instruction,
+                             action_api=action_api, **limits)
     if result.get('error') == 'RuntimeError: Cell output limit exceeded' and not result.get('infrastructure_errors'):
         raise TrajectoryOutputLimit(result, executions)
     valid = [action for action in plan if not action.get('invalid')]
     codes = [action['response'][8:-4].strip() for action in valid]
     if (result.get('error') or result.get('infrastructure_errors')
             or result.get('patch') != reference or position != len(plan)
-            or result['calls'] != len(plan) or result['calls'] > LIMITS['calls']
+            or result['calls'] != len(plan) or result['calls'] > limits['calls']
             or Counter(codes) != Counter(item['code'].strip() for item in executions)
-            or any(item['stderr'] for item in executions)):
+            or Counter((code,bool(action.get('expected_error'))) for code,action in zip(codes,valid))
+                != Counter((item['code'].strip(),bool(item['stderr'])) for item in executions)
+            or any(item['stderr'] and not any(code==item['code'].strip()
+                and action.get('expected_error') and action['expected_error'] in item['stderr']
+                for code,action in zip(codes,valid)) for item in executions)):
         raise ValueError('Reference trajectory failed execution: '+str(result.get('error', executions)))
     expected_hashes = {name: hashlib.sha256(source.encode()).hexdigest() for name, source in reference.items()}
     if result.get('workspace_hashes') != expected_hashes or not agent.grade(task, result['patch'])['passed']:
@@ -135,7 +142,8 @@ def trajectory(original, recursive, visible, revision, *, plan=None, instruction
         queries = result.get('queries', [])
         if (len(queries) != 1 or not queries[0]['recursive']
                 or agent.parse_patch(queries[0]['response'], task) != reference
-                or queries[0]['execution_end']-queries[0]['execution_start'] != 2):
+                or queries[0]['execution_end']-queries[0]['execution_start'] !=
+                    (sum(a['kind']=='subcall' for a in valid) if action_api else 2)):
             raise ValueError('Reference child did not execute and return the applied patch')
     elif result.get('queries'):
         raise ValueError('Sequential reference unexpectedly delegated')
@@ -149,7 +157,7 @@ def trajectory(original, recursive, visible, revision, *, plan=None, instruction
     for index, (call, action) in enumerate(zip(result['trace'], plan)):
         if call['response'] != action['response'] or call['kind'] != action['kind']:
             raise ValueError('Reference trace differs from the executed policy')
-        if action.get('invalid'):
+        if action.get('invalid') or action.get('train') is False:
             continue
         messages = call['messages'] + [dict(role='assistant', content=call['response'])]
         if original['checks'] in '\n'.join(message['content'] for message in messages):
@@ -160,6 +168,7 @@ def trajectory(original, recursive, visible, revision, *, plan=None, instruction
             variant=variant, messages=messages, provenance=provenance,
             verification=dict(kind='local_execution', passed=True)))
     return dict(task_id=original['id'], variant=variant, rows=rows, result=result,
+                target_indices=[i for i,a in enumerate(plan) if not a.get('invalid') and a.get('train') is not False],
                 executions=executions, verification=dict(negative_control_failed=True, final_patch_passed=True),
                 usage_note='Scripted reference policy; usage counters are placeholders, not model token measurements.')
 

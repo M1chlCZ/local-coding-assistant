@@ -100,9 +100,12 @@ def mode_gains(before, after):
     for row in before+after:
         if type(row.get('passed')) is not bool or type(row.get('recursive_passed')) is not bool:
             raise ValueError('Require boolean completed scores')
-    ordinary=[a['id'] for b,a in zip(before,after) if a['condition']=='ordinary' and a['passed'] and not b['passed']]
+    ordinary=[a['id'] for b,a in zip(before,after) if a['condition']=='ordinary'
+              and a.get('repl_passed',a['passed']) and not b.get('repl_passed',b['passed'])]
     recursive=[a['id'] for b,a in zip(before,after) if a['condition']=='recursive' and a['recursive_passed'] and not b['recursive_passed']]
-    lost=[a['id'] for b,a in zip(before,after) if b['passed'] and not a['passed'] or b['recursive_passed'] and not a['recursive_passed']]
+    lost=[a['id'] for b,a in zip(before,after) if b['passed'] and not a['passed']
+          or b['recursive_passed'] and not a['recursive_passed']
+          or b.get('repl_passed',False) and not a.get('repl_passed',False)]
     return dict(passed=bool(ordinary and recursive and not lost),ordinary_gains=ordinary,recursive_gains=recursive,losses=lost)
 
 
@@ -120,8 +123,11 @@ def lesson_rejection(value):
     if curriculum.agent.grade(diagnostic,broken)['passed']:
         return 'specification examples accept the broken caller'
     for omitted in value['editable']:
-        if curriculum.agent.grade(value,{p:s for p,s in reference.items() if p!=omitted})['passed']:
+        partial={p:s for p,s in reference.items() if p!=omitted}
+        if curriculum.agent.grade(value,partial)['passed']:
             return 'private checks do not require both source repairs'
+        if curriculum.agent.grade(diagnostic,partial)['passed']:
+            return 'specification examples do not require both source repairs'
     return None
 
 
@@ -198,10 +204,16 @@ def finalize(folder, revision, anchors):
                 raise ValueError('Invalid failed trace exclusion')
             excluded.append(dict(file=name,reason='output_limit'));continue
         targets=[c['messages']+[dict(role='assistant',content=c['response'])] for c in result['trace']]
-        if targets!=[r['messages'] for r in record['rows']] or len(targets)!=result['calls']:
+        indices=record.get('target_indices',list(range(len(targets))))
+        if (not indices or indices!=sorted(set(indices)) or any(i<0 or i>=len(targets) for i in indices)
+                or [targets[i] for i in indices]!=[r['messages'] for r in record['rows']]
+                or len(targets)!=result['calls']):
             raise ValueError('Unexecuted training target')
-        _,counts=encode_rows(tokenizer,record['rows'],4096)
-        if counts['excluded_count'] or sum(r['answer_tokens'] for r in counts['included'])>curriculum.LIMITS['output_tokens']:
+        full_trace=[dict(record['rows'][0],task_id=f'preflight-{i}',messages=t) for i,t in enumerate(targets)]
+        _,counts=encode_rows(tokenizer,full_trace,4096)
+        limits=binding.get('limits',curriculum.LIMITS)
+        if (counts['excluded_count'] or result['calls']>limits['calls']
+                or sum(r['answer_tokens'] for r in counts['included'])>limits['output_tokens']):
             excluded.append(dict(file=name,reason='whole_trajectory_token_budget'));continue
         rows.extend(record['rows']);selected.append(record)
     families=set.intersection(*({r['family'] for r in selected if r['recursive']==mode} for mode in (False,True)))

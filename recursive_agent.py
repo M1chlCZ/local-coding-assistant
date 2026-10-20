@@ -48,7 +48,10 @@ else:
 '''
 
 
-def system_prompt(mode='rlm', instruction=''):
+def system_prompt(mode='rlm', instruction='', action_api=False):
+    if action_api:
+        from repl_actions import PROMPT, RECURSIVE
+        return PROMPT + (RECURSIVE if mode=='rlm' else 'Subcalls are disabled. Repair and test in this REPL.\n') + instruction
     return SYSTEM + ('Use llm_query(prompt) or rlm_query(prompt) for focused analysis when useful. '
                      'Pass selected source text and a clear question, not the whole context.\n' if mode=='rlm'
                      else 'Subcalls are disabled. Analyze the files yourself in the REPL.\n') + instruction
@@ -123,9 +126,10 @@ class Budget:
 class Sandbox:
     """Upstream-compatible environment with no network, mounts or host-code execution."""
     def __init__(self, context_payload, lm_handler_address=None, depth=1, subcall_fn=None,
-                 allow_queries=True, cell_seconds=20, budget=None, **kwargs):
+                 allow_queries=True, cell_seconds=20, budget=None, action_api=False, **kwargs):
         self.address, self.depth, self.subcall = lm_handler_address, depth, subcall_fn
         self.allow_queries, self.cell_seconds, self.budget = allow_queries, cell_seconds, budget
+        self.action_api = action_api
         self.editable = context_payload.get('editable', []) if isinstance(context_payload, dict) else []
         self.workspace_hashes = {}
         self.container = None
@@ -149,12 +153,17 @@ class Sandbox:
                             'import pathlib,sys;pathlib.Path("/workspace/worker.py").write_text(sys.stdin.read())'],
                            input=(ROOT / 'rlm_worker.py').read_text(), text=True,
                            check=True, capture_output=True, timeout=10)
+            if action_api:
+                subprocess.run(['docker', 'exec', '-i', self.container, 'python', '-I', '-c',
+                    'import pathlib,sys;pathlib.Path("/workspace/repl_actions.py").write_text(sys.stdin.read())'],
+                    input=(ROOT/'repl_actions.py').read_text(), text=True, check=True,
+                    capture_output=True, timeout=10)
             self.process = subprocess.Popen(['docker', 'exec', '-i', '-w', '/workspace', self.container, 'python', '-I', '-u',
                                              '/workspace/worker.py'], stdin=subprocess.PIPE,
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self.reader = threading.Thread(target=self._read, daemon=True, name='local-rlm-reader')
             self.reader.start()
-            self._send({'context': context_payload})
+            self._send({'context': context_payload, **({'action_api': True} if action_api else {})})
             self._receive()
         except BaseException:
             self.cleanup()
@@ -220,7 +229,7 @@ class Sandbox:
         while True:
             frame = self._receive()
             if frame.get('type') == 'result':
-                if set(frame) != {'type', 'stdout', 'stderr', 'final_answer'}:
+                if set(frame) != {'type', 'stdout', 'stderr', 'final_answer'} | ({'checks'} if self.action_api else set()):
                     raise ValueError('Invalid REPL result')
                 if not all(isinstance(frame[k], str) and len(frame[k]) <= 8192 for k in ('stdout', 'stderr')):
                     raise ValueError('Invalid or oversized REPL output')
@@ -231,7 +240,8 @@ class Sandbox:
                     raise RuntimeError('Cell output limit exceeded')
                 if self.budget:
                     self.budget.executions.append(dict(depth=self.depth, code=code,
-                        stderr=frame['stderr'], final_answer=frame['final_answer']))
+                        stderr=frame['stderr'], final_answer=frame['final_answer'],
+                        **({'checks': frame['checks']} if self.action_api else {})))
                 if frame['final_answer'] is not None and self.editable:
                     source = ('import pathlib,json,hashlib; print(json.dumps({name: '
                               'hashlib.sha256(pathlib.Path("/workspace",name).read_bytes()).hexdigest() '
@@ -290,7 +300,7 @@ class Sandbox:
                 self.process = None
 
 
-def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds=300, instruction=''):
+def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds=300, instruction='', action_api=False):
     from rlm import RLM
     from rlm.clients.openai import OpenAIClient
     from rlm.core import rlm as core
@@ -370,17 +380,19 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
 
     def environment(name, kwargs):
         try:
-            env = ObservedSandbox(**kwargs, allow_queries=mode=='rlm', budget=budget)
+            env = ObservedSandbox(**kwargs, allow_queries=mode=='rlm', budget=budget, action_api=action_api)
         except Exception as error:
             budget.infrastructure_errors.append(f'{type(error).__name__}: {error}')
             raise
         environments.append(env)
         return env
 
-    system = system_prompt(mode, instruction)
+    system = system_prompt(mode, instruction, action_api)
     started = time.monotonic()
     row = {'id': task['id'], 'repository': task['repository'], 'split': task['split'],
            'mode': mode, 'depth': depth, 'passed': False}
+    if action_api:
+        row['action_api'] = True
     try:
         # ponytail: scope sandbox, trace-origin and fallback patches to the pinned upstream; use public hooks if provided later.
         with patch.object(core, 'get_environment', environment), \

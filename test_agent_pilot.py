@@ -37,6 +37,7 @@ class PilotTests(unittest.TestCase):
             class BoundarySandbox(agent.Sandbox):
                 def __init__(self,context_payload,budget=None,depth=0,**unused):
                     self.budget,self.depth,self.editable=budget,depth,[]
+                    self.action_api=unused.get('action_api',False)
                     self.workspace_hashes={}
                 def _send(self,value):pass
                 def _receive(self):
