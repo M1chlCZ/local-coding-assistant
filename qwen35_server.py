@@ -43,6 +43,39 @@ def stop_tokens(model, tokenizer):
     return endings
 
 
+def prepare_context(tokenizer, data, context, output_limit):
+    """Keep the task prefix and newest complete turn; evict only whole older turns."""
+    conversations, maximum = validate_batch(
+        {**data, 'conversations': [data.get('messages')]}, output_limit)
+    messages = list(conversations[0])
+    first = next((i for i, m in enumerate(messages) if m['role'] == 'assistant'), len(messages))
+    if any(m['role'] == 'system' for m in messages[first:]):
+        raise ValueError('Context preparation requires system instructions before the first assistant')
+
+    def count():
+        return len(tokenizer.apply_chat_template(messages, tokenize=True,
+            add_generation_prompt=True, enable_thinking=False, return_dict=True)['input_ids'])
+
+    original = tokens = count()
+    dropped = 0
+    while tokens + maximum > context:
+        following = next((i for i in range(first + 1, len(messages))
+                          if messages[i]['role'] == 'assistant'), None)
+        if following is None:
+            break
+        del messages[first:following]
+        if not dropped:
+            messages.insert(first, dict(role='user', content=
+                'Older complete REPL turns were omitted to fit the context. '
+                'Files and variables persist. Inspect them again if needed.'))
+            first += 1
+        dropped += 1
+        tokens = count()
+    return dict(messages=messages, fits=tokens + maximum <= context, context_tokens=context,
+                output_tokens=maximum, prompt_tokens=tokens, original_prompt_tokens=original,
+                dropped_turns=dropped)
+
+
 def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, context, batch_size,
              structured=None):
     conversations, maximum = validate_batch(data, output_limit)
@@ -78,7 +111,8 @@ def generate(model, tokenizer, data, use_adapter, has_adapter, output_limit, con
     return responses
 
 
-def make_handler(generate_fn, model_id, revision, has_adapter, structured_outputs=False):
+def make_handler(generate_fn, model_id, revision, has_adapter, structured_outputs=False,
+                 prepare_context_fn=None):
     state = {'mode': 'base'}
 
     class Handler(BaseHTTPRequestHandler):
@@ -110,6 +144,11 @@ def make_handler(generate_fn, model_id, revision, has_adapter, structured_output
                 data = json.loads(self.rfile.read(size))
                 if not isinstance(data, dict):
                     raise ValueError('Request requires an object')
+                if self.path == '/context':
+                    if prepare_context_fn is None:
+                        raise ValueError('Context preparation is unavailable')
+                    self.send_json(prepare_context_fn(data))
+                    return
                 if self.path == '/mode':
                     mode = data.get('mode')
                     if mode not in ('base', 'adapter') or (mode == 'adapter' and not has_adapter):
@@ -170,7 +209,8 @@ def main():
                         args.output_limit, args.context_length, args.batch_size, structured)
     server = HTTPServer(('127.0.0.1', args.port),
                         make_handler(run, args.model, args.revision, bool(args.adapter),
-                                     args.structured_output))
+                                     args.structured_output, lambda data: prepare_context(
+                                         tokenizer, data, args.context_length, args.output_limit)))
     print(f'EVAL_READY http://127.0.0.1:{args.port}', flush=True)
     server.serve_forever()
 

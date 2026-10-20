@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "experiment": "agent-context-20261020",
+  "status": "prepared_for_fresh_matched_evaluation",
+  "method": "Same frozen short-action candidate; exact server-tokenized context budgeting in both fresh evaluation arms",
+  "training_repeated": false,
+  "source_experiment": "agent-actions-20261020",
+  "candidate_adapter_sha256": "6d9d21b560fe3f88f6253e636bb017320742615a4a83f4505b1f3a64cd1c960e",
+  "candidate_selected_for_holdout": false,
+  "baseline": "Retained BASE, no adapter; fresh evaluation required",
+  "context_policy": {
+    "maximum_tokens": 8192,
+    "max_action_output_tokens": 1024,
+    "preserve": [
+      "initial instructions/task",
+      "newest whole action and feedback",
+      "persistent REPL files and variables"
+    ],
+    "eviction": "Oldest complete assistant turns and associated observations only",
+    "exhaustion": "Recorded terminal model budget failure; no task retry",
+    "trace": "Complete requested and effective messages plus exact counts"
+  },
+  "validation": {
+    "focused_tests": 58,
+    "skipped": 0,
+    "native_sandbox_checks_passed": true,
+    "cpu_tokenizer_replay": {
+      "original_tokens": 13374,
+      "effective_tokens": 7073,
+      "reserved_output": 1024,
+      "dropped_turns": 10
+    },
+    "scope": "Infrastructure validation only; no model-quality evidence"
+  },
+  "development": {
+    "completed": false,
+    "tasks": 15,
+    "ordinary": 8,
+    "recursive": 7,
+    "retention": 15,
+    "before": null,
+    "after": null
+  },
+  "confirmation": {
+    "completed": false,
+    "tasks": 8,
+    "ordinary": 4,
+    "recursive": 4,
+    "model_evaluation_started": false,
+    "candidate_selected": false,
+    "note": "Previously frozen tasks remain fresh: neither model has evaluated them",
+    "sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52"
+  },
+  "general_code_audit": {
+    "completed": false,
+    "tasks_per_model": 790,
+    "baseline_reuse_forbidden": true
+  },
+  "requirements": [
+    "Two distinct development family gains, ordinary tested REPL AND genuine recursive gain, no functional/REPL/recursive/retention losses",
+    "Select exact weights before confirmation, then matched fresh ordinary AND recursive confirmation gains without losses",
+    "Fresh complete matched retained-BASE/candidate general-code audit, zero lost individual base passes"
+  ],
+  "model_learning_gain_established": false,
+  "full_loop_authorized": false,
+  "full_loop_restarted": false
+}

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "experiment": "agent-actions-20261020",
-  "status": "running_preparation",
+  "status": "paused_incomplete_context_failure",
   "source_commit": "cd90bb1c00d40cd10e0255dd887d5861f206229a",
   "evaluation_sha256": "009015c8bd427a2459af85c4c59c52a868cd8765ed1142145410157b4ccd3ecc",
   "method": "Short executed REPL actions and recovery imitation; failed proposals masked from targets; identical interface on both models",
@@ -53,5 +53,10 @@
   ],
   "model_learning_gain_established": false,
   "full_loop_authorized": false,
-  "full_loop_restarted": false
+  "full_loop_restarted": false,
+  "comparison_conclusion": "No learning conclusion: context overflow caused retries before a complete comparison",
+  "context_failures": 2,
+  "training_completed": true,
+  "training_steps": 300,
+  "successor_evaluation": "agent-context-20261020"
 }

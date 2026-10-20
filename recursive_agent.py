@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 from unittest.mock import patch
 
 from evaluation import IMAGE, bounded_run, container_command
@@ -97,6 +98,10 @@ def parse_patch(answer, task):
     return value
 
 
+class ContextWindowExceeded(RuntimeError):
+    pass
+
+
 class Budget:
     def __init__(self, calls=16, output_tokens=8192, seconds=300):
         if not 1 <= calls <= 64 or not 1 <= output_tokens <= 65536 or not 0 < seconds <= 3600:
@@ -107,6 +112,8 @@ class Budget:
         self.trace = []
         self.queries, self.executions = [], []
         self.infrastructure_errors = []
+        self.context_windows = []
+        self.context_exhausted = False
         self.lock = threading.Lock()
 
     def remaining(self):
@@ -117,10 +124,32 @@ class Budget:
 
     def reserve(self, requested):
         self.remaining()
+        if self.context_exhausted:
+            raise ContextWindowExceeded('Task and latest REPL turn exceed the context budget')
         if self.calls >= self.max_calls or self.output_tokens >= self.max_output:
             raise RuntimeError('Model call or output-token budget exhausted')
         self.calls += 1
         return min(requested, self.max_output - self.output_tokens)
+
+    def prepare_prompt(self, prompt, base, maximum):
+        messages = prompt if isinstance(prompt, list) else [dict(role='user', content=prompt)]
+        request = Request(base.rstrip('/')+'/context', data=json.dumps(
+            dict(messages=messages, max_completion_tokens=maximum)).encode(),
+            headers={'Content-Type': 'application/json'})
+        with urlopen(request, timeout=self.remaining()) as response:
+            prepared = json.load(response)
+        if (type(prepared.get('fits')) is not bool or not isinstance(prepared.get('messages'), list)
+                or prepared.get('output_tokens') != maximum
+                or type(prepared.get('prompt_tokens')) is not int
+                or type(prepared.get('context_tokens')) is not int
+                or prepared['fits'] != (prepared['prompt_tokens'] + maximum <= prepared['context_tokens'])):
+            raise ValueError('Invalid context preparation receipt')
+        self.context_windows.append(dict(prepared, requested_messages=json.loads(json.dumps(messages)),
+                                         kind=CALL_ORIGIN.get() or 'root'))
+        if not prepared['fits']:
+            self.context_exhausted = True
+            raise ContextWindowExceeded('Task and latest REPL turn exceed the context budget')
+        return prepared['messages']
 
 
 class Sandbox:
@@ -300,7 +329,8 @@ class Sandbox:
                 self.process = None
 
 
-def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds=300, instruction='', action_api=False):
+def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds=300, instruction='',
+          action_api=False, context_window=False):
     from rlm import RLM
     from rlm.clients.openai import OpenAIClient
     from rlm.core import rlm as core
@@ -326,9 +356,13 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                 self.sampling_args['max_completion_tokens'] = maximum
                 self.client.timeout = budget.remaining()
                 try:
+                    if context_window:
+                        prompt = budget.prepare_prompt(prompt, base, maximum)
+                        self.client.timeout = budget.remaining()
                     response = super().completion(prompt, model)
                 except Exception as error:
-                    if not (type(error).__name__=='APITimeoutError' and budget.deadline-time.monotonic()<=1):
+                    if not isinstance(error, ContextWindowExceeded) and not (
+                            type(error).__name__=='APITimeoutError' and budget.deadline-time.monotonic()<=1):
                         budget.infrastructure_errors.append(f'{type(error).__name__}: {error}')
                     raise
                 used = self.get_last_usage()
@@ -426,6 +460,8 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                input_tokens=budget.input_tokens, output_tokens=budget.output_tokens,
                trace=budget.trace, queries=budget.queries, executions=budget.executions,
                infrastructure_errors=budget.infrastructure_errors)
+    if context_window:
+        row.update(context_windows=budget.context_windows, context_exhausted=budget.context_exhausted)
     return row
 
 

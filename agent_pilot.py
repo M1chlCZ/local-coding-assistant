@@ -116,13 +116,15 @@ def evaluate_one(entry):
     row=solve(task,'http://127.0.0.1:8090',
               mode='baseline' if entry.get('strict_ordinary') and entry['condition']=='ordinary' else 'rlm',
               instruction=entry.get('instruction',RECURSIVE) if entry['condition']=='recursive'
-              else entry.get('ordinary_instruction',''), action_api=entry.get('action_api',False), **limits)
+              else entry.get('ordinary_instruction',''), action_api=entry.get('action_api',False),
+              context_window=entry.get('context_window',False), **limits)
     if row.get('infrastructure_errors'):
         raise RuntimeError('Infrastructure failure: '+'; '.join(row['infrastructure_errors']))
     error=row.get('error','')
     expected=('ValueError:', 'JSONDecodeError:', 'TimeoutError:', 'TimeoutExceededError:',
               'ErrorThresholdExceededError:', 'RuntimeError: Model call or output-token budget exhausted',
               'RuntimeError: Cell output limit exceeded')
+    expected += ('ContextWindowExceeded:',)
     if error and not error.startswith(expected) and not (
             error.startswith('APITimeoutError:') and row['elapsed_s']>=limits['seconds']-1):
         raise RuntimeError('Infrastructure failure: '+error)
@@ -155,6 +157,7 @@ def evaluate(folder, label, adapter, suite):
             atomic_json(task,dict(entry,instruction=config['instruction'],
                 ordinary_instruction=config.get('ordinary_instruction',''),
                 strict_ordinary=config.get('strict_ordinary',False),action_api=config.get('action_api',False),
+                context_window=config.get('context_window',False),
                 limits=config.get('limits',LIMITS))); result.unlink(missing_ok=True)
             run_child([str(ROOT/'.cache/rlm-env/bin/python'),str(ROOT/'agent_pilot.py'),
                        'task','--folder',str(target)],config.get('limits',LIMITS)['seconds']+180)

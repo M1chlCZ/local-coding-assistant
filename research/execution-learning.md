@@ -276,3 +276,39 @@ Python repository experiment; broad repository competence is unproven.
 The interface choice is informed by the tool-design observations in
 [Anthropic's agent report](https://www.anthropic.com/engineering/swe-bench-sonnet).
 It is a hypothesis to test here, not evidence that this model has improved.
+
+### Matched context budgeting
+
+The short-action adapter completed all 300 training steps. Its original candidate
+evaluation encountered two context-limit failures before a complete result existed.
+The REPL appended whole model responses, observations and repeated errors, while
+reserving 1,024 output tokens without checking accumulated prompt length. The server
+correctly rejected input plus output beyond 8,192 tokens. The controller classified
+that rejection as an infrastructure error and retried the task. The original run is
+paused and preserved; its partial/retried results cannot establish a learning gain.
+
+The optional `context_window` evaluator policy now asks the same server tokenizer
+to measure the full chat template before each root or child generation. It retains
+the initial instructions/task and the newest complete turn, removing only whole
+older assistant turns with their feedback. It never cuts source or an observation
+mid-message. The persistent workspace and variables remain available. A notice
+identifies omitted history; every requested and effective prompt and token count
+is saved. If even the protected messages do not fit, the attempt records context
+budget exhaustion without another generation or automatic task retry. Service
+failures remain infrastructure errors. Normal text requests keep their existing
+hard context limit.
+
+This changes evaluation conditions, so a separate frozen comparison starts both
+the retained BASE and the already-trained candidate from fresh results. It reuses
+no old baseline and performs no additional training. The same prompts, action
+interface, context policy, limits, model revision and task order apply to both.
+The eight reserved confirmation tasks remain unused until candidate selection.
+All original development, confirmation and 790-task retention gates still apply.
+
+Validation includes 58 focused checks, the real isolated REPL boundary checks,
+and CPU replay with the pinned Qwen tokenizer. Repeating complete recorded turns
+produced a 13,374-token prompt; the policy retained 7,073 input tokens plus the
+1,024-token response allowance. This is a context-handling check, not a model gain.
+Evicting older observations can lose useful information; the fresh paired results
+must measure that tradeoff. The original failed HTTP requests were not fully saved,
+so their exact token counts are unavailable; their tracebacks remain preserved.
