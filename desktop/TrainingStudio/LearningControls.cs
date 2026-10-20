@@ -4,6 +4,7 @@ internal sealed record LearningControls(string Title,string Hint,string Icon,str
 {
     public static LearningControls For(string status,string desired,bool alive,bool started,bool continuous=false)
     {
+        if(status=="empty")return new("No session yet","Create a session to prepare learning. Nothing starts automatically.","\uE710","Create session","new",false,true,"Neutral");
         if(status=="unknown")return new("Status unavailable","Check the connection before changing learning.","\uE946","Start","none",false,false,"Neutral");
         if(status=="stopped" && continuous)return new("Stopped","Resume continues your saved progress. Learning stays off after login until you resume.","\uE71A","Resume","resume",false,true,"Neutral");
         if(status=="stopped")return new("Stopped","This session has ended. Its saved results are still available.","\uE71A","Start new session","new",false,true,"Neutral");
@@ -18,6 +19,9 @@ internal sealed record LearningControls(string Title,string Hint,string Icon,str
     }
     public static void Check()
     {
+        var empty=For("empty","",false,false);
+        if(empty.Action!="new" || !empty.Enabled || empty.CanPause || empty.Button!="Create session")
+            throw new InvalidOperationException("An empty connected backend must offer session creation, not resume");
         var running=For("running","resume",true,true);
         if(running.Action!="stop" || !running.CanPause)throw new InvalidOperationException("Running controls are incorrect");
         foreach(var status in new[]{"paused","interrupted","failed"})

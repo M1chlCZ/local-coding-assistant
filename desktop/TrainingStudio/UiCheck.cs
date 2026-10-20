@@ -21,6 +21,19 @@ public partial class MainWindow
         if(QualityDetail.FontWeight!=FontWeights.Normal)throw new IOException("Navigation weight leaked into page content");
         if(((SolidColorBrush)QualityTitle.Foreground).Color!=((SolidColorBrush)Application.Current.Resources["TextBrush"]).Color)
             throw new IOException("Navigation accent leaked into page content");
+        if(Session is null) {
+            if(ControlView().Action!="new" || !PrimaryButton.IsEnabled || StatusTitle.Text!="No session yet" || PauseButton.IsVisible)
+                throw new IOException("Connected empty backend has no usable create action");
+            int tab=Tabs.SelectedIndex,page=SettingsTabs.SelectedIndex;
+            string name=ExperimentName.Text;
+            try {
+                Tabs.SelectedIndex=0;
+                PrimaryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if(Tabs.SelectedIndex!=3 || SettingsTabs.SelectedIndex!=0 || !CreateSession.IsEnabled)
+                    throw new IOException("Create action did not open the session form");
+            } finally {Tabs.SelectedIndex=tab;SettingsTabs.SelectedIndex=page;ExperimentName.Text=name;}
+            return;
+        }
         var saved=latest;
         try {
             foreach(string status in new[]{"running","paused","stopped","completed","interrupted","failed","pausing","stopping","waiting"}) {

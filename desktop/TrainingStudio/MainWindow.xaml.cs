@@ -54,7 +54,7 @@ public partial class MainWindow : Window
     }
     void UpdateControls()
     {
-        Controls.IsEnabled=!busy && backend is not null && latest is not null && Session is not null;
+        Controls.IsEnabled=!busy && backend is not null && latest is not null;
         var view=ControlView();
         PrimaryButton.IsEnabled=view.Enabled;
         PrimaryText.Text=view.Button;
@@ -85,7 +85,7 @@ public partial class MainWindow : Window
         latest=null;
         RenderHistory(data);
         if(Session is not null) await Refresh();
-        else {Activity.Text="No experiments yet"; ActivityDetail.Text="Create a learning session in Settings."; OpenSettings(0);}
+        else {latest=new JsonObject{["status"]="empty"}; Activity.Text="No experiments yet"; ActivityDetail.Text="Create a learning session in Settings. Nothing is running."; OpenSettings(0);}
     }
     void RenderHistory(JsonNode data)
     {

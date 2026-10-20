@@ -35,6 +35,8 @@ These prerequisites are checked again by the training and evaluation tools.
 - One main button shows **Start** when idle or paused, and **Stop** while learning.
   **Start** resumes saved work. A stopped continuous loop shows **Resume**.
   A finished experiment shows **Start new session**; it does not reset old results.
+- A connected backend with no sessions shows **No session yet** and **Create session**.
+  This opens setup; creating a session leaves it paused until you choose **Start**.
 - **Pause** requests a checkpoint and releases the GPU. Wait for **paused**.
 - **Stop** stops learning after confirmation. A continuous loop can resume later.
   It stays stopped after login until you select **Resume**. Use Pause for a break.
