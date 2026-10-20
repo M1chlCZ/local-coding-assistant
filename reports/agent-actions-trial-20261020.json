@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "experiment": "agent-actions-20261020",
+  "status": "running_preparation",
+  "source_commit": "cd90bb1c00d40cd10e0255dd887d5861f206229a",
+  "evaluation_sha256": "009015c8bd427a2459af85c4c59c52a868cd8765ed1142145410157b4ccd3ecc",
+  "method": "Short executed REPL actions and recovery imitation; failed proposals masked from targets; identical interface on both models",
+  "baseline": "Fresh retained BASE, no adapter",
+  "recipe": {
+    "learning_rate": 5e-05,
+    "max_epochs": 3,
+    "max_steps": 300,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "gradient_accumulation": 8,
+    "optimizer": "fresh"
+  },
+  "validation": {
+    "focused_tests": 51,
+    "skipped": 1,
+    "native_recovery_canaries": 6,
+    "fresh_heldout_fixture_controls": 32
+  },
+  "development": {
+    "completed": false,
+    "tasks": 15,
+    "before": null,
+    "after": null,
+    "ordinary": 8,
+    "recursive": 7,
+    "retention": 15
+  },
+  "confirmation": {
+    "completed": false,
+    "tasks": 8,
+    "ordinary": 4,
+    "recursive": 4,
+    "model_evaluation_started": false,
+    "candidate_selected": false,
+    "note": "Previously frozen tasks remain fresh: neither model has evaluated them",
+    "sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52"
+  },
+  "general_code_audit": {
+    "completed": false,
+    "tasks_per_model": 790,
+    "baseline_reuse_forbidden": true
+  },
+  "requirements": [
+    "Two distinct development family gains, ordinary tested REPL AND genuine recursive gain, no functional/REPL/recursive/retention losses",
+    "Select exact weights before confirmation, then matched fresh ordinary AND recursive confirmation gains without losses",
+    "Fresh complete matched retained-BASE/candidate general-code audit, zero lost individual base passes"
+  ],
+  "model_learning_gain_established": false,
+  "full_loop_authorized": false,
+  "full_loop_restarted": false
+}

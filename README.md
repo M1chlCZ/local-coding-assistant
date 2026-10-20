@@ -36,7 +36,7 @@ The subsequent [child-tested experiment](research/execution-learning.md#executio
 
 The [multi-file trial](reports/agent-multifile-trial-20261019.json) completed and was rejected: development repairs fell **1/15 → 0/15**, ordinary REPL repairs stayed **0/8**, and genuine recursive repairs stayed **0/7**. Its lessons used specification-derived checks without supplied test files, but the candidate returned no final patches. Independent verification regraded both baseline patches and confirmed the regression. The eight fresh confirmation tasks remain unused; the general-code audit and full-loop restart were not run.
 
-A new [short-action recovery trial](research/execution-learning.md#short-repl-actions-and-recovery-imitation) tests validated REPL edits, automatic patch serialization and training on recovery from actual errors. Both models receive the same interface. No learning gain is established yet; fresh confirmation and the full retention audit remain required before restarting from Collect.
+A new [short-action recovery trial](research/execution-learning.md#short-repl-actions-and-recovery-imitation) tests validated REPL edits, automatic patch serialization and training on recovery from actual errors. Both models receive the same interface. The [finite comparison is running](reports/agent-actions-trial-20261020.json). No learning gain is established yet; fresh confirmation and the full retention audit remain required before restarting from Collect.
 
 [Download 0.1.3](https://github.com/M1chlCZ/local-coding-assistant/releases/tag/studio-v0.1.3) · [Release notes](releases/0.1.3.md) · [Installation guide](desktop/README.md) · [Learning method](research/verified-learning.md)
 
