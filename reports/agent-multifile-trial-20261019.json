@@ -1,15 +1,13 @@
 {
   "schema": 1,
   "experiment": "agent-multifile-verified-20261019",
-  "status": "finite_trial_in_progress",
+  "status": "completed_rejected",
   "snapshot": {
-    "snapshot_at": 1792445274.4958909,
-    "status": "running",
-    "phase": "prepare",
+    "verified_at": 1792487931.441813,
+    "status": "completed",
+    "phase": "completed",
     "failures": 0,
-    "worker_alive": true,
-    "preparation_checked": 24,
-    "preparation_total": 128
+    "worker_alive": false
   },
   "source_commit": "5b324b22e64c50fc6be2700637a0a3e135967c4e",
   "evaluation_sha256": "08535e55dabce9175217305de9713ef2673c6c00136eee92c451a569d7a006a8",
@@ -22,13 +20,44 @@
     "rank": 8,
     "max_epochs": 3,
     "max_steps": 300,
-    "seed": 3407
+    "seed": 3407,
+    "completed": true,
+    "global_step": 300,
+    "included_rows": 1166,
+    "excluded_rows": 0,
+    "training_families": 127,
+    "complete_trajectories": 254,
+    "resumed_checkpoint": "checkpoint-125",
+    "resume_integrity_verified": true,
+    "candidate_sha256": "dae5e2585aac118ee5bb866091c53b27428d26d02eff171daa7d1c11858f304f"
   },
   "development": {
     "tasks": 15,
     "scope": "Previously consumed tasks; includes the five old confirmation tasks",
-    "before": null,
-    "after": null
+    "before": 1,
+    "after": 0,
+    "completed": true,
+    "ordinary": {
+      "before": 0,
+      "after": 0,
+      "total": 8
+    },
+    "recursive": {
+      "before": 0,
+      "after": 0,
+      "total": 7
+    },
+    "retention": {
+      "before": 0,
+      "after": 0,
+      "total": 15
+    },
+    "distinct_gained_families": 0,
+    "lost_functional_passes": 1,
+    "lost_recursive_passes": 0,
+    "lost_retention_passes": 0,
+    "strict_mode_gains_passed": false,
+    "gate_passed": false
   },
   "confirmation": {
     "tasks": 8,
@@ -36,7 +65,9 @@
     "recursive": 4,
     "model_evaluation_started": false,
     "before": null,
-    "after": null
+    "after": null,
+    "status": "unused_development_gate_failed",
+    "candidate_selected": false
   },
   "required_gates": [
     "Two new development families, including ordinary REPL and genuine recursive gains, without losses",
@@ -47,15 +78,55 @@
     "focused_tests": 30,
     "skipped_tests": 1,
     "native_reference_canaries": 2,
-    "fresh_fixture_isolated_checks": 32
+    "fresh_fixture_isolated_checks": 32,
+    "independent_final_verification": true,
+    "ordered_development_rows_checked": 30,
+    "ordered_retention_rows_checked": 30,
+    "returned_final_patches_regraded": 2,
+    "regraded_passes": 1,
+    "regraded_failures": 1,
+    "child_final_answers_reviewed": 2,
+    "invalid_child_final_answers": 2,
+    "evidence_sha256": {
+      "evaluation.json": "08535e55dabce9175217305de9713ef2673c6c00136eee92c451a569d7a006a8",
+      "config.json": "1e62c4a69d517d4e2abf1bb5e4aa696616176d074fa80bc8784a0460d840a2de",
+      "comparison.json": "9d67ed5edba76afa5200452cf08794cff089ccfce76048bc04641151c8a2f6ad",
+      "baseline/development.json": "cb406f83e77062702beadf53b8cbb43bf77fd0dee499326045bdf8801b80b36b",
+      "candidate/development.json": "0f05ab42b9ffd1e606638f96749372846c0c1dc4e341bfe933a397eca56ee8bb",
+      "candidate/development-verified.json": "124e43265593584d8ad5b30ecf1d30d0c3593143fe0d1571ba6a48a848078711",
+      "candidate/adapter/training.json": "5f0dd95e8fc78cf6ce1cfa56ebe4b7474f7583a6877ffcd40e731b8bf64d34f4",
+      "candidate/adapter/adapter_model.safetensors": "dae5e2585aac118ee5bb866091c53b27428d26d02eff171daa7d1c11858f304f"
+    },
+    "independent_verification_sha256": "f9ee4772c36c819ec1351a7c9f1545f3b8f022f809d7578de59994dc4928836b"
   },
   "preparation_correction": "First snapshot paused before collection or model evaluation because a no-op passed source checks; corrected snapshot records and excludes non-discriminating lessons",
   "learning_gain_established": false,
   "full_loop_restarted": false,
   "adapter_promoted": false,
   "limitations": [
-    "Reference demonstrations and construction checks are not model gains.",
-    "Synthetic transfer tasks do not establish production repository competence.",
-    "The before/after comparison, fresh confirmation and full audit remain pending."
-  ]
+    "Reference demonstrations, completed training and lower loss are not model gains.",
+    "This small synthetic development comparison does not establish production repository competence.",
+    "Zero passes on both small retention checks provide no positive general-code retention evidence.",
+    "Fresh confirmation and the full audit were not run because development failed.",
+    "Windows recorded an unexpected shutdown; its underlying cause remains unconfirmed."
+  ],
+  "general_code_audit": {
+    "tasks": 790,
+    "started": false,
+    "reason": "Development gain and no-regression prerequisites failed"
+  },
+  "diagnosis": {
+    "candidate_returned_final_patches": 0,
+    "candidate_child_queries": 10,
+    "candidate_child_executions": 32,
+    "candidate_consecutive_error_limit_failures": 8,
+    "candidate_call_or_token_budget_failures": 7,
+    "baseline_task_deadline_timeouts": 1,
+    "observations": [
+      "Malformed JSON, invalid Python, missing context keys and repeated failed checks prevented completion.",
+      "Some child actions generated unrelated example functions instead of working on the assigned repository.",
+      "Child calls and scratch checks did not produce a verified recursive repair."
+    ],
+    "scope": "Observed failure behavior; no causal claim that a particular alternative recipe will fix it."
+  }
 }

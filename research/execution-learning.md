@@ -166,7 +166,7 @@ An unrecognized REPL response now receives explicit format feedback without exec
 
 Home shows first-attempt passes and verified repairs from the current collection, the number of tokenized REPL training rows, current task and accepted updates. The decision card explains lost passes by suite. A training-row count is not a count of independent tasks or evidence of better quality.
 
-### Multi-file tasks without supplied tests (new finite trial)
+### Multi-file tasks without supplied tests
 
 The failed confirmation exposed a mismatch in the previous lessons: their instruction still
 required `test_visible.py`, and their no-public-test variant inserted that file into context.
@@ -205,3 +205,41 @@ specification examples, and each missing source edit. Non-discriminating lessons
 excluded with recorded reasons; infrastructure errors still stop preparation. The corrected
 snapshot keeps the same recipe and the same eight unobserved confirmation tasks. This is
 a data-quality correction, not a failed or successful learning comparison.
+
+The corrected trial completed on 20 October 2026 and failed the development gate.
+Collection produced 254 complete executed trajectories across 127 training families,
+with 1,166 included training rows. The single recipe completed all 300 steps. An
+unexpected host shutdown interrupted training; the existing worker resumed from an
+integrity-checked checkpoint with its optimizer, scheduler and RNG state. Frozen
+sources, settings, dataset and baseline hashes remained unchanged.
+
+| Complete matched development check | Retained base | Candidate |
+| --- | ---: | ---: |
+| Functional repairs, either mode | 1/15 | 0/15 |
+| Ordinary REPL repairs | 0/8 | 0/8 |
+| Genuine recursive repairs | 0/7 | 0/7 |
+| Small retention check | 0/15 | 0/15 |
+
+Independent verification checked ordered task coverage, frozen bindings and checkpoint
+integrity, then regraded every returned final patch in fresh containers: one baseline
+patch passed and one failed, matching the saved results. The candidate returned no
+final patches and lost the baseline's one functional pass. That baseline pass occurred
+in the recursive condition but used no child call, so it was never counted as a genuine
+recursive success.
+
+The candidate made ten child calls and executed 32 child cells. Its two child final
+answers were invalid patches. Trace inspection found malformed JSON, invalid Python,
+missing context keys and repeated failed checks; some child actions used unrelated
+example functions instead of the assigned repository. Eight tasks ended at the
+consecutive-error limit and seven exhausted the call/token budget. These observations
+show failed transfer and error recovery; they do not establish which training change
+would fix it. The baseline also had one request timeout at the frozen task deadline,
+which the evaluator counts as a failed bounded attempt.
+
+The [aggregate evidence](../reports/agent-multifile-trial-20261019.json) records the
+rejection and evidence hashes. No candidate was selected or promoted. The eight fresh
+confirmation tasks remain unused, and the 790-task audit was not started because the
+development prerequisite failed. All older loops remain paused; no full-loop restart
+or additional recipe followed. Private examples, traces and checkpoints are preserved.
+The all-zero small retention result provides no positive evidence of retained general
+coding ability.
