@@ -1,0 +1,402 @@
+[
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-follow_alias",
+      "repository": "balanced-fresh-follow_alias",
+      "split": "dev",
+      "prompt": "Repair service.follow_alias(name, aliases) follows string aliases until a name has no alias; return that final name. Return None if a cycle is encountered, including a self-loop. The public API must use engine.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert follow_alias(*('a', {'a': 'b', 'b': 'c'})) == 'c'\nassert follow_alias(*('x', {})) == 'x'",
+      "files": {
+        "engine/logic.py": "def follow_alias(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "service.py": "from engine.logic import follow_alias as implementation\nfrom engine.bridge import invoke\n\ndef follow_alias(*args, **kwargs):\n    return None\n",
+        "engine/__init__.py": "",
+        "engine/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "engine/logic.py",
+        "service.py"
+      ],
+      "reference_patch": {
+        "engine/logic.py": "def follow_alias(name, aliases):\n    seen = set()\n    while name in aliases:\n        if name in seen: return None\n        seen.add(name)\n        name = aliases[name]\n    return name\n",
+        "service.py": "from engine.logic import follow_alias as implementation\nfrom engine.bridge import invoke\n\ndef follow_alias(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from service import follow_alias\nassert follow_alias(*('a', {'a': 'b', 'b': 'c'})) == 'c'\nassert follow_alias(*('x', {})) == 'x'\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom service import follow_alias\nassert follow_alias(*('a', {'a': 'a'})) == None\nassert follow_alias(*('a', {'a': 'b', 'b': 'a'})) == None\nassert follow_alias(*('a', {'a': 'b', 'z': 'z'})) == 'b'\nassert follow_alias(*('', {'': 'end'})) == 'end'\nassert follow_alias(*('z', {'a': 'b'})) == 'z'\nassert follow_alias(*('a', {'a': 'b', 'b': 'c', 'c': 'd'})) == 'd'\nargs = ('a', {'a': 'a'})\nbefore = copy.deepcopy(args)\nfollow_alias(*args)\nassert args == before\nargs = ('a', {'a': 'b', 'b': 'a'})\nbefore = copy.deepcopy(args)\nfollow_alias(*args)\nassert args == before\nargs = ('a', {'a': 'b', 'z': 'z'})\nbefore = copy.deepcopy(args)\nfollow_alias(*args)\nassert args == before\nargs = ('', {'': 'end'})\nbefore = copy.deepcopy(args)\nfollow_alias(*args)\nassert args == before\nargs = ('z', {'a': 'b'})\nbefore = copy.deepcopy(args)\nfollow_alias(*args)\nassert args == before\nargs = ('a', {'a': 'b', 'b': 'c', 'c': 'd'})\nbefore = copy.deepcopy(args)\nfollow_alias(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-expand_tabs",
+      "repository": "balanced-fresh-expand_tabs",
+      "split": "dev",
+      "prompt": "Repair api.expand_tabs(text, width) replaces each tab by enough spaces to reach the next multiple-of-width column, starting at column zero. A newline resets the column; every other character advances it by one. width is positive. The public API must use domain.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert expand_tabs(*('a\\tb', 4)) == 'a   b'\nassert expand_tabs(*('\\t', 3)) == '   '",
+      "files": {
+        "domain/logic.py": "def expand_tabs(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "api.py": "from domain.logic import expand_tabs as implementation\nfrom domain.bridge import invoke\n\ndef expand_tabs(*args, **kwargs):\n    return None\n",
+        "domain/__init__.py": "",
+        "domain/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "domain/logic.py",
+        "api.py"
+      ],
+      "reference_patch": {
+        "domain/logic.py": "def expand_tabs(text, width):\n    out = []\n    col = 0\n    for ch in text:\n        if ch == '\\t':\n            n = width - col % width\n            out.append(' ' * n)\n            col += n\n        else:\n            out.append(ch)\n            col = 0 if ch == '\\n' else col + 1\n    return ''.join(out)\n",
+        "api.py": "from domain.logic import expand_tabs as implementation\nfrom domain.bridge import invoke\n\ndef expand_tabs(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from api import expand_tabs\nassert expand_tabs(*('a\\tb', 4)) == 'a   b'\nassert expand_tabs(*('\\t', 3)) == '   '\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom api import expand_tabs\nassert expand_tabs(*('', 4)) == ''\nassert expand_tabs(*('abcd\\tx', 4)) == 'abcd    x'\nassert expand_tabs(*('a\\n\\tb', 2)) == 'a\\n  b'\nassert expand_tabs(*('\\t\\t', 2)) == '    '\nassert expand_tabs(*('x\\ty', 1)) == 'x y'\nassert expand_tabs(*('ab\\tc\\td', 3)) == 'ab c  d'\nargs = ('', 4)\nbefore = copy.deepcopy(args)\nexpand_tabs(*args)\nassert args == before\nargs = ('abcd\\tx', 4)\nbefore = copy.deepcopy(args)\nexpand_tabs(*args)\nassert args == before\nargs = ('a\\n\\tb', 2)\nbefore = copy.deepcopy(args)\nexpand_tabs(*args)\nassert args == before\nargs = ('\\t\\t', 2)\nbefore = copy.deepcopy(args)\nexpand_tabs(*args)\nassert args == before\nargs = ('x\\ty', 1)\nbefore = copy.deepcopy(args)\nexpand_tabs(*args)\nassert args == before\nargs = ('ab\\tc\\td', 3)\nbefore = copy.deepcopy(args)\nexpand_tabs(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-compare_versions",
+      "repository": "balanced-fresh-compare_versions",
+      "split": "dev",
+      "prompt": "Repair application.compare_versions(left, right) compares dot-separated nonnegative integer components numerically. Missing trailing components equal zero. Leading zeros are allowed. Return -1, 0, or 1. Both inputs are nonempty valid component sequences. The public API must use components.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert compare_versions(*('1.10', '1.2')) == 1\nassert compare_versions(*('1', '1.0.0')) == 0",
+      "files": {
+        "components/logic.py": "def compare_versions(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "application.py": "from components.logic import compare_versions as implementation\nfrom components.bridge import invoke\n\ndef compare_versions(*args, **kwargs):\n    return None\n",
+        "components/__init__.py": "",
+        "components/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "components/logic.py",
+        "application.py"
+      ],
+      "reference_patch": {
+        "components/logic.py": "def compare_versions(left, right):\n    a = [int(x) for x in left.split('.')]\n    b = [int(x) for x in right.split('.')]\n    n = max(len(a), len(b))\n    a += [0] * (n-len(a))\n    b += [0] * (n-len(b))\n    return (a > b) - (a < b)\n",
+        "application.py": "from components.logic import compare_versions as implementation\nfrom components.bridge import invoke\n\ndef compare_versions(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from application import compare_versions\nassert compare_versions(*('1.10', '1.2')) == 1\nassert compare_versions(*('1', '1.0.0')) == 0\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom application import compare_versions\nassert compare_versions(*('0.9', '1')) == -1\nassert compare_versions(*('01.02', '1.2')) == 0\nassert compare_versions(*('2.0.1', '2')) == 1\nassert compare_versions(*('0', '0.0')) == 0\nassert compare_versions(*('4.3', '4.3.1')) == -1\nassert compare_versions(*('10', '2.99')) == 1\nargs = ('0.9', '1')\nbefore = copy.deepcopy(args)\ncompare_versions(*args)\nassert args == before\nargs = ('01.02', '1.2')\nbefore = copy.deepcopy(args)\ncompare_versions(*args)\nassert args == before\nargs = ('2.0.1', '2')\nbefore = copy.deepcopy(args)\ncompare_versions(*args)\nassert args == before\nargs = ('0', '0.0')\nbefore = copy.deepcopy(args)\ncompare_versions(*args)\nassert args == before\nargs = ('4.3', '4.3.1')\nbefore = copy.deepcopy(args)\ncompare_versions(*args)\nassert args == before\nargs = ('10', '2.99')\nbefore = copy.deepcopy(args)\ncompare_versions(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-round_robin",
+      "repository": "balanced-fresh-round_robin",
+      "split": "dev",
+      "prompt": "Repair facade.round_robin(queues) returns a new list taking one item from each nonempty input queue in original queue order per round, until exhausted. Do not mutate the input lists. The public API must use libcode.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert round_robin(*([[1, 2], [3], [4, 5, 6]],)) == [1, 3, 4, 2, 5, 6]\nassert round_robin(*([[], [7]],)) == [7]",
+      "files": {
+        "libcode/logic.py": "def round_robin(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "facade.py": "from libcode.logic import round_robin as implementation\nfrom libcode.bridge import invoke\n\ndef round_robin(*args, **kwargs):\n    return None\n",
+        "libcode/__init__.py": "",
+        "libcode/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "libcode/logic.py",
+        "facade.py"
+      ],
+      "reference_patch": {
+        "libcode/logic.py": "def round_robin(queues):\n    out = []\n    for i in range(max((len(q) for q in queues), default=0)):\n        for q in queues:\n            if i < len(q): out.append(q[i])\n    return out\n",
+        "facade.py": "from libcode.logic import round_robin as implementation\nfrom libcode.bridge import invoke\n\ndef round_robin(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from facade import round_robin\nassert round_robin(*([[1, 2], [3], [4, 5, 6]],)) == [1, 3, 4, 2, 5, 6]\nassert round_robin(*([[], [7]],)) == [7]\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom facade import round_robin\nassert round_robin(*([],)) == []\nassert round_robin(*([[], []],)) == []\nassert round_robin(*([[1, 2]],)) == [1, 2]\nassert round_robin(*([[0], [0]],)) == [0, 0]\nassert round_robin(*([[1], [], [2, 3]],)) == [1, 2, 3]\nassert round_robin(*([[1, 2], [3, 4]],)) == [1, 3, 2, 4]\nargs = ([],)\nbefore = copy.deepcopy(args)\nround_robin(*args)\nassert args == before\nargs = ([[], []],)\nbefore = copy.deepcopy(args)\nround_robin(*args)\nassert args == before\nargs = ([[1, 2]],)\nbefore = copy.deepcopy(args)\nround_robin(*args)\nassert args == before\nargs = ([[0], [0]],)\nbefore = copy.deepcopy(args)\nround_robin(*args)\nassert args == before\nargs = ([[1], [], [2, 3]],)\nbefore = copy.deepcopy(args)\nround_robin(*args)\nassert args == before\nargs = ([[1, 2], [3, 4]],)\nbefore = copy.deepcopy(args)\nround_robin(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-pointer_tokens",
+      "repository": "balanced-fresh-pointer_tokens",
+      "split": "dev",
+      "prompt": "Repair service.pointer_tokens(pointer) decodes a valid JSON Pointer string into a list of tokens. Empty pointer means no tokens. Otherwise remove the leading slash, split on slash preserving empty tokens, then decode ~1 to slash and ~0 to tilde in that order. The public API must use engine.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert pointer_tokens(*('/a~1b/~0c',)) == ['a/b', '~c']\nassert pointer_tokens(*('/',)) == ['']",
+      "files": {
+        "engine/logic.py": "def pointer_tokens(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "service.py": "from engine.logic import pointer_tokens as implementation\nfrom engine.bridge import invoke\n\ndef pointer_tokens(*args, **kwargs):\n    return None\n",
+        "engine/__init__.py": "",
+        "engine/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "engine/logic.py",
+        "service.py"
+      ],
+      "reference_patch": {
+        "engine/logic.py": "def pointer_tokens(pointer):\n    if pointer == '': return []\n    return [part.replace('~1','/').replace('~0','~') for part in pointer[1:].split('/')]\n",
+        "service.py": "from engine.logic import pointer_tokens as implementation\nfrom engine.bridge import invoke\n\ndef pointer_tokens(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from service import pointer_tokens\nassert pointer_tokens(*('/a~1b/~0c',)) == ['a/b', '~c']\nassert pointer_tokens(*('/',)) == ['']\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom service import pointer_tokens\nassert pointer_tokens(*('',)) == []\nassert pointer_tokens(*('/~01',)) == ['~1']\nassert pointer_tokens(*('//a/',)) == ['', 'a', '']\nassert pointer_tokens(*('/a~0~1b',)) == ['a~/b']\nassert pointer_tokens(*('/0/10',)) == ['0', '10']\nassert pointer_tokens(*('/~0~0',)) == ['~~']\nargs = ('',)\nbefore = copy.deepcopy(args)\npointer_tokens(*args)\nassert args == before\nargs = ('/~01',)\nbefore = copy.deepcopy(args)\npointer_tokens(*args)\nassert args == before\nargs = ('//a/',)\nbefore = copy.deepcopy(args)\npointer_tokens(*args)\nassert args == before\nargs = ('/a~0~1b',)\nbefore = copy.deepcopy(args)\npointer_tokens(*args)\nassert args == before\nargs = ('/0/10',)\nbefore = copy.deepcopy(args)\npointer_tokens(*args)\nassert args == before\nargs = ('/~0~0',)\nbefore = copy.deepcopy(args)\npointer_tokens(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-redact_headers",
+      "repository": "balanced-fresh-redact_headers",
+      "split": "dev",
+      "prompt": "Repair api.redact_headers(lines, secret_names) returns new header lines. Each line has a colon. Compare the stripped header name before the first colon with secret_names case-insensitively. For matches preserve the exact part before the colon and replace the rest with colon-space-[redacted]. Preserve all other lines exactly. The public API must use domain.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert redact_headers(*(['Token: abc', 'Host: x'], ['token'])) == ['Token: [redacted]', 'Host: x']\nassert redact_headers(*([' X-Key : a:b'], ['x-key'])) == [' X-Key : [redacted]']",
+      "files": {
+        "domain/logic.py": "def redact_headers(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "api.py": "from domain.logic import redact_headers as implementation\nfrom domain.bridge import invoke\n\ndef redact_headers(*args, **kwargs):\n    return None\n",
+        "domain/__init__.py": "",
+        "domain/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "domain/logic.py",
+        "api.py"
+      ],
+      "reference_patch": {
+        "domain/logic.py": "def redact_headers(lines, secret_names):\n    names = {n.lower() for n in secret_names}\n    out = []\n    for line in lines:\n        name, value = line.split(':', 1)\n        out.append(name + ': [redacted]' if name.strip().lower() in names else line)\n    return out\n",
+        "api.py": "from domain.logic import redact_headers as implementation\nfrom domain.bridge import invoke\n\ndef redact_headers(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from api import redact_headers\nassert redact_headers(*(['Token: abc', 'Host: x'], ['token'])) == ['Token: [redacted]', 'Host: x']\nassert redact_headers(*([' X-Key : a:b'], ['x-key'])) == [' X-Key : [redacted]']\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom api import redact_headers\nassert redact_headers(*([], ['x'])) == []\nassert redact_headers(*(['A:  b'], [])) == ['A:  b']\nassert redact_headers(*(['a:', 'A: x'], ['A'])) == ['a: [redacted]', 'A: [redacted]']\nassert redact_headers(*(['Host: x:y'], ['token'])) == ['Host: x:y']\nassert redact_headers(*(['X: z'], ['x', 'X'])) == ['X: [redacted]']\nassert redact_headers(*(['A: x', 'B: y'], ['b'])) == ['A: x', 'B: [redacted]']\nargs = ([], ['x'])\nbefore = copy.deepcopy(args)\nredact_headers(*args)\nassert args == before\nargs = (['A:  b'], [])\nbefore = copy.deepcopy(args)\nredact_headers(*args)\nassert args == before\nargs = (['a:', 'A: x'], ['A'])\nbefore = copy.deepcopy(args)\nredact_headers(*args)\nassert args == before\nargs = (['Host: x:y'], ['token'])\nbefore = copy.deepcopy(args)\nredact_headers(*args)\nassert args == before\nargs = (['X: z'], ['x', 'X'])\nbefore = copy.deepcopy(args)\nredact_headers(*args)\nassert args == before\nargs = (['A: x', 'B: y'], ['b'])\nbefore = copy.deepcopy(args)\nredact_headers(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-stuff_bytes",
+      "repository": "balanced-fresh-stuff_bytes",
+      "split": "dev",
+      "prompt": "Repair application.stuff_bytes(values) returns a list of bytes, escaping each 126 or 125 byte as [125, byte XOR 32]. Other byte values are unchanged. Inputs are integers in [0,255]. The public API must use components.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert stuff_bytes(*([0, 126, 1],)) == [0, 125, 94, 1]\nassert stuff_bytes(*([125],)) == [125, 93]",
+      "files": {
+        "components/logic.py": "def stuff_bytes(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "application.py": "from components.logic import stuff_bytes as implementation\nfrom components.bridge import invoke\n\ndef stuff_bytes(*args, **kwargs):\n    return None\n",
+        "components/__init__.py": "",
+        "components/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "components/logic.py",
+        "application.py"
+      ],
+      "reference_patch": {
+        "components/logic.py": "def stuff_bytes(values):\n    out = []\n    for value in values:\n        if value in (125,126): out.extend([125, value ^ 32])\n        else: out.append(value)\n    return out\n",
+        "application.py": "from components.logic import stuff_bytes as implementation\nfrom components.bridge import invoke\n\ndef stuff_bytes(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from application import stuff_bytes\nassert stuff_bytes(*([0, 126, 1],)) == [0, 125, 94, 1]\nassert stuff_bytes(*([125],)) == [125, 93]\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom application import stuff_bytes\nassert stuff_bytes(*([],)) == []\nassert stuff_bytes(*([126, 125],)) == [125, 94, 125, 93]\nassert stuff_bytes(*([255, 32],)) == [255, 32]\nassert stuff_bytes(*([125, 125],)) == [125, 93, 125, 93]\nassert stuff_bytes(*([94, 93],)) == [94, 93]\nassert stuff_bytes(*([1, 2, 3],)) == [1, 2, 3]\nargs = ([],)\nbefore = copy.deepcopy(args)\nstuff_bytes(*args)\nassert args == before\nargs = ([126, 125],)\nbefore = copy.deepcopy(args)\nstuff_bytes(*args)\nassert args == before\nargs = ([255, 32],)\nbefore = copy.deepcopy(args)\nstuff_bytes(*args)\nassert args == before\nargs = ([125, 125],)\nbefore = copy.deepcopy(args)\nstuff_bytes(*args)\nassert args == before\nargs = ([94, 93],)\nbefore = copy.deepcopy(args)\nstuff_bytes(*args)\nassert args == before\nargs = ([1, 2, 3],)\nbefore = copy.deepcopy(args)\nstuff_bytes(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "ordinary",
+    "task": {
+      "id": "balanced-fresh-unfold_lines",
+      "repository": "balanced-fresh-unfold_lines",
+      "split": "dev",
+      "prompt": "Repair facade.unfold_lines(lines) joins continuation lines that begin with a space or tab to the previous output line, with exactly one space followed by the continuation with leading spaces and tabs removed. A continuation without a previous line becomes its stripped text. Other lines, including empty lines, start a new output line. The public API must use libcode.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert unfold_lines(*(['A: one', ' two', 'B: x'],)) == ['A: one two', 'B: x']\nassert unfold_lines(*(['\\tfirst', 'second'],)) == ['first', 'second']",
+      "files": {
+        "libcode/logic.py": "def unfold_lines(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "facade.py": "from libcode.logic import unfold_lines as implementation\nfrom libcode.bridge import invoke\n\ndef unfold_lines(*args, **kwargs):\n    return None\n",
+        "libcode/__init__.py": "",
+        "libcode/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "libcode/logic.py",
+        "facade.py"
+      ],
+      "reference_patch": {
+        "libcode/logic.py": "def unfold_lines(lines):\n    out = []\n    for line in lines:\n        if line.startswith((' ', '\\t')):\n            tail = line.lstrip(' \\t')\n            if out: out[-1] += ' ' + tail\n            else: out.append(tail)\n        else: out.append(line)\n    return out\n",
+        "facade.py": "from libcode.logic import unfold_lines as implementation\nfrom libcode.bridge import invoke\n\ndef unfold_lines(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from facade import unfold_lines\nassert unfold_lines(*(['A: one', ' two', 'B: x'],)) == ['A: one two', 'B: x']\nassert unfold_lines(*(['\\tfirst', 'second'],)) == ['first', 'second']\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom facade import unfold_lines\nassert unfold_lines(*([],)) == []\nassert unfold_lines(*(['a', '  b', '\\tc'],)) == ['a b c']\nassert unfold_lines(*(['', ' x'],)) == [' x']\nassert unfold_lines(*(['a', ' '],)) == ['a ']\nassert unfold_lines(*(['a b', 'c'],)) == ['a b', 'c']\nassert unfold_lines(*(['  a', '\\tb'],)) == ['a b']\nargs = ([],)\nbefore = copy.deepcopy(args)\nunfold_lines(*args)\nassert args == before\nargs = (['a', '  b', '\\tc'],)\nbefore = copy.deepcopy(args)\nunfold_lines(*args)\nassert args == before\nargs = (['', ' x'],)\nbefore = copy.deepcopy(args)\nunfold_lines(*args)\nassert args == before\nargs = (['a', ' '],)\nbefore = copy.deepcopy(args)\nunfold_lines(*args)\nassert args == before\nargs = (['a b', 'c'],)\nbefore = copy.deepcopy(args)\nunfold_lines(*args)\nassert args == before\nargs = (['  a', '\\tb'],)\nbefore = copy.deepcopy(args)\nunfold_lines(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-netstrings",
+      "repository": "balanced-fresh-netstrings",
+      "split": "dev",
+      "prompt": "Repair service.netstrings(text) parses concatenated valid netstrings into a list of payload strings. A netstring is decimal character count, colon, exactly that many characters, comma. Payload may contain colons and commas; empty input returns []. Inputs are valid ASCII netstrings. The public API must use engine.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert netstrings(*('3:abc,0:,',)) == ['abc', '']\nassert netstrings(*('3:a,b,',)) == ['a,b']",
+      "files": {
+        "engine/logic.py": "def netstrings(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "service.py": "from engine.logic import netstrings as implementation\nfrom engine.bridge import invoke\n\ndef netstrings(*args, **kwargs):\n    return None\n",
+        "engine/__init__.py": "",
+        "engine/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "engine/logic.py",
+        "service.py"
+      ],
+      "reference_patch": {
+        "engine/logic.py": "def netstrings(text):\n    out = []\n    i = 0\n    while i < len(text):\n        colon = text.index(':', i)\n        n = int(text[i:colon])\n        start = colon + 1\n        out.append(text[start:start+n])\n        i = start+n+1\n    return out\n",
+        "service.py": "from engine.logic import netstrings as implementation\nfrom engine.bridge import invoke\n\ndef netstrings(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from service import netstrings\nassert netstrings(*('3:abc,0:,',)) == ['abc', '']\nassert netstrings(*('3:a,b,',)) == ['a,b']\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom service import netstrings\nassert netstrings(*('',)) == []\nassert netstrings(*('1::,',)) == [':']\nassert netstrings(*('0:,0:,',)) == ['', '']\nassert netstrings(*('5:hello,1:x,',)) == ['hello', 'x']\nassert netstrings(*('4::,a,,',)) == [':,a,']\nassert netstrings(*('10:0123456789,',)) == ['0123456789']\nargs = ('',)\nbefore = copy.deepcopy(args)\nnetstrings(*args)\nassert args == before\nargs = ('1::,',)\nbefore = copy.deepcopy(args)\nnetstrings(*args)\nassert args == before\nargs = ('0:,0:,',)\nbefore = copy.deepcopy(args)\nnetstrings(*args)\nassert args == before\nargs = ('5:hello,1:x,',)\nbefore = copy.deepcopy(args)\nnetstrings(*args)\nassert args == before\nargs = ('4::,a,,',)\nbefore = copy.deepcopy(args)\nnetstrings(*args)\nassert args == before\nargs = ('10:0123456789,',)\nbefore = copy.deepcopy(args)\nnetstrings(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-edit_with_undo",
+      "repository": "balanced-fresh-edit_with_undo",
+      "split": "dev",
+      "prompt": "Repair api.edit_with_undo(operations) starts with empty text. Each operation is (append, text), (delete, nonnegative count), or (undo, None). Append and delete save the previous text, even if unchanged. Delete removes at most count final characters; zero removes none. Undo restores the most recent saved text and removes that history entry; with no history it does nothing. Return final text. The public API must use domain.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert edit_with_undo(*([('append', 'abc'), ('delete', 1), ('undo', None)],)) == 'abc'\nassert edit_with_undo(*([('append', 'x'), ('delete', 0)],)) == 'x'",
+      "files": {
+        "domain/logic.py": "def edit_with_undo(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "api.py": "from domain.logic import edit_with_undo as implementation\nfrom domain.bridge import invoke\n\ndef edit_with_undo(*args, **kwargs):\n    return None\n",
+        "domain/__init__.py": "",
+        "domain/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "domain/logic.py",
+        "api.py"
+      ],
+      "reference_patch": {
+        "domain/logic.py": "def edit_with_undo(operations):\n    text = ''\n    history = []\n    for operation, value in operations:\n        if operation == 'undo':\n            if history: text = history.pop()\n        else:\n            history.append(text)\n            if operation == 'append': text += value\n            elif value: text = text[:-value]\n    return text\n",
+        "api.py": "from domain.logic import edit_with_undo as implementation\nfrom domain.bridge import invoke\n\ndef edit_with_undo(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from api import edit_with_undo\nassert edit_with_undo(*([('append', 'abc'), ('delete', 1), ('undo', None)],)) == 'abc'\nassert edit_with_undo(*([('append', 'x'), ('delete', 0)],)) == 'x'\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom api import edit_with_undo\nassert edit_with_undo(*([],)) == ''\nassert edit_with_undo(*([('undo', None)],)) == ''\nassert edit_with_undo(*([('append', 'abc'), ('delete', 10)],)) == ''\nassert edit_with_undo(*([('append', 'a'), ('append', 'b'), ('undo', None), ('undo', None)],)) == ''\nassert edit_with_undo(*([('append', 'a'), ('delete', 0), ('undo', None)],)) == 'a'\nassert edit_with_undo(*([('append', 'ab'), ('delete', 1), ('append', 'x')],)) == 'ax'\nargs = ([],)\nbefore = copy.deepcopy(args)\nedit_with_undo(*args)\nassert args == before\nargs = ([('undo', None)],)\nbefore = copy.deepcopy(args)\nedit_with_undo(*args)\nassert args == before\nargs = ([('append', 'abc'), ('delete', 10)],)\nbefore = copy.deepcopy(args)\nedit_with_undo(*args)\nassert args == before\nargs = ([('append', 'a'), ('append', 'b'), ('undo', None), ('undo', None)],)\nbefore = copy.deepcopy(args)\nedit_with_undo(*args)\nassert args == before\nargs = ([('append', 'a'), ('delete', 0), ('undo', None)],)\nbefore = copy.deepcopy(args)\nedit_with_undo(*args)\nassert args == before\nargs = ([('append', 'ab'), ('delete', 1), ('append', 'x')],)\nbefore = copy.deepcopy(args)\nedit_with_undo(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-splice_text",
+      "repository": "balanced-fresh-splice_text",
+      "split": "dev",
+      "prompt": "Repair application.splice_text(text, edits) applies (start, end, replacement) edits simultaneously using zero-based half-open coordinates in the original text. Edits are supplied in any order, have distinct starts, valid bounds, and do not overlap. Return the resulting text. Insertions have start=end. The public API must use components.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert splice_text(*('abcdef', [(4, 6, 'Z'), (1, 3, 'XY')])) == 'aXYdZ'\nassert splice_text(*('ab', [(1, 1, '!')])) == 'a!b'",
+      "files": {
+        "components/logic.py": "def splice_text(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "application.py": "from components.logic import splice_text as implementation\nfrom components.bridge import invoke\n\ndef splice_text(*args, **kwargs):\n    return None\n",
+        "components/__init__.py": "",
+        "components/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "components/logic.py",
+        "application.py"
+      ],
+      "reference_patch": {
+        "components/logic.py": "def splice_text(text, edits):\n    out = []\n    cursor = 0\n    for start, end, replacement in sorted(edits):\n        out.append(text[cursor:start])\n        out.append(replacement)\n        cursor = end\n    out.append(text[cursor:])\n    return ''.join(out)\n",
+        "application.py": "from components.logic import splice_text as implementation\nfrom components.bridge import invoke\n\ndef splice_text(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from application import splice_text\nassert splice_text(*('abcdef', [(4, 6, 'Z'), (1, 3, 'XY')])) == 'aXYdZ'\nassert splice_text(*('ab', [(1, 1, '!')])) == 'a!b'\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom application import splice_text\nassert splice_text(*('abc', [])) == 'abc'\nassert splice_text(*('abc', [(0, 3, '')])) == ''\nassert splice_text(*('', [(0, 0, 'x')])) == 'x'\nassert splice_text(*('abcd', [(0, 1, 'XX'), (3, 4, 'Y')])) == 'XXbcY'\nassert splice_text(*('ab', [(2, 2, '!')])) == 'ab!'\nassert splice_text(*('abc', [(0, 0, '-'), (2, 3, '+')])) == '-ab+'\nargs = ('abc', [])\nbefore = copy.deepcopy(args)\nsplice_text(*args)\nassert args == before\nargs = ('abc', [(0, 3, '')])\nbefore = copy.deepcopy(args)\nsplice_text(*args)\nassert args == before\nargs = ('', [(0, 0, 'x')])\nbefore = copy.deepcopy(args)\nsplice_text(*args)\nassert args == before\nargs = ('abcd', [(0, 1, 'XX'), (3, 4, 'Y')])\nbefore = copy.deepcopy(args)\nsplice_text(*args)\nassert args == before\nargs = ('ab', [(2, 2, '!')])\nbefore = copy.deepcopy(args)\nsplice_text(*args)\nassert args == before\nargs = ('abc', [(0, 0, '-'), (2, 3, '+')])\nbefore = copy.deepcopy(args)\nsplice_text(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-token_bucket",
+      "repository": "balanced-fresh-token_bucket",
+      "split": "dev",
+      "prompt": "Repair facade.token_bucket(capacity, refill, requests) starts full at time zero. Each (time, amount) request has nondecreasing nonnegative integer time and nonnegative integer amount. Before each request add elapsed-time times refill tokens, capped at capacity. Accept if amount is at most current tokens and deduct it; rejected requests deduct nothing. Return a list of acceptance booleans. capacity and refill are nonnegative integers. The public API must use libcode.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert token_bucket(*(3, 1, [(0, 3), (0, 1), (1, 1)])) == [True, False, True]\nassert token_bucket(*(2, 1, [(10, 3), (10, 2)])) == [False, True]",
+      "files": {
+        "libcode/logic.py": "def token_bucket(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "facade.py": "from libcode.logic import token_bucket as implementation\nfrom libcode.bridge import invoke\n\ndef token_bucket(*args, **kwargs):\n    return None\n",
+        "libcode/__init__.py": "",
+        "libcode/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "libcode/logic.py",
+        "facade.py"
+      ],
+      "reference_patch": {
+        "libcode/logic.py": "def token_bucket(capacity, refill, requests):\n    tokens = capacity\n    previous = 0\n    out = []\n    for time, amount in requests:\n        tokens = min(capacity, tokens+(time-previous)*refill)\n        accepted = amount <= tokens\n        out.append(accepted)\n        if accepted: tokens -= amount\n        previous = time\n    return out\n",
+        "facade.py": "from libcode.logic import token_bucket as implementation\nfrom libcode.bridge import invoke\n\ndef token_bucket(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from facade import token_bucket\nassert token_bucket(*(3, 1, [(0, 3), (0, 1), (1, 1)])) == [True, False, True]\nassert token_bucket(*(2, 1, [(10, 3), (10, 2)])) == [False, True]\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom facade import token_bucket\nassert token_bucket(*(0, 1, [(1, 0), (2, 1)])) == [True, False]\nassert token_bucket(*(5, 0, [(0, 2), (1, 3), (9, 1)])) == [True, True, False]\nassert token_bucket(*(2, 2, [(0, 2), (1, 2)])) == [True, True]\nassert token_bucket(*(1, 1, [])) == []\nassert token_bucket(*(4, 1, [(0, 5), (0, 4), (2, 3), (3, 3)])) == [False, True, False, True]\nassert token_bucket(*(1, 0, [(0, 0), (0, 1), (0, 0)])) == [True, True, True]\nargs = (0, 1, [(1, 0), (2, 1)])\nbefore = copy.deepcopy(args)\ntoken_bucket(*args)\nassert args == before\nargs = (5, 0, [(0, 2), (1, 3), (9, 1)])\nbefore = copy.deepcopy(args)\ntoken_bucket(*args)\nassert args == before\nargs = (2, 2, [(0, 2), (1, 2)])\nbefore = copy.deepcopy(args)\ntoken_bucket(*args)\nassert args == before\nargs = (1, 1, [])\nbefore = copy.deepcopy(args)\ntoken_bucket(*args)\nassert args == before\nargs = (4, 1, [(0, 5), (0, 4), (2, 3), (3, 3)])\nbefore = copy.deepcopy(args)\ntoken_bucket(*args)\nassert args == before\nargs = (1, 0, [(0, 0), (0, 1), (0, 0)])\nbefore = copy.deepcopy(args)\ntoken_bucket(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-clockwise",
+      "repository": "balanced-fresh-clockwise",
+      "split": "dev",
+      "prompt": "Repair service.clockwise(grid) rotates a rectangular grid 90 degrees clockwise and returns new lists. Empty grid or a grid with zero columns returns []. Do not mutate inputs. The public API must use engine.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert clockwise(*([[1, 2, 3], [4, 5, 6]],)) == [[4, 1], [5, 2], [6, 3]]\nassert clockwise(*([[1], [2]],)) == [[2, 1]]",
+      "files": {
+        "engine/logic.py": "def clockwise(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "service.py": "from engine.logic import clockwise as implementation\nfrom engine.bridge import invoke\n\ndef clockwise(*args, **kwargs):\n    return None\n",
+        "engine/__init__.py": "",
+        "engine/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "engine/logic.py",
+        "service.py"
+      ],
+      "reference_patch": {
+        "engine/logic.py": "def clockwise(grid):\n    if not grid or not grid[0]: return []\n    return [[grid[r][c] for r in range(len(grid)-1,-1,-1)] for c in range(len(grid[0]))]\n",
+        "service.py": "from engine.logic import clockwise as implementation\nfrom engine.bridge import invoke\n\ndef clockwise(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from service import clockwise\nassert clockwise(*([[1, 2, 3], [4, 5, 6]],)) == [[4, 1], [5, 2], [6, 3]]\nassert clockwise(*([[1], [2]],)) == [[2, 1]]\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom service import clockwise\nassert clockwise(*([],)) == []\nassert clockwise(*([[]],)) == []\nassert clockwise(*([[7]],)) == [[7]]\nassert clockwise(*([[1, 2]],)) == [[1], [2]]\nassert clockwise(*([[1, 2], [3, 4]],)) == [[3, 1], [4, 2]]\nassert clockwise(*([[], []],)) == []\nargs = ([],)\nbefore = copy.deepcopy(args)\nclockwise(*args)\nassert args == before\nargs = ([[]],)\nbefore = copy.deepcopy(args)\nclockwise(*args)\nassert args == before\nargs = ([[7]],)\nbefore = copy.deepcopy(args)\nclockwise(*args)\nassert args == before\nargs = ([[1, 2]],)\nbefore = copy.deepcopy(args)\nclockwise(*args)\nassert args == before\nargs = ([[1, 2], [3, 4]],)\nbefore = copy.deepcopy(args)\nclockwise(*args)\nassert args == before\nargs = ([[], []],)\nbefore = copy.deepcopy(args)\nclockwise(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-accept_events",
+      "repository": "balanced-fresh-accept_events",
+      "split": "dev",
+      "prompt": "Repair api.accept_events(events, cooldown) takes nondecreasing (time, key) events and returns accepted events as lists [time,key]. Accept the first event for each key and later ones only if time minus that key's last ACCEPTED time is at least cooldown. Rejected events must not postpone eligibility. cooldown is nonnegative. The public API must use domain.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert accept_events(*([(0, 'a'), (2, 'a'), (3, 'a')], 3)) == [[0, 'a'], [3, 'a']]\nassert accept_events(*([(0, 'a'), (0, 'b')], 2)) == [[0, 'a'], [0, 'b']]",
+      "files": {
+        "domain/logic.py": "def accept_events(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "api.py": "from domain.logic import accept_events as implementation\nfrom domain.bridge import invoke\n\ndef accept_events(*args, **kwargs):\n    return None\n",
+        "domain/__init__.py": "",
+        "domain/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "domain/logic.py",
+        "api.py"
+      ],
+      "reference_patch": {
+        "domain/logic.py": "def accept_events(events, cooldown):\n    last = {}\n    out = []\n    for time, key in events:\n        if key not in last or time-last[key] >= cooldown:\n            last[key] = time\n            out.append([time,key])\n    return out\n",
+        "api.py": "from domain.logic import accept_events as implementation\nfrom domain.bridge import invoke\n\ndef accept_events(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from api import accept_events\nassert accept_events(*([(0, 'a'), (2, 'a'), (3, 'a')], 3)) == [[0, 'a'], [3, 'a']]\nassert accept_events(*([(0, 'a'), (0, 'b')], 2)) == [[0, 'a'], [0, 'b']]\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom api import accept_events\nassert accept_events(*([], 1)) == []\nassert accept_events(*([(0, 'a'), (0, 'a')], 0)) == [[0, 'a'], [0, 'a']]\nassert accept_events(*([(1, 'a'), (3, 'a')], 2)) == [[1, 'a'], [3, 'a']]\nassert accept_events(*([(0, 'a'), (2, 'a'), (4, 'a')], 3)) == [[0, 'a'], [4, 'a']]\nassert accept_events(*([(5, 'x'), (6, 'y'), (7, 'x')], 5)) == [[5, 'x'], [6, 'y']]\nassert accept_events(*([(1, 'a'), (10, 'a')], 2)) == [[1, 'a'], [10, 'a']]\nargs = ([], 1)\nbefore = copy.deepcopy(args)\naccept_events(*args)\nassert args == before\nargs = ([(0, 'a'), (0, 'a')], 0)\nbefore = copy.deepcopy(args)\naccept_events(*args)\nassert args == before\nargs = ([(1, 'a'), (3, 'a')], 2)\nbefore = copy.deepcopy(args)\naccept_events(*args)\nassert args == before\nargs = ([(0, 'a'), (2, 'a'), (4, 'a')], 3)\nbefore = copy.deepcopy(args)\naccept_events(*args)\nassert args == before\nargs = ([(5, 'x'), (6, 'y'), (7, 'x')], 5)\nbefore = copy.deepcopy(args)\naccept_events(*args)\nassert args == before\nargs = ([(1, 'a'), (10, 'a')], 2)\nbefore = copy.deepcopy(args)\naccept_events(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-shell_words",
+      "repository": "balanced-fresh-shell_words",
+      "split": "dev",
+      "prompt": "Repair application.shell_words(text) splits text on whitespace outside double quotes. Quotes are removed; quoted whitespace is preserved. Adjacent quoted and unquoted parts form one word; an empty quoted string forms an empty word. Quotes are balanced and there are no backslashes or single quotes. The public API must use components.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert shell_words(*('a \"b c\" d',)) == ['a', 'b c', 'd']\nassert shell_words(*('\"\" x',)) == ['', 'x']",
+      "files": {
+        "components/logic.py": "def shell_words(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "application.py": "from components.logic import shell_words as implementation\nfrom components.bridge import invoke\n\ndef shell_words(*args, **kwargs):\n    return None\n",
+        "components/__init__.py": "",
+        "components/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "components/logic.py",
+        "application.py"
+      ],
+      "reference_patch": {
+        "components/logic.py": "def shell_words(text):\n    out = []\n    word = []\n    quoted = False\n    active = False\n    for ch in text:\n        if ch == '\"':\n            quoted = not quoted\n            active = True\n        elif ch.isspace() and not quoted:\n            if active: out.append(''.join(word))\n            word = []\n            active = False\n        else:\n            word.append(ch)\n            active = True\n    if active: out.append(''.join(word))\n    return out\n",
+        "application.py": "from components.logic import shell_words as implementation\nfrom components.bridge import invoke\n\ndef shell_words(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from application import shell_words\nassert shell_words(*('a \"b c\" d',)) == ['a', 'b c', 'd']\nassert shell_words(*('\"\" x',)) == ['', 'x']\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom application import shell_words\nassert shell_words(*('',)) == []\nassert shell_words(*('a\" b\"c',)) == ['a bc']\nassert shell_words(*(' \\t x \\n y ',)) == ['x', 'y']\nassert shell_words(*('\" \"',)) == [' ']\nassert shell_words(*('a\"\"b',)) == ['ab']\nassert shell_words(*('\"a\"\"b\"',)) == ['ab']\nargs = ('',)\nbefore = copy.deepcopy(args)\nshell_words(*args)\nassert args == before\nargs = ('a\" b\"c',)\nbefore = copy.deepcopy(args)\nshell_words(*args)\nassert args == before\nargs = (' \\t x \\n y ',)\nbefore = copy.deepcopy(args)\nshell_words(*args)\nassert args == before\nargs = ('\" \"',)\nbefore = copy.deepcopy(args)\nshell_words(*args)\nassert args == before\nargs = ('a\"\"b',)\nbefore = copy.deepcopy(args)\nshell_words(*args)\nassert args == before\nargs = ('\"a\"\"b\"',)\nbefore = copy.deepcopy(args)\nshell_words(*args)\nassert args == before\n"
+    }
+  },
+  {
+    "condition": "recursive",
+    "task": {
+      "id": "balanced-fresh-overlay_records",
+      "repository": "balanced-fresh-overlay_records",
+      "split": "dev",
+      "prompt": "Repair facade.overlay_records(layers) processes lists of (key,value) pairs in order. Non-None values assign or replace a key; None deletes it if present. Return surviving pairs as lists in insertion order. Replacing retains order; deleting then inserting moves the key to the end. The public API must use libcode.logic through the supplied bridge. Repair both the implementation and its caller. Inputs must not be mutated. No test files are supplied. Required examples:\nassert overlay_records(*([[('a', 1), ('b', 2)], [('a', 3)]],)) == [['a', 3], ['b', 2]]\nassert overlay_records(*([[('a', 1), ('b', 2)], [('a', None), ('a', 4)]],)) == [['b', 2], ['a', 4]]",
+      "files": {
+        "libcode/logic.py": "def overlay_records(*args, **kwargs):\n    raise NotImplementedError()\n",
+        "facade.py": "from libcode.logic import overlay_records as implementation\nfrom libcode.bridge import invoke\n\ndef overlay_records(*args, **kwargs):\n    return None\n",
+        "libcode/__init__.py": "",
+        "libcode/bridge.py": "def invoke(function, args, kwargs):\n    return function(*args, **kwargs)\n"
+      },
+      "editable": [
+        "libcode/logic.py",
+        "facade.py"
+      ],
+      "reference_patch": {
+        "libcode/logic.py": "def overlay_records(layers):\n    values = {}\n    for layer in layers:\n        for key, value in layer:\n            if value is None: values.pop(key, None)\n            else: values[key] = value\n    return [[key,value] for key,value in values.items()]\n",
+        "facade.py": "from libcode.logic import overlay_records as implementation\nfrom libcode.bridge import invoke\n\ndef overlay_records(*args, **kwargs):\n    return invoke(implementation, args, kwargs)\n"
+      },
+      "diagnostic": "from facade import overlay_records\nassert overlay_records(*([[('a', 1), ('b', 2)], [('a', 3)]],)) == [['a', 3], ['b', 2]]\nassert overlay_records(*([[('a', 1), ('b', 2)], [('a', None), ('a', 4)]],)) == [['b', 2], ['a', 4]]\nprint('ISSUE_CHECKS_PASSED')\n",
+      "checks": "import copy\nfrom facade import overlay_records\nassert overlay_records(*([],)) == []\nassert overlay_records(*([[]],)) == []\nassert overlay_records(*([[('x', None)]],)) == []\nassert overlay_records(*([[('a', 0), ('b', False)]],)) == [['a', 0], ['b', False]]\nassert overlay_records(*([[('a', 1)], [('a', None)]],)) == []\nassert overlay_records(*([[('a', 1), ('b', 2)], [('b', None), ('c', 3)]],)) == [['a', 1], ['c', 3]]\nargs = ([],)\nbefore = copy.deepcopy(args)\noverlay_records(*args)\nassert args == before\nargs = ([[]],)\nbefore = copy.deepcopy(args)\noverlay_records(*args)\nassert args == before\nargs = ([[('x', None)]],)\nbefore = copy.deepcopy(args)\noverlay_records(*args)\nassert args == before\nargs = ([[('a', 0), ('b', False)]],)\nbefore = copy.deepcopy(args)\noverlay_records(*args)\nassert args == before\nargs = ([[('a', 1)], [('a', None)]],)\nbefore = copy.deepcopy(args)\noverlay_records(*args)\nassert args == before\nargs = ([[('a', 1), ('b', 2)], [('b', None), ('c', 3)]],)\nbefore = copy.deepcopy(args)\noverlay_records(*args)\nassert args == before\n"
+    }
+  }
+]
