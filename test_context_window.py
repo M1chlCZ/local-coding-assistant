@@ -108,6 +108,10 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(budget.context_windows[0]['requested_messages'], messages())
             self.assertEqual(budget.context_windows[0]['messages'], effective)
             self.assertLess(len(effective), len(messages()))
+            recorded = copy.deepcopy(budget.context_windows[0])
+            effective.append(dict(role='assistant', content='next action'))
+            effective[0]['content'] = 'changed by caller'
+            self.assertEqual(budget.context_windows[0], recorded)
             with self.assertRaises(agent.ContextWindowExceeded):
                 budget.prepare_prompt([dict(role='user', content='large task' * 100)], base, 100)
             self.assertEqual(len(budget.context_windows), 2)

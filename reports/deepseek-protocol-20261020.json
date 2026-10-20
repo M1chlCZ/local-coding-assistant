@@ -1,0 +1,436 @@
+{
+  "completed": true,
+  "experiment": "deepseek-protocol-20261020",
+  "type": "same-weight public interface ablation",
+  "source_revision": "9fb8ba1ff238d7fcc36e2a36c036dee022730b6d",
+  "inference_binding": {
+    "model": "Qwen/Qwen3.5-4B",
+    "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+    "adapter": null,
+    "precision": "bf16",
+    "sources": {
+      "research/tool_protocol.py": "f74512c1cd85348ca43d762dd63a6198e76e74be081efbab89a57c32a729905e",
+      "research/tool_protocol_compare.py": "83295cb7c5876bbc0f8dc396144af81bf3ea9c944f28b983cd25f28159653873",
+      "research/tool_protocol_tasks.json": "f463d889773ccfc9dd2350d4c90e950cec1804bf16a0497333a5c654d1743e88",
+      "recursive_agent.py": "82299ed2231fdb316356c80935e7698c891687284180d5ebdc43f3f33f0e93bc",
+      "rlm_worker.py": "96bcd79ba19ffa2d7d876e998211757dfa6f87e33e5f03fc1ab761f94a828ac8",
+      "repl_actions.py": "9e302c055a9331212f0e4186ccf6bfcf36e967cc9f080eb49dd7951233f4e12f",
+      "agent_pilot.py": "724b786ca46da1440f4548a944c3b3620de6a5df0eabe4967a71ee13b2add0d8",
+      "evaluation.py": "5231f27e0ea1fa1f70fbee0129b2ffedddf28796c9abaa850ed4cc5ab0f99098",
+      "qwen35_server.py": "7816319b9309d28270b25df1d6e2599f7002f00676b43ed8c76c68c500f6e8c3",
+      "qwen35_train.py": "6642260eb2a4e296cf7bda7cd15d5a8903b93d2c019d83a3a5184781578b5866",
+      "structured_output.py": "9d773c2093bfbd18e2e8ba5ebf4f5de15c4247882a4600a67db8da8661ad3c3b",
+      "research/adapter_eval_server.py": "dddbfe182bbc3a2c48535d9ef0add1a2afc26e506b85cc95cc66f150da9f3afa",
+      "repl_learning.py": "4065bbbf84be05817088d82dcd319892a32a6b517dcdd37c5ed630c314021ac4",
+      "coding_loop_stage.py": "75976477ec3a563ff6b310e935a9e93b89222f26c76b5d5b223e9942bd44c7b7",
+      "focused_experiment.py": "d377b35404817cff6ad4c0ff76c183b2c7e11d040c8a2be9d0181517b1cb5ff9",
+      "requirements-structured.txt": "740ff45686a4162635360f5c0bb66db86c4233b58fb255213d8c3869756f1731",
+      "requirements-rlm.txt": "8d82b8c9b9f783cbb2f79ef2322abbbb2a4330c931bcd3efd78f5f97836c6d4b"
+    },
+    "limits": {
+      "calls": 12,
+      "output_tokens": 8192,
+      "seconds": 360
+    },
+    "context": 8192,
+    "action_tokens": 1024,
+    "temperature": 0,
+    "batch_size": 1,
+    "order": [
+      [
+        "protocol-dev-tag-index",
+        [
+          "fenced",
+          "typed",
+          "constrained"
+        ]
+      ],
+      [
+        "protocol-dev-duration-total",
+        [
+          "typed",
+          "constrained",
+          "fenced"
+        ]
+      ],
+      [
+        "protocol-dev-query-pairs",
+        [
+          "constrained",
+          "fenced",
+          "typed"
+        ]
+      ],
+      [
+        "protocol-dev-severity-counts",
+        [
+          "fenced",
+          "typed",
+          "constrained"
+        ]
+      ],
+      [
+        "protocol-dev-range-cover",
+        [
+          "typed",
+          "constrained",
+          "fenced"
+        ]
+      ],
+      [
+        "protocol-dev-config-flags",
+        [
+          "constrained",
+          "fenced",
+          "typed"
+        ]
+      ]
+    ],
+    "upstream": {
+      "rlm": "f7df6af55027159b2f428ff98c9b19beb872618ee88aa8fef62c9498fa1e0562",
+      "parsing": "dd0a706c885ba5a820ecf81c9aa20e99457758108727f1900b045167998d03d6"
+    },
+    "runtime": {
+      "torch": "2.14.0+cu130",
+      "transformers": "5.17.0",
+      "unsloth": "2026.10.3",
+      "xgrammar": "0.2.2",
+      "jsonschema": "4.26.0"
+    }
+  },
+  "summary": {
+    "completed": true,
+    "tasks_per_interface": 6,
+    "learning_gain_established": false,
+    "full_loop_authorized": false,
+    "independent_manual_review_pending": false,
+    "interfaces": {
+      "fenced": {
+        "passed": 3,
+        "tested_repl": 1,
+        "recursive_passed": 0,
+        "calls": 48,
+        "output_tokens": 6949,
+        "elapsed_s": 260.12,
+        "protocol_errors": null,
+        "ordinary_tested_repl": 0
+      },
+      "typed": {
+        "passed": 0,
+        "tested_repl": 0,
+        "recursive_passed": 0,
+        "calls": 57,
+        "output_tokens": 10024,
+        "elapsed_s": 363.55899999999997,
+        "protocol_errors": 25,
+        "ordinary_tested_repl": 0
+      },
+      "constrained": {
+        "passed": 0,
+        "tested_repl": 0,
+        "recursive_passed": 0,
+        "calls": 54,
+        "output_tokens": 14816,
+        "elapsed_s": 542.187,
+        "protocol_errors": 11,
+        "ordinary_tested_repl": 0
+      }
+    },
+    "versus_fenced": {
+      "typed": {
+        "functional_gains": [],
+        "functional_losses": [
+          "protocol-dev-query-pairs",
+          "protocol-dev-severity-counts",
+          "protocol-dev-range-cover"
+        ],
+        "tested_repl_gains": [],
+        "tested_repl_losses": [
+          "protocol-dev-severity-counts"
+        ],
+        "recursive_gains": [],
+        "recursive_losses": []
+      },
+      "constrained": {
+        "functional_gains": [],
+        "functional_losses": [
+          "protocol-dev-query-pairs",
+          "protocol-dev-severity-counts",
+          "protocol-dev-range-cover"
+        ],
+        "tested_repl_gains": [],
+        "tested_repl_losses": [
+          "protocol-dev-severity-counts"
+        ],
+        "recursive_gains": [],
+        "recursive_losses": []
+      }
+    },
+    "scope": "Same retained BASE, six public development canaries, no training or reserved heldouts. Typed/constrained prompts match; fenced also changes the interface and prompt."
+  },
+  "independent_review": {
+    "completed": true,
+    "manual_assertions_and_trajectories_reviewed": 18,
+    "generations_replayed": 159,
+    "root_patches_regraded": 9,
+    "child_patches_regraded": 2,
+    "patch_grade_mismatches": 0,
+    "typed_initial_prompts_identical": true,
+    "all_actual_prompts_fit_context": true,
+    "automatic_verification_passed": false,
+    "automatic_verification_failures": 2,
+    "supplemental_verification_passed": true,
+    "new_model_generations_during_review": 0,
+    "context_receipt_alias_mismatches": {
+      "typed": 57,
+      "constrained": 54
+    },
+    "recording_defect": "The saved effective-message list aliased the returned list. Each typed receipt later acquired its own assistant action and user feedback. All other fields match exact replay; replayed messages equal the immutable actual inference trace.",
+    "repair": "Snapshot the context receipt before returning messages. Frozen sources and evidence remain unchanged.",
+    "schema_and_syntax_counts": {
+      "fenced": {
+        "trajectories": 6,
+        "generations": 48
+      },
+      "typed": {
+        "trajectories": 6,
+        "generations": 57,
+        "python_payloads": 25,
+        "schema_valid": 40,
+        "invalid_json": 16,
+        "incomplete": 1
+      },
+      "constrained": {
+        "trajectories": 6,
+        "generations": 54,
+        "python_payloads": 34,
+        "schema_valid": 48,
+        "incomplete": 6
+      }
+    },
+    "task_checks": [
+      {
+        "id": "protocol-dev-tag-index",
+        "interface": "fenced",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_1_checks": 1,
+          "depth_1_successful_assertion_checks": 1
+        }
+      },
+      {
+        "id": "protocol-dev-tag-index",
+        "interface": "typed",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_1_checks": 1,
+          "depth_1_successful_assertion_checks": 1
+        }
+      },
+      {
+        "id": "protocol-dev-tag-index",
+        "interface": "constrained",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_1_checks": 1,
+          "depth_1_successful_assertion_checks": 1
+        }
+      },
+      {
+        "id": "protocol-dev-duration-total",
+        "interface": "typed",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {}
+      },
+      {
+        "id": "protocol-dev-duration-total",
+        "interface": "constrained",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_1_checks": 1,
+          "depth_1_successful_assertion_checks": 1
+        }
+      },
+      {
+        "id": "protocol-dev-duration-total",
+        "interface": "fenced",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {}
+      },
+      {
+        "id": "protocol-dev-query-pairs",
+        "interface": "constrained",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {}
+      },
+      {
+        "id": "protocol-dev-query-pairs",
+        "interface": "fenced",
+        "passed": true,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {}
+      },
+      {
+        "id": "protocol-dev-query-pairs",
+        "interface": "typed",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {}
+      },
+      {
+        "id": "protocol-dev-severity-counts",
+        "interface": "fenced",
+        "passed": true,
+        "tested_repl": true,
+        "recursive_passed": false,
+        "checks": {
+          "depth_1_checks": 1,
+          "depth_1_successful_assertion_checks": 1
+        }
+      },
+      {
+        "id": "protocol-dev-severity-counts",
+        "interface": "typed",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_2_checks": 3,
+          "depth_2_successful_assertion_checks": 0,
+          "depth_1_checks": 1,
+          "depth_1_successful_assertion_checks": 0
+        }
+      },
+      {
+        "id": "protocol-dev-severity-counts",
+        "interface": "constrained",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_2_checks": 3,
+          "depth_2_successful_assertion_checks": 0,
+          "depth_1_checks": 1,
+          "depth_1_successful_assertion_checks": 0
+        }
+      },
+      {
+        "id": "protocol-dev-range-cover",
+        "interface": "typed",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_2_checks": 1,
+          "depth_2_successful_assertion_checks": 1
+        }
+      },
+      {
+        "id": "protocol-dev-range-cover",
+        "interface": "constrained",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_2_checks": 1,
+          "depth_2_successful_assertion_checks": 1,
+          "depth_1_checks": 3,
+          "depth_1_successful_assertion_checks": 0
+        }
+      },
+      {
+        "id": "protocol-dev-range-cover",
+        "interface": "fenced",
+        "passed": true,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_1_checks": 3,
+          "depth_1_successful_assertion_checks": 0
+        }
+      },
+      {
+        "id": "protocol-dev-config-flags",
+        "interface": "constrained",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_2_checks": 5,
+          "depth_2_successful_assertion_checks": 0
+        }
+      },
+      {
+        "id": "protocol-dev-config-flags",
+        "interface": "fenced",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {}
+      },
+      {
+        "id": "protocol-dev-config-flags",
+        "interface": "typed",
+        "passed": false,
+        "tested_repl": false,
+        "recursive_passed": false,
+        "checks": {
+          "depth_2_checks": 5,
+          "depth_2_successful_assertion_checks": 0
+        }
+      }
+    ],
+    "evidence_sha256": {
+      "results.json": "ec5c72ce17c80ea4fda389acad45eaeb8dd350f5f76832dcae6bc00dafce7896",
+      "summary.json": "917ca0f9c480f2c5b7004b9ffbd9ecfe2ba396226d51ec1d6724008153a4f1d6",
+      "binding.json": "ca8444c832b6281c05a893e55a45085af4d9276dfc98982dfae75d46b1670910"
+    },
+    "tests": {
+      "targeted_context_and_protocol_remote": {
+        "run": 14,
+        "passed": 14,
+        "skipped": 0
+      },
+      "regression_reproduced_before_fix": true
+    }
+  },
+  "findings": [
+    "Tag normalization used lower instead of casefold in all three interfaces; successful self-checks missed the Unicode defect.",
+    "Duration typed actions repeatedly contained duplicate text keys. Constraints avoided that JSON defect, but the resulting parser still violated whitespace, case and ASCII-digit requirements.",
+    "Typed query solving repeated empty checks; constrained query solving repeated truncated test payloads. Fenced returned a functional fallback patch without tested REPL completion.",
+    "Fenced severity passed meaningful parent assertions and grading but did not delegate. Both typed children failed assertions, repeated unchanged checks and returned no completed proposal.",
+    "Both typed range children returned correctly graded patches after meaningful checks. Neither parent applied the proposal and completed a matching successful check; no child pre-repair failing assertion was observed. Constrained parent tests contradicted required adjacent merging.",
+    "Flag children used the wrong per-key default and repeated the same failing assertions. Final typed parent checks were truncated. Fenced repeatedly read without printing and returned a failing fallback patch."
+  ],
+  "decision": {
+    "learning_gain_established": false,
+    "full_loop_authorized": false,
+    "deploy_interface_as_default": false,
+    "new_training_recipe_started": false,
+    "reserved_learning_heldouts_used": false,
+    "general_code_audit_started": false
+  },
+  "limits": [
+    "Six public canaries, one greedy run per interface; not a broad capability estimate or learned-weight comparison.",
+    "Typed and constrained use identical initial prompts. Fenced also differs in prompt and controller, including a possible final-answer fallback.",
+    "Schema-valid response denominators differ because trajectories diverge; protocol-error totals are not independent trials.",
+    "Automatic verification failed twice due to evidence aliasing. Supplemental CPU replay and grading recovered an auditable result; this was not a clean automatic run.",
+    "Fenced stop reasons are not retained in the legacy trace and its schema-valid count is not comparable."
+  ]
+}

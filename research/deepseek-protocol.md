@@ -4,9 +4,11 @@ The completed short-action adapter comparison lost five functional passes and tw
 tested ordinary REPL passes, with no recursive gain. The separate direct-JSON
 comparison also lost one functional pass. Those results remain unchanged.
 
-The next bounded experiment tests an inference interface on retained BASE only.
+The completed bounded experiment tested an inference interface on retained BASE only.
 It does not train an adapter, use the eight reserved learning heldouts, or
-authorize a full Collect restart. Model results are not available yet.
+authorize a full Collect restart. Neither new interface improved task solving.
+The [aggregate report](../reports/deepseek-protocol-20261020.json) includes all
+18 trajectories, individual losses and the verification incident described below.
 
 ## What the source review found
 
@@ -86,7 +88,75 @@ grades. Scripted Docker tests also verified a real child repair and parent
 recheck, exhausted-child failure, and infrastructure-error propagation. These
 are integration checks, not model gains.
 
-The finite controller runs comparison followed by CPU context replay and
-independent patch regrading. Manual inspection of meaningful executed assertions
-is still required. Full results, individual losses and limits must be published
-before any conclusion. The prior learning gates remain in force.
+## Completed results
+
+| Measure | Fenced REPL | Typed actions | Typed + constraints |
+| --- | ---: | ---: | ---: |
+| Functional root repairs | 3/6 | 0/6 | 0/6 |
+| Functional repairs with matching parent REPL assertions | 1/6 | 0/6 | 0/6 |
+| Tested ordinary REPL | 0/3 | 0/3 | 0/3 |
+| Genuine recursive completion | 0/3 | 0/3 | 0/3 |
+| Model generations | 48 | 57 | 54 |
+| Complete schema-valid actions | Not comparable | 40/57 | 48/54 |
+| Invalid JSON, including duplicate keys | Not comparable | 16 | 0 |
+| Truncated actions | Stop reason not recorded | 1 | 6 |
+
+Both typed interfaces lost the fenced functional passes on query pairs, severity
+counts and range coverage. They also lost the tested parent pass on severity.
+There were no functional, tested REPL or recursive gains. The two typed interfaces
+had the same final task scores. Constraints removed malformed JSON in these
+trajectories, but did not prevent empty test actions, incomplete long tests,
+incorrect repairs or repeated failures. Their action totals have different
+denominators because execution diverged; they are not independent task samples.
+All 25 complete, schema-valid Python payloads in typed mode and all 34 in
+constrained mode parsed, which still did not establish functional correctness.
+
+Manual review covered every trajectory and the executed assertions:
+
+- All tag repairs used `lower()` where Unicode `casefold()` was required.
+  Their successful self-checks omitted the distinguishing case.
+- The constrained duration parser passed its own assertions but accepted input
+  forbidden by the specification. The plain typed arm repeated duplicate keys.
+- Both typed range children produced correctly graded repairs and ran meaningful
+  assertions. Neither parent applied the proposal and completed the required
+  matching test chain. No child pre-repair failing assertion was observed.
+  The constrained parent also wrote a test contradicting adjacent-range merging.
+- Severity and flag children repeatedly reran failing assertions without fixing
+  the cause. A child that exhausted its actions returned an error.
+- Two fenced functional passes came from final-answer fallback patches without
+  successful matching REPL checks. The severity pass had genuine parent
+  assertions, but no child; it is not a recursive pass.
+
+These results concern this small adaptation on Qwen, not DeepSeek's models or
+their native tool protocol. The source review yielded useful correctness fixes,
+but this interface should not become the default based on these results.
+
+## Verification incident and independent recovery
+
+Generation completed all 18 rows without an infrastructure failure or context
+overflow. Automatic verification then failed twice: the saved effective-message
+list shared an object with the list returned to the agent. Appending the next
+assistant action and tool feedback also changed that receipt. The controller was
+paused before further retries. Its frozen sources and evidence remain unchanged;
+its automatic verification status is **failed**, not retroactively successful.
+
+A separate CPU audit replayed all 159 requests with the pinned tokenizer. Every
+replayed prompt exactly matched the independent inference trace; token counts,
+eviction decisions and output budgets matched, and every request fit within
+8,192 tokens. The only receipt discrepancies were the two later messages appended
+to each of the 57 typed and 54 constrained receipts. It independently regraded all
+nine returned root patches and both returned child patches, with no grading
+discrepancies. Initial prompts matched between the typed arms. Manual inspection
+also confirmed that printed success messages and zero-assertion checks earned no
+tested or recursive passes.
+
+The public code now snapshots the receipt before returning mutable messages.
+A regression test failed before the fix; all 14 context/protocol checks then
+passed in a separate disposable remote checkout, with no skips. No model
+generation was repeated and no frozen result was edited. Existing upstream
+resource warnings remain. The supplemental review supports the reported result,
+but this was not a clean automatic verification run.
+
+Full Collect remains paused. No new training recipe, reserved learning heldout
+evaluation or 790-task audit was started. The prior learned candidate remains
+rejected, and the learning gates remain unchanged.

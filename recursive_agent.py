@@ -144,7 +144,8 @@ class Budget:
                 or type(prepared.get('context_tokens')) is not int
                 or prepared['fits'] != (prepared['prompt_tokens'] + maximum <= prepared['context_tokens'])):
             raise ValueError('Invalid context preparation receipt')
-        self.context_windows.append(dict(prepared, requested_messages=json.loads(json.dumps(messages)),
+        self.context_windows.append(dict(json.loads(json.dumps(prepared)),
+                                         requested_messages=json.loads(json.dumps(messages)),
                                          kind=CALL_ORIGIN.get() or 'root'))
         if not prepared['fits']:
             self.context_exhausted = True
