@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "experiment": "agent-context-verified-20261020",
-  "status": "running_fresh_matched_baseline",
+  "status": "completed_rejected_development_regression",
   "method": "Same frozen short-action candidate; exact server-tokenized context budgeting in both fresh evaluation arms",
   "training_repeated": false,
   "source_experiment": "agent-actions-20261020",
   "candidate_adapter_sha256": "6d9d21b560fe3f88f6253e636bb017320742615a4a83f4505b1f3a64cd1c960e",
   "candidate_selected_for_holdout": false,
-  "baseline": "Retained BASE, no adapter; fresh evaluation required",
+  "baseline": "Retained BASE, no adapter; new complete matched evaluation",
   "context_policy": {
     "maximum_tokens": 8192,
     "max_action_output_tokens": 1024,
@@ -33,13 +33,36 @@
     "scope": "Infrastructure validation only; no model-quality evidence"
   },
   "development": {
-    "completed": false,
+    "completed": true,
     "tasks": 15,
     "ordinary": 8,
     "recursive": 7,
     "retention": 15,
-    "before": null,
-    "after": null
+    "before": 5,
+    "after": 0,
+    "functional_losses": 5,
+    "new_distinct_family_gains": 0,
+    "ordinary_functional": {
+      "before": 4,
+      "after": 0,
+      "total": 8
+    },
+    "ordinary_tested_repl": {
+      "before": 2,
+      "after": 0,
+      "total": 8
+    },
+    "genuine_recursive": {
+      "before": 0,
+      "after": 0,
+      "total": 7
+    },
+    "retention_passes": {
+      "before": 0,
+      "after": 0,
+      "total": 15
+    },
+    "strict_mode_gate_passed": false
   },
   "confirmation": {
     "completed": false,
@@ -49,12 +72,14 @@
     "model_evaluation_started": false,
     "candidate_selected": false,
     "note": "Previously frozen tasks remain fresh: neither model has evaluated them",
-    "sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52"
+    "sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52",
+    "not_run_reason": "Required development gate failed; all eight tasks remain unused by either model"
   },
   "general_code_audit": {
     "completed": false,
     "tasks_per_model": 790,
-    "baseline_reuse_forbidden": true
+    "baseline_reuse_forbidden": true,
+    "not_run_reason": "Required development gate failed; no new full audit authorized by the conditional protocol"
   },
   "requirements": [
     "Two distinct development family gains, ordinary tested REPL AND genuine recursive gain, no functional/REPL/recursive/retention losses",
@@ -66,5 +91,34 @@
   "full_loop_restarted": false,
   "source_commit": "6332a1be8e08e68bd693538bd869f05b484baced",
   "evaluation_sha256": "7553a35f039c7b5d47914d0e05cfeeb0e39b5ba24ad11e02cefc253325a85ee1",
-  "startup_note": "First controller snapshot preserved after nested GPU-lock failure before any model comparison; corrected controller delegates locking to existing evaluator"
+  "startup_note": "First controller snapshot preserved after nested GPU-lock failure before any model comparison; corrected controller delegates locking to existing evaluator",
+  "independent_completed_review": {
+    "passed": true,
+    "experiment_infrastructure_failures": 0,
+    "controller_retries": 0,
+    "task_rows": 30,
+    "root_patches_regraded": 10,
+    "valid_child_patches_regraded": 2,
+    "invalid_child_returns": 2,
+    "grading_mismatches": 0,
+    "context_generations_reconstructed": 277,
+    "compacted_generations": 6,
+    "compacted_tasks": 3,
+    "context_exhaustion": 0,
+    "same_initial_prompts_verified": true,
+    "frozen_source_data_adapter_bindings_verified": true,
+    "manual_parent_child_test_review_complete": true,
+    "qualifying_parent_child_test_chains": 0,
+    "context_audit_sha256": "7ffaba920760d9bcaafee6fe959e32f8fa13c277d3f7847ab882b0305008b060",
+    "patch_audit_sha256": "165749a44574c29094f9d430cd2a22160a4a8a6207aaf13c459da5c16d3c00bc",
+    "comparison_sha256": "18ffe9fe037033ea85da7ad93abd6fc9c07f770f6963079863c230739d7b262a",
+    "independent_review_sha256": "342a37253c41c0fbd771811beb08e25a69add8c38c425be28dca2a342b6d8427"
+  },
+  "diagnosis": [
+    "Two child proposals pass independent functional grading, but child checks still fail and parent delegation fails to parse fenced JSON; neither constitutes a completed recursive repair.",
+    "Candidate actions repeat undefined check variables, unavailable test imports and malformed final output. These are observed model failures, not a new training gain.",
+    "Two base repairs satisfy the strict tested-REPL criterion; neither is retained by the candidate."
+  ],
+  "decision": "Reject this candidate; preserve evidence and checkpoints, keep full training paused, no additional recipe",
+  "format_comparison": "Separate authorized same-weight comparison remains pending; cannot authorize restart"
 }

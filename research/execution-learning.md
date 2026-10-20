@@ -312,3 +312,34 @@ produced a 13,374-token prompt; the policy retained 7,073 input tokens plus the
 Evicting older observations can lose useful information; the fresh paired results
 must measure that tradeoff. The original failed HTTP requests were not fully saved,
 so their exact token counts are unavailable; their tracebacks remain preserved.
+
+The fresh comparison is now complete, with zero controller retries or infrastructure
+failures. Independent verification reconstructed all 277 root/child context windows
+with the pinned tokenizer. Six generations across three candidate tasks needed
+whole-turn eviction; none exceeded the context budget. All source, dataset, adapter
+and report bindings matched. A separate review reran all ten returned root patches
+and both parseable child patches in the isolated grader, with no grading mismatch.
+
+| Complete development measure | Retained BASE | Candidate |
+| --- | ---: | ---: |
+| Functional repairs | 5/15 | 0/15 |
+| Ordinary functional repairs | 4/8 | 0/8 |
+| Ordinary repairs with successful assertions on the returned source | 2/8 | 0/8 |
+| Genuine recursive repairs | 0/7 | 0/7 |
+| Small retention sample | 0/15 | 0/15 |
+
+There were five lost functional passes, two lost tested REPL passes, and no new
+repair families. The strict development gate failed. Two child proposals passed
+independent functional grading, but their own checks still failed and the parent
+could not consume the fenced JSON response. Neither completed the required
+child-test, parent-test and final-repair chain. Other observed failures included
+undefined check variables, repeated imports of unavailable test packages and
+malformed final answers. Printed success markers were not counted as successful
+execution.
+
+This candidate is rejected. No weights were selected for confirmation, none of the
+eight reserved tasks were model-evaluated, and the conditional 790-task audit was
+not started. The original and repaired comparison evidence and checkpoints are
+preserved. Full training remains paused, with no further recipe launched.
+The separately authorized same-weight format comparison is still required; it
+cannot establish learning gains or authorize a restart.
