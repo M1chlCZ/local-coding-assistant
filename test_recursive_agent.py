@@ -60,6 +60,41 @@ try:
     rejects(lambda: env.execute_code('print("x"*200000)'))
 finally:
     env.cleanup()
+# Fenced cells with assertions must leave the same check evidence as action calls.
+budget = agent.Budget(calls=4, output_tokens=100, seconds=20)
+env = agent.Sandbox(context_payload={'files': {'solver.py': 'x=1\n'}, 'editable': ['solver.py']},
+                    budget=budget)
+try:
+    env.execute_code("assert open('solver.py').read() == 'x=1\\n'")
+    receipt = budget.executions[-1]['checks'][-1]
+    assert receipt['returncode'] == 0 and receipt['assertions'] == 1, receipt
+    env.execute_code("assert open('solver.py').read() == 'x=2\\n'")
+    receipt = budget.executions[-1]['checks'][-1]
+    assert receipt['returncode'] == 1 and receipt['assertions'] == 1, receipt
+finally:
+    env.cleanup()
+# Unexecuted assertions, swallowed failures and edits after tests cannot earn evidence.
+for code, source, expected in [
+    ("def unused():\n    assert False\n", 'x=1\n', False),
+    ("if False:\n    assert False\n", 'x=1\n', False),
+    ("try:\n    assert False\nexcept AssertionError:\n    pass", 'x=1\n', False),
+    ("assert open('solver.py').read() == 'x=1\\n'\n"
+     "open('solver.py','w').write('x=2\\n')", 'x=2\n', False),
+    ("open('solver.py','w').write('x=2\\n')\n"
+     "assert open('solver.py').read() == 'x=2\\n'", 'x=2\n', True),
+    ("def verify():\n    assert open('solver.py').read() == 'x=1\\n'\nverify()", 'x=1\n', True),
+]:
+    budget = agent.Budget(calls=4, output_tokens=100, seconds=20)
+    env = agent.Sandbox(context_payload={'files': {'solver.py': 'x=1\n'}, 'editable': ['solver.py']},
+                        budget=budget)
+    try:
+        env.execute_code(code)
+        hashes = {'solver.py': agent.hashlib.sha256(source.encode()).hexdigest()}
+        row = dict(passed=True, patch={'solver.py':source}, workspace_hashes=hashes,
+                   executions=budget.executions)
+        assert agent.tested_repl(row) is expected, (code, budget.executions)
+    finally:
+        env.cleanup()
 env = agent.Sandbox(context_payload={})
 env.cell_seconds = .3
 try:
@@ -158,4 +193,19 @@ with tempfile.TemporaryDirectory() as directory:
         agent.main()
     saved = json.loads(output.read_text())['tasks'][0]
     assert not saved['passed'] and 'mock grader timeout' in saved['feedback']
+with tempfile.TemporaryDirectory() as directory:
+    output = Path(directory) / 'tested-report.json'
+    hashes = {name: hashlib.sha256(source.encode()).hexdigest()
+              for name, source in dev['reference_patch'].items()}
+    row = {'id':dev['id'], 'repository':dev['repository'], 'split':'dev', 'passed':False,
+           'patch':dev['reference_patch'], 'workspace_hashes':hashes,
+           'checks':[{'returncode':0, 'assertions':1, 'before':hashes, 'after':hashes}],
+           'calls':1, 'elapsed_s':.1}
+    row['executions'] = [{'stderr':'', 'final_answer':None, 'checks':row.pop('checks')}]
+    with mock_patch.object(sys, 'argv', ['recursive_agent.py', '--task', dev['id'], '--output', str(output)]), \
+         mock_patch.object(agent, 'solve', return_value=row), \
+         mock_patch.object(agent, 'grade', return_value={'passed':True}):
+        agent.main()
+    saved = json.loads(output.read_text())['tasks'][0]
+    assert saved['repl_passed'], 'Fenced assertion evidence must reach the CLI report'
 print('PASS: patch paths, shared budgets, persistent isolated state, output and time bounds')

@@ -98,6 +98,26 @@ def parse_patch(answer, task):
     return value
 
 
+def tested_repl(row):
+    """Evidence that a successful assertion ran on the returned source."""
+    if not row.get('passed') or not row.get('patch'):
+        return False
+    hashes={p:hashlib.sha256(s.encode()).hexdigest() for p,s in row['patch'].items()}
+    if row.get('workspace_hashes')!=hashes:
+        return False
+    child_indices={i for q in row.get('queries',[]) if q.get('recursive')
+                   for i in range(q['execution_start'],q['execution_end'])}
+    checks=[c for i,e in enumerate(row.get('executions',[])) if i not in child_indices
+            for c in e.get('checks',[])]
+    last = checks[-1] if checks else {}
+    # Fenced receipts bind the last executed assertion to the final source, not cell entry.
+    stable = last.get('before') == last.get('after')
+    after = last.get('after')
+    return bool(checks and last.get('returncode')==0 and last.get('assertions')
+        and stable and isinstance(after, dict)
+        and all(after.get(p)==h for p,h in hashes.items()))
+
+
 class ContextWindowExceeded(RuntimeError):
     pass
 
@@ -183,11 +203,10 @@ class Sandbox:
                             'import pathlib,sys;pathlib.Path("/workspace/worker.py").write_text(sys.stdin.read())'],
                            input=(ROOT / 'rlm_worker.py').read_text(), text=True,
                            check=True, capture_output=True, timeout=10)
-            if action_api:
-                subprocess.run(['docker', 'exec', '-i', self.container, 'python', '-I', '-c',
-                    'import pathlib,sys;pathlib.Path("/workspace/repl_actions.py").write_text(sys.stdin.read())'],
-                    input=(ROOT/'repl_actions.py').read_text(), text=True, check=True,
-                    capture_output=True, timeout=10)
+            subprocess.run(['docker', 'exec', '-i', self.container, 'python', '-I', '-c',
+                'import pathlib,sys;pathlib.Path("/workspace/repl_actions.py").write_text(sys.stdin.read())'],
+                input=(ROOT/'repl_actions.py').read_text(), text=True, check=True,
+                capture_output=True, timeout=10)
             self.process = subprocess.Popen(['docker', 'exec', '-i', '-w', '/workspace', self.container, 'python', '-I', '-u',
                                              '/workspace/worker.py'], stdin=subprocess.PIPE,
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -259,10 +278,13 @@ class Sandbox:
         while True:
             frame = self._receive()
             if frame.get('type') == 'result':
-                if set(frame) != {'type', 'stdout', 'stderr', 'final_answer'} | ({'checks'} if self.action_api else set()):
+                if set(frame) not in ({'type', 'stdout', 'stderr', 'final_answer'},
+                                      {'type', 'stdout', 'stderr', 'final_answer', 'checks'}):
                     raise ValueError('Invalid REPL result')
                 if not all(isinstance(frame[k], str) and len(frame[k]) <= 8192 for k in ('stdout', 'stderr')):
                     raise ValueError('Invalid or oversized REPL output')
+                if 'checks' in frame and not isinstance(frame['checks'], list):
+                    raise ValueError('Invalid REPL check receipt')
                 if (frame['final_answer'] is not None and
                         (not isinstance(frame['final_answer'], str) or len(frame['final_answer']) > 100000)):
                     raise ValueError('Invalid model final answer')
@@ -271,7 +293,7 @@ class Sandbox:
                 if self.budget:
                     self.budget.executions.append(dict(depth=self.depth, code=code,
                         stderr=frame['stderr'], final_answer=frame['final_answer'],
-                        **({'checks': frame['checks']} if self.action_api else {})))
+                        **({'checks': frame['checks']} if 'checks' in frame else {})))
                 if frame['final_answer'] is not None and self.editable:
                     source = ('import pathlib,json,hashlib; print(json.dumps({name: '
                               'hashlib.sha256(pathlib.Path("/workspace",name).read_bytes()).hexdigest() '
@@ -556,6 +578,7 @@ def main():
         if row.get('patch') and not args.repo:
             try:
                 row.update(grade(task,row['patch']))
+                row['repl_passed'] = tested_repl(row)
             except Exception as error:
                 row.update(passed=False, feedback=f'{type(error).__name__}: {error}')
         report['tasks'].append(row)

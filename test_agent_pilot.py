@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 
-from agent_pilot import recursive_success, comparison, evaluate_one
+from agent_pilot import recursive_success, comparison, evaluate_one, tested_repl
 from qwen35_train import atomic_json, sha256
 
 
@@ -158,6 +158,24 @@ class PilotTests(unittest.TestCase):
             self.assertFalse(recursive_success(bad,task))
         row['queries'][0]['recursive']=False
         self.assertFalse(recursive_success(row,task))
+
+    def test_fenced_assertions_count_and_negative_controls_do_not(self):
+        patch={'solver.py':'x=2'}
+        old=hashlib.sha256(b'x=1').hexdigest(); new=hashlib.sha256(b'x=2').hexdigest()
+        passing=dict(returncode=0,assertions=1,before={'solver.py':new},after={'solver.py':new})
+        row=dict(passed=True,patch=patch,workspace_hashes={'solver.py':new},
+                 executions=[dict(stderr='',final_answer=None,checks=[passing])])
+        self.assertTrue(tested_repl(row))
+        stale=copy.deepcopy(row)
+        stale['executions'][0]['checks'][0]['after']={'solver.py':old}
+        self.assertFalse(tested_repl(stale))
+        for action_api in (False, True):
+            changed=copy.deepcopy(row);changed['action_api']=action_api
+            changed['executions'][0]['checks'][0]['before']={'solver.py':old}
+            self.assertFalse(tested_repl(changed), 'Source changed after its assertion')
+        no_assert=copy.deepcopy(row)
+        no_assert['executions'][0]['checks'][0]['assertions']=0
+        self.assertFalse(tested_repl(no_assert))
 
     def test_matched_gate(self):
         with tempfile.TemporaryDirectory() as directory:

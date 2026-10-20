@@ -10,6 +10,7 @@ from pathlib import Path
 
 from qwen35_train import atomic_json, sha256
 from focused_experiment import ROOT, read
+from recursive_agent import tested_repl
 from repl_learning import LIMITS, run_child
 
 RECURSIVE = ('For the root repository task (context is a dictionary), '
@@ -91,21 +92,6 @@ def recursive_success(row, task):
     return False
 
 
-def tested_repl(row):
-    if not row.get('passed') or not row.get('patch'):
-        return False
-    hashes={p:hashlib.sha256(s.encode()).hexdigest() for p,s in row['patch'].items()}
-    if row.get('workspace_hashes')!=hashes:
-        return False
-    child_indices={i for q in row.get('queries',[]) if q.get('recursive')
-                   for i in range(q['execution_start'],q['execution_end'])}
-    checks=[c for i,e in enumerate(row.get('executions',[])) if i not in child_indices
-            for c in e.get('checks',[])]
-    return bool(checks and checks[-1]['returncode']==0 and checks[-1]['assertions']
-        and checks[-1]['before']==checks[-1]['after']
-        and all(checks[-1]['after'].get(p)==h for p,h in hashes.items()))
-
-
 def evaluate_one(entry):
     from recursive_agent import solve, grade
     from polyglot_runtime import check_program
@@ -131,8 +117,7 @@ def evaluate_one(entry):
     if row.get('patch'):
         row.update(grade(task,row['patch']))
     row.update(condition=entry['condition'], recursive_passed=recursive_success(row,task))
-    if entry.get('action_api'):
-        row['repl_passed']=tested_repl(row)
+    row['repl_passed']=tested_repl(row)
     return row
 
 
