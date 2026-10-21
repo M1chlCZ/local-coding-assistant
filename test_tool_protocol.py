@@ -19,6 +19,16 @@ def response(tool, path='', text='', finish='stop'):
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_read_action_displays_file_exactly_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = 'value = "quoted\\\\path"\n'
+            task = dict(task='Inspect.', editable=['solver.py'], files={'solver.py': source})
+            namespace = Workspace(task, {}, root=directory).bindings()
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                exec(protocol.action_code(response('read', 'solver.py'), False), namespace)
+            self.assertEqual(output.getvalue(), source)
+
     def test_summary_requires_all_matched_tasks_and_never_authorizes_learning(self):
         from research.tool_protocol_compare import summarize
         entries = [dict(condition='ordinary', task=dict(id='one'))]

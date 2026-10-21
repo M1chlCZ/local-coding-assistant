@@ -48,7 +48,7 @@ def action_code(response, child):
     if tool == 'read':
         if not path or text:
             raise ValueError('read requires only a path')
-        return 'print(read('+repr(path)+'))'
+        return 'read('+repr(path)+')'
     if tool == 'write':
         if not path:
             raise ValueError('write requires a path')

@@ -13,7 +13,7 @@ task is a dictionary with task (requirements), editable (paths), and files (orig
 is_child is True only inside a child REPL; it is False in the root.
 The same interface exists in parent and child; never parse task or source text as JSON.
 show() displays the requirements, inventory and editable source.
-read(path) returns source text. write(path, source) replaces ONE editable file after syntax validation.
+read(path) displays and returns source text. write(path, source) replaces ONE editable file after syntax validation.
 check(code) runs your Python checks in a fresh process with repository imports. It prints and returns
 returncode/output. Write actual assertions from requirements and examples; no tests are guaranteed.
 Errors are evidence: correct the failing source or action, then rerun checks. Do not repeat unchanged failures.
@@ -60,17 +60,22 @@ class Workspace:
             raise ValueError('Symlinks and paths outside the repository are not allowed')
         return target
 
-    def read(self, name):
+    def _read(self, name):
         if name not in self.task['files']:
             raise ValueError('Unknown repository file')
         return self.target(name).read_text()
+
+    def read(self, name):
+        source = self._read(name)
+        print(source, end='')
+        return source
 
     def show(self):
         print(self.task.get('task', '')[:3000])
         print('Files:', list(self.task['files']))
         print('Editable:', self.task['editable'])
         for name in self.task['editable'][:2]:
-            print(name, self.read(name)[:1500])
+            print(name, self._read(name)[:1500])
 
     def validate(self, patch):
         if not isinstance(patch, dict) or not patch:
@@ -122,13 +127,13 @@ class Workspace:
         if self.is_child or not self.query or not isinstance(goal, str) or not goal or len(goal) > 2000:
             raise ValueError('Delegation needs an available child and a short goal')
         request = dict(task=self.task['task']+'\nChild goal: '+goal,
-            editable=self.task['editable'], files={p:self.read(p) for p in self.task['files']})
+            editable=self.task['editable'], files={p:self._read(p) for p in self.task['files']})
         result = json.loads(self.query(json.dumps(request)))
         return self.validate(result)
 
     def finish(self):
-        patch = {p:self.read(p) for p in self.task['editable']
-                 if self.read(p) != self.task['files'][p]}
+        patch = {p:self._read(p) for p in self.task['editable']
+                 if self._read(p) != self.task['files'][p]}
         self.validate(patch)
         if (not self.checks or self.checks[-1]['returncode'] != 0
                 or self.checks[-1]['before'] != self.hashes()

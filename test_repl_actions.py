@@ -1,5 +1,6 @@
 """The action interface transports text; it must never invent repairs or test results."""
 import contextlib
+import importlib.util
 import io
 import json
 from pathlib import Path
@@ -19,6 +20,53 @@ class ActionTests(unittest.TestCase):
                    'api.py': 'from pkg.core import greet\n', 'README.md': 'read only'})
         self.answer = {}
         self.workspace = Workspace(self.context, self.answer, root=self.root)
+
+    def test_bare_read_displays_source_and_preserves_return_value_in_parent_and_child(self):
+        child = Workspace(json.dumps(self.context), {}, root=self.root/'child')
+        for workspace in (self.workspace, child):
+            with self.subTest(child=workspace.is_child):
+                namespace = workspace.bindings()
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    exec("read('README.md')", namespace)
+                self.assertEqual(output.getvalue(), self.context['files']['README.md'])
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(namespace['read']('pkg/core.py'), self.context['files']['pkg/core.py'])
+
+    def test_internal_reads_do_not_echo_source_during_show_delegate_or_finish(self):
+        source = 'def greet():\n    return 2\n'
+        self.workspace.query = lambda _: json.dumps({'pkg/core.py': source})
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.workspace.show()
+        self.assertEqual(output.getvalue().count(self.context['files']['pkg/core.py']), 1)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.workspace.write('pkg/core.py', source)
+            self.workspace.check('from pkg.core import greet\nassert greet() == 2')
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.workspace.delegate('Repair and test.')
+            self.workspace.finish()
+        self.assertEqual(output.getvalue(), '')
+        self.assertEqual(self.answer['content'], {'pkg/core.py': source})
+
+    @unittest.skipUnless(importlib.util.find_spec('rlm'), 'Pinned upstream and Docker required')
+    def test_real_worker_displays_parent_and_child_reads_with_existing_output_bound(self):
+        from recursive_agent import Sandbox
+        context = dict(self.context, files={**self.context['files'], 'large.txt': 'x'*8193})
+        for payload in (context, json.dumps(context)):
+            env = Sandbox(context_payload=payload, action_api=True)
+            try:
+                result = env.execute_code("read('README.md')")
+                self.assertFalse(result.stderr)
+                self.assertEqual(result.stdout, 'read only')
+                result = env.execute_code("source = read('pkg/core.py')\nassert source == task['files']['pkg/core.py']")
+                self.assertFalse(result.stderr)
+                self.assertEqual(result.stdout, context['files']['pkg/core.py'])
+                with self.assertRaisesRegex(RuntimeError, 'Cell output limit exceeded'):
+                    env.execute_code("read('large.txt')")
+            finally:
+                env.cleanup()
 
     def test_text_roundtrip_and_fresh_checks(self):
         source = 'def greet():\n    return ' + repr('a "quote"\\path\nline') + '\n'
