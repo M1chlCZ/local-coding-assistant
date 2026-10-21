@@ -21,8 +21,8 @@ REVISION = '851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a'
 def session_path(name):
     if not isinstance(name, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}', name):
         raise ValueError('Use a session name with letters, numbers, dashes or underscores')
-    path = SESSIONS / name
-    if path.resolve().parent != SESSIONS.resolve():
+    path = (SESSIONS / name).resolve()
+    if path.parent != SESSIONS.resolve():
         raise ValueError('Session must stay in the private learning folder')
     return path
 
@@ -69,7 +69,13 @@ def checked_report(path):
         raise ValueError('Comparison has no bound evidence')
     for name, digest in report['inputs'].items():
         item = (path / name).resolve()
-        if not item.is_relative_to(path.resolve()) or not item.is_file() or sha256(item) != digest:
+        if not item.is_relative_to(path.resolve()):
+            # Reused weights must match the exact external file bound before the run.
+            config = path/'config.json'
+            if (not config.is_file() or sha256(config) != state.get('config_sha256')
+                    or read(config).get('inputs', {}).get(str(item)) != digest):
+                raise ValueError('Comparison external evidence is not bound to this session')
+        if not item.is_file() or sha256(item) != digest:
             raise ValueError('Comparison evidence changed; result is not trusted')
     return report
 

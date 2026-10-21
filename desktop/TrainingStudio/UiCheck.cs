@@ -4,9 +4,18 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
+using System.Windows.Automation.Peers;
 namespace TrainingStudio;
 public partial class MainWindow
 {
+    internal void CheckHomeAccessibility()
+    {
+        if(Tabs.SelectedIndex!=0 || !Activity.IsVisible)throw new IOException("Home must open with visible activity");
+        var peer=UIElementAutomationPeer.CreatePeerForElement(Tabs);
+        bool ContainsActivity(AutomationPeer node)=>node.GetAutomationId()=="Activity" ||
+            (node.GetChildren()?.Any(ContainsActivity)??false);
+        if(peer is null || !ContainsActivity(peer))throw new IOException("Home activity is missing from the accessibility tree");
+    }
     [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr window,int attribute,out int value,int size);
     internal int CheckBackdrop()
     {
@@ -66,10 +75,11 @@ public partial class MainWindow
             latest["report"]=System.Text.Json.Nodes.JsonNode.Parse("""{"pilot_gate":{},"comparisons":{"training_effect":{"repairs":{"python":{"before":0,"after":0,"total":8}}}}}""");
             Render(latest);
             if(Activity.Text!="Experiment completed" || CurrentTask.Text!="Comparison completed" ||
-                ProgressText.Text!="All scheduled checks finished" || StageProgress.Value!=100 || ReplComparison.Text!="0 → 0 / 8" || ChartHint.Text.StartsWith("Waiting"))
+                ProgressText.Text!="All scheduled checks finished" || StageProgress.Value!=100 || ReplComparison.Text!="0 → 0 / 8" ||
+                ReplComparisonLabel.Text!="Functional repairs" || ChartHint.Text.StartsWith("Waiting"))
                 throw new IOException("Completed pilot shows stale progress or omits its measured REPL result");
             latest["report"]!["pilot_gate"]=null;Render(latest);
-            if(ReplComparison.Text!="—")throw new IOException("Direct repair tests were mislabeled as REPL results");
+            if(ReplComparison.Text!="—" || ReplComparisonLabel.Text!="REPL comparison")throw new IOException("Direct repair tests were mislabeled as REPL results");
         } finally {latest=saved;Render(saved!);UpdateControls();}
     }
     internal async Task CheckRefreshBehavior()

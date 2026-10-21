@@ -11,6 +11,17 @@ class DesktopBridgeTests(unittest.TestCase):
         for name in ('../escape', '/tmp/x', '.cache/learning/../x', 'a/b', ''):
             with self.assertRaises(ValueError): app.session_path(name)
 
+    def test_separate_dashboard_can_use_existing_session_storage(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d).resolve()
+            storage = root/'saved'; storage.mkdir()
+            session = storage/'trial'; session.mkdir()
+            link = root/'dashboard'; link.symlink_to(storage, target_is_directory=True)
+            with patch.object(app, 'SESSIONS', link):
+                self.assertEqual(app.session_path('trial'), session)
+                (storage/'escape').symlink_to(root, target_is_directory=True)
+                with self.assertRaises(ValueError): app.session_path('escape')
+
     def test_task_preview_contains_only_current_editable_code(self):
         with tempfile.TemporaryDirectory() as d:
             folder=Path(d)/'round-000001';folder.mkdir()
@@ -66,6 +77,37 @@ class DesktopBridgeTests(unittest.TestCase):
             (p/'status.json').write_text(json.dumps({'completed_stages':[{'result':'comparison.json','sha256':'0'*64}]}))
             with self.assertRaisesRegex(ValueError,'comparison changed'): app.checked_report(p)
 
+    def test_reused_adapter_requires_exact_frozen_external_binding(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d).resolve(); session = root/'trial'; session.mkdir()
+            weights = root/'saved-adapter'; weights.write_bytes(b'original weights')
+            link = session/'adapter'; link.symlink_to(weights)
+            digest = app.sha256(weights)
+            report = session/'comparison.json'
+            report.write_text(json.dumps(dict(completed=True, inputs={'adapter':digest})))
+            config = session/'config.json'
+            state = dict(completed_stages=[dict(result='comparison.json', sha256=app.sha256(report))])
+
+            def bind(inputs):
+                config.write_text(json.dumps(dict(inputs=inputs)))
+                state['config_sha256'] = app.sha256(config)
+                (session/'status.json').write_text(json.dumps(state))
+
+            bind({str(weights):digest})
+            self.assertTrue(app.checked_report(session)['completed'])
+            weights.write_bytes(b'changed weights')
+            with self.assertRaises(ValueError): app.checked_report(session)
+            weights.write_bytes(b'original weights')
+            other = root/'unbound-adapter'; other.write_bytes(weights.read_bytes())
+            link.unlink(); link.symlink_to(other)
+            with self.assertRaises(ValueError): app.checked_report(session)
+            bind({str(other):digest})
+            self.assertTrue(app.checked_report(session)['completed'])
+            config.write_text(json.dumps(dict(inputs={str(other):digest, 'changed':digest})))
+            with self.assertRaises(ValueError): app.checked_report(session)
+            bind({})
+            with self.assertRaises(ValueError): app.checked_report(session)
+
     def test_new_experiment_requires_valid_name_and_budget(self):
         for request in ({'name':'../bad','hours':1},{'name':'trial','hours':24}):
             with self.assertRaises(ValueError): app.prepare(request)
@@ -114,7 +156,7 @@ class AgentCurriculumStatusTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
+        self.root = Path(self.temporary.name).resolve()
         self.path = self.root/'pilot'
         self.path.mkdir()
         self.config = dict(learning_method='agent_curriculum', inputs={}, stages=[

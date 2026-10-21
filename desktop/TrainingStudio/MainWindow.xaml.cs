@@ -214,7 +214,9 @@ public partial class MainWindow : Window
         DecisionReason.Text=reasons?.Count>0?string.Join(". ",reasons.Select(r=>r!.ToString())):
             S(report,"decision",S(state,"readiness","Waiting for a complete comparison."));
         var repl=report?["comparisons"]?["training_effect"]?["repl"]?.AsObject();
+        ReplComparisonLabel.Text="REPL comparison";
         if(repl is null && report?["pilot_gate"] is not null)repl=report["comparisons"]?["training_effect"]?["repairs"]?.AsObject();
+        if(repl is not null && report?["comparisons"]?["training_effect"]?["repl"] is null)ReplComparisonLabel.Text="Functional repairs";
         ReplComparison.Text=repl is null?"—":
             $"{repl.Sum(r=>N(r.Value,"before")):0} → {repl.Sum(r=>N(r.Value,"after")):0} / {repl.Sum(r=>N(r.Value,"total")):0}";
         var gpu=state["gpu"]; GpuName.Text=S(gpu,"name","GPU information unavailable").Replace("NVIDIA GeForce ","");

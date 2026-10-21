@@ -51,6 +51,8 @@ public partial class App : Application
             try
             {
                 if(!await window.Ready.Task.WaitAsync(TimeSpan.FromSeconds(90)))throw new IOException("No live session loaded");
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                window.CheckHomeAccessibility();
                 await window.CheckRefreshBehavior();
                 foreach(string mode in new[]{"Light","Dark","System"})
                 {
