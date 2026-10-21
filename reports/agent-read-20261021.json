@@ -1,0 +1,176 @@
+{
+  "schema": 1,
+  "experiment": "agent-read-20261021",
+  "status": "completed_rejected_development_gate",
+  "method": "New complete matched evaluation after shared read visibility repair; unchanged retained BASE and existing balanced adapter",
+  "source_commit": "65e89159cf77baefbd74b3ea58b47a07c2378fd6",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "candidate_adapter_sha256": "40e20b7003bcf4b374ee012aedba3eb37bc4860b3e04b5455239a2bbce013dee",
+  "candidate_selected_for_holdout": false,
+  "training": {
+    "new_updates": 0,
+    "reused_adapter_from": "agent-balanced-resume-20261021",
+    "original_training_source_commit": "0b1245260274432e1924110863bf7ea37779dcad",
+    "weights_unchanged": true
+  },
+  "repair": {
+    "public_read": "Displays and returns exact source text",
+    "internal_reads": "Remain quiet for show, delegate and finish",
+    "typed_dispatcher": "Does not double print read output",
+    "preflight_tests": 14,
+    "preflight_skipped": 0,
+    "actual_parent_child_sandbox_reads_tested": true,
+    "existing_output_cap_preserved": true,
+    "source_visibility_observed_in_model_prompt": true
+  },
+  "matched_settings": {
+    "precision": "bf16",
+    "decoding": "greedy",
+    "initial_prompts_identical": true,
+    "one_conversation_per_request": true,
+    "server_batch_capacity": 2,
+    "context_tokens": 8192,
+    "max_depth": 2,
+    "max_calls": 12,
+    "total_output_tokens": 8192,
+    "seconds_per_task": 360,
+    "same_tokenizer_budgeting": true,
+    "same_task_instructions": true,
+    "new_complete_baseline": true,
+    "old_model_outputs_reused": false
+  },
+  "comparison": {
+    "completed": true,
+    "tasks": 16,
+    "ordinary_tasks": 8,
+    "recursive_tasks": 8,
+    "task_status": "Already-exposed public development tasks, not fresh heldout",
+    "retention_checks": 15,
+    "baseline": {
+      "functional": 7,
+      "ordinary_tested_repl": 2,
+      "genuine_recursive": 0,
+      "retention": 0,
+      "returned_root_patches": 12,
+      "executions": 147,
+      "check_calls": 20,
+      "parent_check_calls": 20,
+      "child_check_calls": 0,
+      "successful_parent_assertion_checks": 10,
+      "successful_child_assertion_checks": 0,
+      "observed_completed_finishes": 3,
+      "child_queries": 0,
+      "development_generations": 140,
+      "terminal_error_types": {
+        "ValueError": 3,
+        "JSONDecodeError": 1
+      }
+    },
+    "candidate": {
+      "functional": 1,
+      "ordinary_tested_repl": 0,
+      "genuine_recursive": 0,
+      "retention": 0,
+      "returned_root_patches": 2,
+      "executions": 165,
+      "check_calls": 25,
+      "parent_check_calls": 16,
+      "child_check_calls": 9,
+      "successful_parent_assertion_checks": 0,
+      "successful_child_assertion_checks": 3,
+      "observed_completed_finishes": 0,
+      "child_queries": 7,
+      "development_generations": 165,
+      "terminal_error_types": {
+        "ValueError": 6,
+        "JSONDecodeError": 1,
+        "RuntimeError": 7
+      }
+    },
+    "functional_gains": [],
+    "functional_losses": [
+      "balanced-fresh-follow_alias",
+      "balanced-fresh-compare_versions",
+      "balanced-fresh-redact_headers",
+      "balanced-fresh-splice_text",
+      "balanced-fresh-clockwise",
+      "balanced-fresh-accept_events"
+    ],
+    "ordinary_tested_repl_gains": [],
+    "ordinary_tested_repl_losses": [
+      "balanced-fresh-follow_alias",
+      "balanced-fresh-compare_versions"
+    ],
+    "genuine_recursive_gains": [],
+    "genuine_recursive_losses": [],
+    "retention_losses": [],
+    "strict_mode_gate_passed": false
+  },
+  "verification": {
+    "completed": true,
+    "evidence_checks_passed": true,
+    "input_hashes_verified": 113,
+    "public_source_files_verified": 312,
+    "development_trajectories_reviewed": 32,
+    "context_requests_reconstructed": 305,
+    "context_compactions": 0,
+    "context_exhaustions": 0,
+    "root_patches_regraded": 14,
+    "valid_child_patches_regraded": 0,
+    "invalid_child_returns": 7,
+    "grading_mismatches": 0,
+    "qualifying_parent_child_chains": 0,
+    "stage_attempts": 3,
+    "controller_failures": 0,
+    "retries": 0,
+    "container_image": "sha256:f5582a9fb4b280c6eeacb83601f9fc0840b661b2a1f98eb90a4d57b320d24941",
+    "evidence_sha256": {
+      "evaluation.json": "ad74c40fa737e9172ce8684059b61802715bedd587f79971f35d1ebe170295c3",
+      "comparison.json": "308cd1d54e3bda0354e69dd93775fc3be2ec5d2d1c74b2eef0c369ca7ecf4ebd",
+      "context-verified.json": "5ecb5a8cb14e1ae3a99ba0325ab9e9aa05d9b830e43c88f29945944c7efefb1d",
+      "candidate/development-verified.json": "69eb38d5011a96c94bb2348f6616bd280ceceba0d6a8f5201a2acba0e31c9f29",
+      "baseline/development.json": "a0773e2fbd5742ff588daf72ac6195db3345a5768e6d6ff85fa076e1a4104e6c",
+      "candidate/development.json": "fb11b0e227a5c35207e69fed1402db10e587ab83b10bad8f7ede4dc99d2a6f0c",
+      "provenance.json": "9e97f92c1dd16378b41d65d0dd96bb82a29053629d0286588402af51c37b9726"
+    },
+    "manual_review_sha256": "6e9927be72597cfc71e77e7e51a5308381e29bb354bfb084e6dd6eaef8c5f180"
+  },
+  "child_review": {
+    "actual_checks": 9,
+    "successful_assertion_checks": 3,
+    "completed_child_finishes": 0,
+    "budget_exhausted_returns": 7,
+    "conclusion": "Some child assertions passed on repaired source, but no child returned a finished patch for parent application and testing; no recursive solve"
+  },
+  "history": {
+    "original_training_host_interruption_preserved": true,
+    "original_partial_model_outputs_reused": false,
+    "this_comparison_controller_failures": 0,
+    "ui_initial_loading_check_failed": true,
+    "ui_subsequent_read_only_verification_passed": true,
+    "ui_failure_did_not_retry_model": true
+  },
+  "reserved_holdouts": {
+    "tasks": 8,
+    "sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52",
+    "model_evaluation_started": false,
+    "candidate_selected": false,
+    "not_run_reason": "Required development gate failed"
+  },
+  "general_code_audit": {
+    "tasks_per_model": 790,
+    "completed": false,
+    "new_baseline_required": true,
+    "not_run_reason": "Required development gate failed"
+  },
+  "limitations": [
+    "The fixed 16-task suite is development already exposed to both models; it is not evidence of fresh-task generalization.",
+    "Retention stores pass booleans only and both arms scored zero; this cannot establish general-code preservation.",
+    "The result rejects this unchanged adapter under the repaired shared interface; it does not establish the cause of its training failure or evaluate another recipe."
+  ],
+  "model_learning_gain_established": false,
+  "full_loop_authorized": false,
+  "full_loop_restarted": false,
+  "decision": "Reject candidate; preserve evidence and checkpoints; keep full Collect paused; do not launch another recipe"
+}
