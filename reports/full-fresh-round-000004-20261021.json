@@ -1,0 +1,220 @@
+{
+  "schema": 1,
+  "experiment": "coding-model-fresh-20261021-114559",
+  "round": 4,
+  "status": "development_complete_general_code_audit_in_progress",
+  "source_commit": "33f74c3a82f958ed8e68ce2ebe588f633c69b6c8",
+  "config_sha256": "51f52bb4f90cfc2984faa277ef3a580726b33836138a174dc3874302bd64c7e7",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "candidate_adapter_sha256": "2a847a21f470d07e0da2675353a781a571152ad09273aac7d9f5277972f2f4fd",
+  "candidate_selected_for_reserved_holdouts": false,
+  "training": {
+    "initial_adapter": null,
+    "fresh_optimizer": true,
+    "precision": "bf16",
+    "rank": 8,
+    "learning_rate": 5e-06,
+    "maximum_updates": 128,
+    "maximum_epochs": 1,
+    "actual_updates": 15,
+    "gradient_accumulation": 8,
+    "max_length": 4096,
+    "seed": 3407,
+    "included_rows": 113,
+    "excluded_rows": 0,
+    "languages": {
+      "python": 34,
+      "go": 19,
+      "typescript": 24,
+      "rust": 19,
+      "dart": 17
+    },
+    "kinds": {
+      "complete_code": 48,
+      "correction": 14,
+      "executed_repl_repair": 38,
+      "teacher_reference": 13
+    },
+    "checkpoint_steps_preserved": [
+      5,
+      10,
+      15
+    ],
+    "final_weights_preserved": true,
+    "prior_three_rounds_training_skipped_for_insufficient_balanced_data": true
+  },
+  "development": {
+    "task_status": "Public development checks; not fresh heldout confirmation",
+    "direct": {
+      "tasks": 60,
+      "baseline_passed": 20,
+      "candidate_passed": 21,
+      "gained": [
+        "codecontests-37dd3cd27a0988625833870c-python"
+      ],
+      "lost": [],
+      "languages": {
+        "python": {
+          "total": 28,
+          "before": 17,
+          "after": 18,
+          "gained": [
+            "codecontests-37dd3cd27a0988625833870c-python"
+          ],
+          "lost": []
+        },
+        "go": {
+          "total": 8,
+          "before": 0,
+          "after": 0,
+          "gained": [],
+          "lost": []
+        },
+        "typescript": {
+          "total": 8,
+          "before": 2,
+          "after": 2,
+          "gained": [],
+          "lost": []
+        },
+        "rust": {
+          "total": 8,
+          "before": 1,
+          "after": 1,
+          "gained": [],
+          "lost": []
+        },
+        "dart": {
+          "total": 8,
+          "before": 0,
+          "after": 0,
+          "gained": [],
+          "lost": []
+        }
+      }
+    },
+    "repl": {
+      "tasks": 10,
+      "problem_families": 2,
+      "languages_per_family": 5,
+      "baseline_passed": 0,
+      "candidate_passed": 0,
+      "gained": [],
+      "lost": [],
+      "actual_child_model_calls": {
+        "baseline": 0,
+        "candidate": 0
+      },
+      "genuine_recursive_solves": {
+        "baseline": 0,
+        "candidate": 0
+      },
+      "limits": {
+        "depth": 2,
+        "calls": 8,
+        "output_tokens": 6144,
+        "seconds": 240
+      },
+      "model_errors": {
+        "baseline": {
+          "TimeoutError: REPL cell time limit reached": 1,
+          "RuntimeError: Model call or output-token budget exhausted": 9
+        },
+        "candidate": {
+          "RuntimeError: Model call or output-token budget exhausted": 8,
+          "TimeoutError: REPL cell time limit reached": 2
+        }
+      }
+    }
+  },
+  "independent_verification": {
+    "source_bindings": 23,
+    "completed_stage_bindings": 9,
+    "direct_answers_regraded": 120,
+    "unique_answer_and_test_executions": 95,
+    "exact_duplicate_answer_and_test_results_reused": 25,
+    "functional_regrade_mismatches": 0,
+    "repl_trajectories_inspected": 20,
+    "logged_model_calls": 150,
+    "child_model_calls": 0,
+    "exact_tokenizer_counts_reproduced": true,
+    "matched_initial_prompts": true,
+    "matched_task_order_and_limits": true,
+    "maximum_input_tokens": 6646,
+    "maximum_input_plus_reserved_output": 7670,
+    "context_limit": 8192,
+    "context_overflows": 0,
+    "valid_completed_repl_patches_returned": 0,
+    "returned_repl_patch_regrades": 0,
+    "syntax_invalid_complete_repl_blocks": {
+      "baseline": 2,
+      "candidate": 4
+    },
+    "evidence_sha256": {
+      "baseline.json": "116a90f1fff7ba9ead66052ae39977b83ea378e152f1f4b8e2b3ae12b13e01dc",
+      "candidate.json": "8481f686d831f6c09737a6b47eec064a419dde5191e4dc45340072dd7db5459e",
+      "repl-baseline.json": "6de0545faeb6fbf92be807ba666fe4b668ed6a39dc39adba82048c408f5bf16f",
+      "repl-candidate.json": "3411abc19a42e46cc60882e98d6fd999a55354171c1fbfb566f8326d519c7154",
+      "gate.json": "506e9afd0acd1242d74042fd49c847314dd634d458df4cada5f8c9c1cf548f68",
+      "tasks.json": "5d848a436796dae19b5c3b7c13e3f302ccdb39e9324f1709982cedaf488c16fb",
+      "train.jsonl": "a350ecfa31fe71fa5828782829063f35864fd1e51e563629ef6a0901c84ea4cb",
+      "adapter/training.json": "38fd71c88073eac93131bd9639da444ee75e7b31eed8f208c4296ad11e0bfea5"
+    }
+  },
+  "gates": {
+    "built_in_direct_or_functional_repl_gate": {
+      "completed": true,
+      "gained": [
+        "codecontests-37dd3cd27a0988625833870c-python"
+      ],
+      "lost": [],
+      "promising": true,
+      "repl": {
+        "gained": [],
+        "lost": [],
+        "promising": false
+      }
+    },
+    "strong_tested_repl_and_genuine_recursive_gate_passed": false,
+    "accepted_updates": 0,
+    "retained_adapter": null
+  },
+  "general_code_audit": {
+    "status": "running_new_base_arm",
+    "completed": false,
+    "tasks_per_model": 790,
+    "new_matched_base_and_candidate_required": true,
+    "precision": "bf16",
+    "temperature": 0,
+    "thinking": false,
+    "batch_size": 2,
+    "individual_base_pass_losses_allowed": 0
+  },
+  "reserved_holdouts": {
+    "tasks": 8,
+    "sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52",
+    "used_for_this_run": false,
+    "candidate_selected": false
+  },
+  "history": {
+    "collection_pause_and_resume_observed": true,
+    "pause_initiator_recorded": false,
+    "monitor_issued_pause_or_resume": false,
+    "pause_preceded_all_model_comparisons": true,
+    "controller_failures_at_review": 0,
+    "partial_outputs_from_older_sessions_used_for_comparison": false
+  },
+  "limitations": [
+    "A one-task direct development gain is not evidence of tested REPL or recursive improvement or heldout generalization.",
+    "The ten REPL tasks are two program families across five languages; they are not ten independent problem families.",
+    "The full-loop REPL pass flag is a functional patch grade, not a tested_repl assertion check. Its saved rows omit structured executions, child-query and workspace-hash records.",
+    "Both REPL arms ended with budget or cell-time-limit errors. No completed root patch or child call existed to establish a tested parent-child solve.",
+    "Exact replay confirms submitted contexts fit; adaptive context eviction was not enabled by the full-loop solve call.",
+    "Syntax findings count complete fenced REPL blocks parsed as Python; they are not independent execution or learning gains.",
+    "The 790-task audit is incomplete. No retention or promotion conclusion can yet be drawn.",
+    "The user explicitly authorized this continuous full run. It remains active under its existing gate; the stricter reserved-heldout learning proof has not been met."
+  ],
+  "repl_and_recursive_learning_gain_established": false,
+  "decision": "Continue authorized audit and full run; preserve checkpoints; make no REPL or recursive gain claim."
+}
