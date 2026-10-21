@@ -1,0 +1,161 @@
+{
+  "schema": 1,
+  "experiment": "agent-balanced-resume-20261021",
+  "status": "completed_rejected_development_gate",
+  "original_experiment": "agent-balanced-20261020",
+  "method": "One bounded fresh-BASE recovery adapter with explicit equal-row multilingual replay",
+  "source_commit": "0b1245260274432e1924110863bf7ea37779dcad",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "candidate_adapter_sha256": "40e20b7003bcf4b374ee012aedba3eb37bc4860b3e04b5455239a2bbce013dee",
+  "candidate_selected_for_holdout": false,
+  "recipe": {
+    "learning_rate": 5e-06,
+    "max_epochs": 1,
+    "max_steps": 96,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "gradient_accumulation": 8
+  },
+  "data": {
+    "selected_train_families": 64,
+    "accepted_complete_pairs": 63,
+    "executed_trajectories": 126,
+    "excluded_whole_family_pairs": 1,
+    "rows": 2180,
+    "action_rows": 1090,
+    "replay_rows": 1090,
+    "distinct_replay_anchors": 150,
+    "masked_failed_proposals": 86,
+    "balance_unit": "rows, not target tokens",
+    "dataset_sha256": "6dc5ea01a3b4be2901520cde78fc4975754efd49b92ddfb5ce7c0c86bfbd5a77"
+  },
+  "training": {
+    "completed": true,
+    "updates": 96,
+    "fresh_adapter_and_optimizer": true,
+    "precision": "bf16",
+    "included_rows": 2180,
+    "excluded_rows": 0
+  },
+  "comparison": {
+    "completed": true,
+    "tasks": 16,
+    "ordinary_tasks": 8,
+    "recursive_tasks": 8,
+    "retention_checks": 15,
+    "baseline": {
+      "functional": 1,
+      "ordinary_tested_repl": 0,
+      "genuine_recursive": 0,
+      "retention": 0,
+      "returned_root_patches": 12,
+      "executions": 133,
+      "check_calls": 11,
+      "parent_check_calls": 11,
+      "child_check_calls": 0,
+      "successful_assertion_checks": 1,
+      "observed_completed_finishes": 0,
+      "child_queries": 0,
+      "development_generations": 144,
+      "rows_with_observed_silent_read": 16,
+      "terminal_error_types": {
+        "ValueError": 4
+      }
+    },
+    "candidate": {
+      "functional": 1,
+      "ordinary_tested_repl": 0,
+      "genuine_recursive": 0,
+      "retention": 0,
+      "returned_root_patches": 3,
+      "executions": 150,
+      "check_calls": 21,
+      "parent_check_calls": 20,
+      "child_check_calls": 1,
+      "successful_assertion_checks": 1,
+      "observed_completed_finishes": 0,
+      "child_queries": 5,
+      "development_generations": 159,
+      "rows_with_observed_silent_read": 16,
+      "terminal_error_types": {
+        "ValueError": 7,
+        "JSONDecodeError": 1,
+        "RuntimeError": 5
+      }
+    },
+    "functional_gains": [
+      "balanced-fresh-splice_text"
+    ],
+    "functional_losses": [
+      "balanced-fresh-token_bucket"
+    ],
+    "ordinary_tested_repl_gains": [],
+    "genuine_recursive_gains": [],
+    "retention_losses": [],
+    "strict_mode_gate_passed": false
+  },
+  "verification": {
+    "completed": true,
+    "evidence_checks_passed": true,
+    "matched_initial_prompts": true,
+    "input_hashes_verified": 111,
+    "development_trajectories_reviewed": 32,
+    "context_requests_reconstructed": 303,
+    "context_compactions": 0,
+    "context_exhaustions": 0,
+    "root_patches_regraded": 15,
+    "valid_child_patches_regraded": 0,
+    "invalid_child_returns": 5,
+    "grading_mismatches": 0,
+    "actual_child_check_calls": 1,
+    "successful_child_check_calls": 0,
+    "observed_completed_finishes": 0,
+    "qualifying_parent_child_chains": 0,
+    "continuation_stage_attempts": 7,
+    "inherited_data_stage_attempts": 3,
+    "continuation_controller_failures": 0,
+    "comparison_sha256": "373043270866abf5835184e04954950977fff85dda089863ca36a080b59c7f56",
+    "context_review_sha256": "1d36c9ba3bf9717b441434eeec589c079f9b250958cc276c7beaf8d243e2f737",
+    "patch_review_sha256": "650e6d1fbd6443183acf07f875f54f8b09ce79ec275a96711c11163eb954f620",
+    "manual_review_sha256": "35f341a0213c513eba3218c4eeae068dafd74d9f53f793a738adada7905f7f01"
+  },
+  "recovery": {
+    "original_interrupted_by": "Windows unclean shutdown; physical cause unconfirmed",
+    "original_partial_baseline_rows": 4,
+    "original_training_updates": 0,
+    "guard_rejected_resumes": 2,
+    "inherited_stages": [
+      "prepare",
+      "collect",
+      "verify-collection"
+    ],
+    "partial_model_outputs_reused": false,
+    "new_complete_matched_baseline": true,
+    "same_frozen_recipe_sources_data": true,
+    "recovery_sha256": "0a422ac572798385fa2db7fa14e5fc9b5de48af4914badeb17eaf46e7354e98d"
+  },
+  "reserved_holdouts": {
+    "tasks": 8,
+    "model_evaluation_started": false,
+    "candidate_selected": false,
+    "sha256": "b7997875c6749f52107fc6ea9a675290c2532821dded6edb52d4d894e6078f52",
+    "not_run_reason": "Required development gate failed"
+  },
+  "general_code_audit": {
+    "tasks_per_model": 790,
+    "completed": false,
+    "new_baseline_required": true,
+    "not_run_reason": "Required development gate failed"
+  },
+  "limitations": [
+    "Both arms expose silent return values from bare read(path) calls; observations confirm this in every task. This limits conclusions about training beyond the tested interface.",
+    "Retention stores only pass booleans and has zero base positives; this does not establish general-code retention.",
+    "Original host shutdown interrupted an earlier baseline; the reviewed continuation reused data only and evaluated both arms anew."
+  ],
+  "model_learning_gain_established": false,
+  "full_loop_authorized": false,
+  "full_loop_restarted": false,
+  "decision": "Reject candidate; preserve all evidence and checkpoints; no additional recipe"
+}
