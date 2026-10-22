@@ -2,7 +2,7 @@
   "schema": 1,
   "experiment": "coding-model-fresh-20261021-114559",
   "round": 4,
-  "status": "development_complete_general_code_audit_in_progress",
+  "status": "complete_candidate_rejected",
   "source_commit": "33f74c3a82f958ed8e68ce2ebe588f633c69b6c8",
   "config_sha256": "51f52bb4f90cfc2984faa277ef3a580726b33836138a174dc3874302bd64c7e7",
   "model": "Qwen/Qwen3.5-4B",
@@ -130,7 +130,7 @@
   },
   "independent_verification": {
     "source_bindings": 23,
-    "completed_stage_bindings": 9,
+    "completed_stage_bindings": 12,
     "direct_answers_regraded": 120,
     "unique_answer_and_test_executions": 95,
     "exact_duplicate_answer_and_test_results_reused": 25,
@@ -159,7 +159,25 @@
       "gate.json": "506e9afd0acd1242d74042fd49c847314dd634d458df4cada5f8c9c1cf548f68",
       "tasks.json": "5d848a436796dae19b5c3b7c13e3f302ccdb39e9324f1709982cedaf488c16fb",
       "train.jsonl": "a350ecfa31fe71fa5828782829063f35864fd1e51e563629ef6a0901c84ea4cb",
-      "adapter/training.json": "38fd71c88073eac93131bd9639da444ee75e7b31eed8f208c4296ad11e0bfea5"
+      "adapter/training.json": "38fd71c88073eac93131bd9639da444ee75e7b31eed8f208c4296ad11e0bfea5",
+      "finish.json": "fed32a63214023ef2ebf751c73132e8091c5407b3a2429e6f340fea2b8533f92",
+      "audit-parent/summary.json": "985d74df65bfad40ea6a29afab6bce48c3cca51e8173c3e5b01cfca5ac89b2c1",
+      "audit-candidate/summary.json": "79b18a0c593b8716bb7806ae0e099d651ad6b42d8cf2fde585200812332d009c",
+      "audit-parent/binding.json": "545e7d1284e8a03342f25157dea72bfceb64dc18ad8e8475ded48177ea212af7",
+      "audit-candidate/binding.json": "501f99b6357ee7b63c56fa99a34b2a513cacde7819201d894f0e56b37e253504"
+    },
+    "finish_input_bindings": 48,
+    "audit": {
+      "rows_checked_for_completeness_order_and_counts": 1580,
+      "exact_registered_task_order": true,
+      "matched_source_dataset_runtime_and_generation_bindings": true,
+      "changed_task_pairs_regraded": 26,
+      "answers_regraded": 52,
+      "regrade_mismatches": 0,
+      "unchanged_grade_task_pairs_not_reexecuted": 764,
+      "pre_pause_candidate_rows_verified_unchanged": 286,
+      "baseline_verified_unchanged_after_restart": true,
+      "preserved_checkpoint_and_adapter_files_verified": 38
     }
   },
   "gates": {
@@ -178,18 +196,98 @@
     },
     "strong_tested_repl_and_genuine_recursive_gate_passed": false,
     "accepted_updates": 0,
-    "retained_adapter": null
+    "retained_adapter": null,
+    "full_retention_gate_passed": false,
+    "candidate_accepted": false
   },
   "general_code_audit": {
-    "status": "running_new_base_arm",
-    "completed": false,
+    "status": "complete_rejected_for_individual_losses",
+    "completed": true,
     "tasks_per_model": 790,
-    "new_matched_base_and_candidate_required": true,
     "precision": "bf16",
     "temperature": 0,
     "thinking": false,
     "batch_size": 2,
-    "individual_base_pass_losses_allowed": 0
+    "individual_base_pass_losses_allowed": 0,
+    "baseline_passed": 492,
+    "candidate_passed": 492,
+    "gained_count": 13,
+    "lost_count": 13,
+    "languages": {
+      "python": {
+        "before": 137,
+        "after": 135,
+        "total": 164,
+        "gained": [
+          "HumanEval/134"
+        ],
+        "lost": [
+          "HumanEval/103",
+          "HumanEval/129",
+          "HumanEval/160"
+        ]
+      },
+      "go": {
+        "before": 57,
+        "after": 60,
+        "total": 154,
+        "gained": [
+          "HumanEval_57_monotonic",
+          "HumanEval_62_derivative",
+          "HumanEval_141_file_name_check",
+          "HumanEval_144_simplify",
+          "HumanEval_154_cycpattern_check"
+        ],
+        "lost": [
+          "HumanEval_138_is_equal_to_sum_even",
+          "HumanEval_146_specialFilter"
+        ]
+      },
+      "typescript": {
+        "before": 117,
+        "after": 117,
+        "total": 159,
+        "gained": [
+          "HumanEval_67_fruit_distribution",
+          "HumanEval_107_even_odd_palindrome"
+        ],
+        "lost": [
+          "HumanEval_76_is_simple_power",
+          "HumanEval_109_move_one_ball"
+        ]
+      },
+      "rust": {
+        "before": 94,
+        "after": 93,
+        "total": 156,
+        "gained": [
+          "HumanEval_78_hex_key",
+          "HumanEval_147_get_max_triples"
+        ],
+        "lost": [
+          "HumanEval_90_next_smallest",
+          "HumanEval_112_reverse_delete",
+          "HumanEval_119_match_parens"
+        ]
+      },
+      "dart": {
+        "before": 87,
+        "after": 87,
+        "total": 157,
+        "gained": [
+          "HumanEval_22_filter_integers",
+          "HumanEval_36_fizz_buzz",
+          "HumanEval_79_decimal_to_binary"
+        ],
+        "lost": [
+          "HumanEval_104_unique_digits",
+          "HumanEval_120_maximum",
+          "HumanEval_138_is_equal_to_sum_even"
+        ]
+      }
+    },
+    "new_matched_base_and_candidate_completed": true,
+    "scope": "HumanEval/MultiPL-E function tests, one greedy attempt; not a repository or agent benchmark"
   },
   "reserved_holdouts": {
     "tasks": 8,
@@ -201,9 +299,14 @@
     "collection_pause_and_resume_observed": true,
     "pause_initiator_recorded": false,
     "monitor_issued_pause_or_resume": false,
-    "pause_preceded_all_model_comparisons": true,
     "controller_failures_at_review": 0,
-    "partial_outputs_from_older_sessions_used_for_comparison": false
+    "partial_outputs_from_older_sessions_used_for_comparison": false,
+    "collection_pause_preceded_all_model_comparisons": true,
+    "candidate_audit_paused_after_rows": 286,
+    "user_confirmed_overnight_pc_shutdown": true,
+    "new_resume_command_observed_utc": "2026-10-22T08:30:11.047464+00:00",
+    "audit_continued_from_verified_saved_rows_in_same_session": true,
+    "candidate_audit_was_uninterrupted": false
   },
   "limitations": [
     "A one-task direct development gain is not evidence of tested REPL or recursive improvement or heldout generalization.",
@@ -212,9 +315,11 @@
     "Both REPL arms ended with budget or cell-time-limit errors. No completed root patch or child call existed to establish a tested parent-child solve.",
     "Exact replay confirms submitted contexts fit; adaptive context eviction was not enabled by the full-loop solve call.",
     "Syntax findings count complete fenced REPL blocks parsed as Python; they are not independent execution or learning gains.",
-    "The 790-task audit is incomplete. No retention or promotion conclusion can yet be drawn.",
+    "The complete audit has thirteen individual regressions despite an unchanged aggregate score. Both models were independently regraded on every changed task; the 764 task pairs with unchanged pass/fail flags were checked for complete records and bindings but not re-executed.",
+    "The candidate audit paused after 286 rows and continued after a user-confirmed PC shutdown and a newer Resume command. All 286 saved rows and the completed BASE baseline were verified unchanged; this was not an uninterrupted run.",
     "The user explicitly authorized this continuous full run. It remains active under its existing gate; the stricter reserved-heldout learning proof has not been met."
   ],
   "repl_and_recursive_learning_gain_established": false,
-  "decision": "Continue authorized audit and full run; preserve checkpoints; make no REPL or recursive gain claim."
+  "decision": "Reject candidate because thirteen previously passing audit tasks were lost; retain BASE and preserve all checkpoints. The explicitly authorized continuous session continues collection in round five. No tested REPL or recursive gain is established.",
+  "reviewed_at": "2026-10-22T09:35:57.107680+00:00"
 }
