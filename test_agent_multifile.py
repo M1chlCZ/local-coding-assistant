@@ -92,16 +92,32 @@ class MultiFileTests(unittest.TestCase):
         self.assertEqual(sum(p['kind']=='subcall' for p in plan), 2)
 
     def test_learning_gate_requires_both_modes_and_no_losses(self):
-        old = [dict(id='a', condition='ordinary', passed=False, recursive_passed=False),
-               dict(id='b', condition='recursive', passed=False, recursive_passed=False)]
+        old = [dict(id='a', condition='ordinary', passed=False, recursive_passed=False, repl_passed=False),
+               dict(id='b', condition='recursive', passed=False, recursive_passed=False, repl_passed=False)]
         new = copy.deepcopy(old)
         new[1].update(passed=True, recursive_passed=True)
         self.assertFalse(multifile.mode_gains(old,new)['passed'])
-        new[0]['passed']=True
+        new[0].update(passed=True,repl_passed=True)
         self.assertTrue(multifile.mode_gains(old,new)['passed'])
-        old[0]['passed']=True
+        old[0].update(passed=True,repl_passed=True)
         self.assertFalse(multifile.mode_gains(old,new)['passed'])
         with self.assertRaises(ValueError): multifile.mode_gains(old,new[::-1])
+
+    def test_mode_gate_rejects_missing_test_evidence_and_duplicate_rows(self):
+        old = [dict(id='a',condition='ordinary',passed=False,recursive_passed=False,repl_passed=False),
+               dict(id='b',condition='recursive',passed=False,recursive_passed=False,repl_passed=False)]
+        new = [dict(old[0],passed=True,repl_passed=True),
+               dict(old[1],passed=True,repl_passed=True,recursive_passed=True)]
+        self.assertTrue(multifile.mode_gains(old,new)['passed'])
+        for field in ('repl_passed','recursive_passed','passed'):
+            bad=copy.deepcopy(new);del bad[0][field]
+            with self.subTest(field=field),self.assertRaises(ValueError):
+                multifile.mode_gains(old,bad)
+        with self.assertRaises(ValueError):
+            multifile.mode_gains(old+[old[0]],new+[new[0]])
+        bad=copy.deepcopy(new);bad[0]['condition']='unknown'
+        with self.assertRaises(ValueError):
+            multifile.mode_gains(bad,bad)
 
 
 if __name__ == '__main__': unittest.main()

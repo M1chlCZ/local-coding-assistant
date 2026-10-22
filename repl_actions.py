@@ -2,6 +2,7 @@
 import ast
 import hashlib
 import json
+import re
 from pathlib import Path, PurePosixPath
 import subprocess
 import sys
@@ -128,7 +129,9 @@ class Workspace:
             raise ValueError('Delegation needs an available child and a short goal')
         request = dict(task=self.task['task']+'\nChild goal: '+goal,
             editable=self.task['editable'], files={p:self._read(p) for p in self.task['files']})
-        result = json.loads(self.query(json.dumps(request)))
+        response = self.query(json.dumps(request))
+        match = re.fullmatch(r'\s*```(?:json)?\s*\n(.*?)\n```\s*', response, re.S)
+        result = json.loads(match.group(1) if match else response)
         return self.validate(result)
 
     def finish(self):

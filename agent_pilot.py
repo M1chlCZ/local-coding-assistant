@@ -165,6 +165,7 @@ def evaluate(folder, label, adapter, suite):
 
 
 def comparison(folder, candidate, suite):
+    from agent_multifile import mode_gains
     from qwen35_server import validate_adapter
     from qwen35_train import MODEL
     config_path=folder/'evaluation.json'
@@ -209,12 +210,14 @@ def comparison(folder, candidate, suite):
                     or [r.get('id') for r in rows]!=ids):
                 raise ValueError('Retention results are incomplete')
         retention_lost=[a['id'] for b,a in zip(before['retention'],after['retention']) if b['passed'] and not a['passed']]
-    accepted=not(lost or lost_recursive or retention_lost) and len(set(gained)) >= (2 if suite=='development' else 1)
-    if suite=='development':accepted=accepted and bool(recursive)
+    modes=mode_gains(before['rows'],after['rows'])
+    gained_ids=set(modes['ordinary_gains']+modes['recursive_gains'])
+    gained_families={e['task']['repository'] for e in expected if e['task']['id'] in gained_ids}
+    accepted=modes['passed'] and not retention_lost and len(gained_families)>=2
     result=dict(completed=True,pilot_passed=accepted,full_loop_authorized=False,
         before=sum(r['passed'] for r in before['rows']),after=sum(r['passed'] for r in after['rows']),
         total=len(expected),gained_families=sorted(set(gained)),lost=lost,recursive_gains=recursive,
-        recursive_losses=lost_recursive,retention_losses=retention_lost,
+        recursive_losses=lost_recursive,retention_losses=retention_lost,mode_gate=modes,
         inputs={str(path.relative_to(folder)):sha256(path) for path in
                 (config_path,before_path,after_path,adapter/'adapter_model.safetensors',
                  adapter/'adapter_config.json',adapter/'training.json')},

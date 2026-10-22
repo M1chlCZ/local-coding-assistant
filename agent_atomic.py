@@ -21,30 +21,29 @@ def actions(value, recursive, recovery):
         plan.append(dict(kind=kind, response='```repl\n'+code+'\n```', **extra))
     core, caller = value['editable']
     reference = value['reference_patch']
+    check = 'check('+repr(value['diagnostic'])+')'
     kind = 'subcall' if recursive else 'root'
     if recursive:
         add('show()')
         add('proposal = delegate("Repair the public API across its implementation and caller. '
             'Derive assertions from the requirements, run them before and after editing, and finish.")')
     add('show()', kind)
-    add('checks = '+repr(value['diagnostic'])+'\ncheck(checks)', kind)
+    add(check, kind)
     if recovery == 'syntax':
         add('write('+repr(core)+', '+repr('def incomplete(:\n    pass\n')+')',
             kind, train=False, expected_error='SyntaxError')
     elif recovery == 'semantic':
         add('write('+repr(core)+', '+repr(value['files'][core])+')', kind, train=False)
         add('write('+repr(caller)+', '+repr(reference[caller])+')', kind)
-        add('check(checks)', kind)
+        add(check, kind)
     add('write('+repr(core)+', '+repr(reference[core])+')', kind)
     if recovery == 'missing_edit':
-        add('check(checks)', kind)
+        add(check, kind)
     if recovery != 'semantic':
         add('write('+repr(caller)+', '+repr(reference[caller])+')', kind)
-    add('check(checks)', kind)
-    add('finish()', kind)
+    add(check+'\nfinish()', kind)
     if recursive:
-        add('apply(proposal)\ncheck('+repr(value['diagnostic'])+')')
-        add('finish()')
+        add('apply(proposal)\n'+check+'\nfinish()')
     return plan
 
 

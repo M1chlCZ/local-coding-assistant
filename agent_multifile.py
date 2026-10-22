@@ -97,15 +97,19 @@ def actions(value, recursive):
 def mode_gains(before, after):
     if not before or [(r['id'],r['condition']) for r in before]!=[(r['id'],r['condition']) for r in after]:
         raise ValueError('Require complete matching ordered tasks')
+    if len({(r['id'],r['condition']) for r in before}) != len(before):
+        raise ValueError('Require unique task and mode pairs')
     for row in before+after:
-        if type(row.get('passed')) is not bool or type(row.get('recursive_passed')) is not bool:
+        if (row['condition'] not in ('ordinary','recursive')
+                or any(type(row.get(k)) is not bool for k in ('passed','recursive_passed','repl_passed'))
+                or (row['recursive_passed'] or row['repl_passed']) and not row['passed']):
             raise ValueError('Require boolean completed scores')
     ordinary=[a['id'] for b,a in zip(before,after) if a['condition']=='ordinary'
-              and a.get('repl_passed',a['passed']) and not b.get('repl_passed',b['passed'])]
+              and a['repl_passed'] and not b['repl_passed']]
     recursive=[a['id'] for b,a in zip(before,after) if a['condition']=='recursive' and a['recursive_passed'] and not b['recursive_passed']]
     lost=[a['id'] for b,a in zip(before,after) if b['passed'] and not a['passed']
           or b['recursive_passed'] and not a['recursive_passed']
-          or b.get('repl_passed',False) and not a.get('repl_passed',False)]
+          or b['repl_passed'] and not a['repl_passed']]
     return dict(passed=bool(ordinary and recursive and not lost),ordinary_gains=ordinary,recursive_gains=recursive,losses=lost)
 
 

@@ -190,8 +190,8 @@ class PilotTests(unittest.TestCase):
                 revision=revision,precision='bf16',adapter_sha256=sha256(adapter/'adapter_model.safetensors'),
                 adapter_config_sha256=sha256(adapter/'adapter_config.json')))
             binding=dict(evaluation_sha256=sha256(root/'evaluation.json'),suite='development')
-            before=[dict(id=str(i),condition=e['condition'],passed=i==2,recursive_passed=False) for i,e in enumerate(entries)]
-            after=[dict(**{**r,'passed':True,'recursive_passed':i==1}) for i,r in enumerate(before)]
+            before=[dict(id=str(i),condition=e['condition'],passed=i==2,recursive_passed=False,repl_passed=False) for i,e in enumerate(entries)]
+            after=[dict(**{**r,'passed':True,'recursive_passed':i==1,'repl_passed':True}) for i,r in enumerate(before)]
             def save(name,rows,retained=True):
                 evidence=dict(binding,adapter_sha256=sha256(adapter/'adapter_model.safetensors') if name=='candidate' else None)
                 atomic_json(root/name/'development.json',dict(completed=True,binding=evidence,rows=rows,
@@ -199,6 +199,10 @@ class PilotTests(unittest.TestCase):
             save('baseline',before);save('candidate',after)
             result=comparison(root,'candidate','development')
             self.assertTrue(result['pilot_passed']);self.assertFalse(result['full_loop_authorized'])
+            missing_ordinary=copy.deepcopy(after);missing_ordinary[0]['repl_passed']=False
+            save('candidate',missing_ordinary)
+            self.assertFalse(comparison(root,'candidate','development')['pilot_passed'])
+            save('candidate',after)
             self.assertEqual(result['inputs']['candidate/development.json'],sha256(root/'candidate/development.json'))
             for name,key,value in [('baseline','adapter_sha256','b'*64),('candidate','adapter_sha256',None),
                                    ('candidate','suite','holdout')]:

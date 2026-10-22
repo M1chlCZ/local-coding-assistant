@@ -407,7 +407,7 @@ def train(args, rows, progress):
         lr_scheduler_type='linear', weight_decay=0.01, bf16=True, fp16=False,
         optim='adamw_8bit', logging_steps=1, save_strategy='steps', save_steps=args.save_steps,
         logging_nan_inf_filter=False,
-        save_total_limit=3, report_to='none', push_to_hub=False,
+        save_total_limit=None, report_to='none', push_to_hub=False,
         seed=args.seed, data_seed=args.seed, dataloader_num_workers=0, disable_tqdm=True)
     trainer = Trainer(model=model, args=settings, train_dataset=encoded,
                       data_collator=collate, callbacks=[Checkpoints()])

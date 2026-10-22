@@ -45,6 +45,19 @@ class AtomicTests(unittest.TestCase):
                 self.assertNotIn(value['reference_patch'][value['editable'][0]],roots)
                 self.assertIn('apply(proposal)',roots)
 
+    def test_checks_remain_executable_without_a_remembered_check_variable(self):
+        import ast
+        value=task(fixture(),0)
+        for recovery in ('syntax','semantic','missing_edit'):
+            for recursive in (False,True):
+                plan=atomic.actions(value,recursive,recovery)
+                for action in plan:
+                    tree=ast.parse(action['response'][8:-4])
+                    for call in ast.walk(tree):
+                        if isinstance(call,ast.Call) and isinstance(call.func,ast.Name) and call.func.id=='check':
+                            self.assertEqual(ast.literal_eval(call.args[0]),value['diagnostic'])
+                self.assertNotEqual(plan[-1]['response'].strip(),'```repl\nfinish()\n```')
+
     def test_frozen_interface_and_limits_reach_evaluator(self):
         row=dict(passed=False,infrastructure_errors=[])
         with patch('recursive_agent.solve',return_value=row) as solve, \

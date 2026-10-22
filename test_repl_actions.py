@@ -123,6 +123,17 @@ class ActionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.workspace.delegate('repair')
 
+    def test_child_json_fence_uses_same_patch_format_as_root(self):
+        proposal = {'pkg/core.py': 'def greet():\n    return 1\n'}
+        for response in (json.dumps(proposal), '```json\n'+json.dumps(proposal)+'\n```'):
+            self.workspace.query = lambda _, response=response: response
+            self.assertEqual(self.workspace.delegate('Repair and test.'), proposal)
+        for response in ('Here is a patch: '+json.dumps(proposal),
+                         '```json\n{"README.md":"overwrite"}\n```'):
+            self.workspace.query = lambda _, response=response: response
+            with self.assertRaises(ValueError):
+                self.workspace.delegate('Repair and test.')
+
     def test_execution_receipts_cannot_overflow_the_worker_protocol(self):
         with contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaisesRegex(RuntimeError,'Cell output limit exceeded'):
