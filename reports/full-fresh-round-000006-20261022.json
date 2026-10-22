@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "experiment": "coding-model-fresh-20261021-114559",
+  "source_commit": "33f74c3a82f958ed8e68ce2ebe588f633c69b6c8",
+  "config_sha256": "51f52bb4f90cfc2984faa277ef3a580726b33836138a174dc3874302bd64c7e7",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "round": 6,
+  "status": "complete_candidate_rejected",
+  "candidate_adapter_sha256": "a0d3c99b98a5a1544a9a0b79395000cec04ad3c33e5c8002fb6c5da98eaa1d26",
+  "training": {
+    "initial_adapter": null,
+    "fresh_optimizer": true,
+    "precision": "bf16",
+    "learning_rate": 1.25e-06,
+    "max_epochs": 1.0,
+    "rank": 8,
+    "gradient_accumulation": 8,
+    "max_length": 4096,
+    "seed": 3407,
+    "maximum_updates": 128,
+    "actual_updates": 20,
+    "included_rows": 153,
+    "excluded_rows": 0,
+    "languages": {
+      "python": 42,
+      "go": 31,
+      "typescript": 35,
+      "rust": 24,
+      "dart": 21
+    },
+    "learning_rate_changed_by_frozen_recipe_after_previous_development_loss": true
+  },
+  "development": {
+    "scope": "Public development checks; not fresh reserved heldout confirmation",
+    "direct": {
+      "tasks_per_model": 60,
+      "baseline_passed": 15,
+      "candidate_passed": 14,
+      "gained_count": 1,
+      "lost_count": 2,
+      "languages": {
+        "python": {
+          "total": 28,
+          "baseline": 12,
+          "candidate": 12,
+          "gained_count": 1,
+          "lost_count": 1
+        },
+        "go": {
+          "total": 8,
+          "baseline": 1,
+          "candidate": 1,
+          "gained_count": 0,
+          "lost_count": 0
+        },
+        "typescript": {
+          "total": 8,
+          "baseline": 1,
+          "candidate": 1,
+          "gained_count": 0,
+          "lost_count": 0
+        },
+        "rust": {
+          "total": 8,
+          "baseline": 1,
+          "candidate": 0,
+          "gained_count": 0,
+          "lost_count": 1
+        },
+        "dart": {
+          "total": 8,
+          "baseline": 0,
+          "candidate": 0,
+          "gained_count": 0,
+          "lost_count": 0
+        }
+      }
+    },
+    "repl": {
+      "tasks_per_model": 10,
+      "baseline_passed": 0,
+      "candidate_passed": 0,
+      "gained_count": 0,
+      "lost_count": 0,
+      "languages": {
+        "python": {
+          "total": 2,
+          "baseline": 0,
+          "candidate": 0,
+          "gained_count": 0,
+          "lost_count": 0
+        },
+        "go": {
+          "total": 2,
+          "baseline": 0,
+          "candidate": 0,
+          "gained_count": 0,
+          "lost_count": 0
+        },
+        "typescript": {
+          "total": 2,
+          "baseline": 0,
+          "candidate": 0,
+          "gained_count": 0,
+          "lost_count": 0
+        },
+        "rust": {
+          "total": 2,
+          "baseline": 0,
+          "candidate": 0,
+          "gained_count": 0,
+          "lost_count": 0
+        },
+        "dart": {
+          "total": 2,
+          "baseline": 0,
+          "candidate": 0,
+          "gained_count": 0,
+          "lost_count": 0
+        }
+      },
+      "problem_families": 2,
+      "limits": {
+        "depth": 2,
+        "calls": 8,
+        "output_tokens": 6144,
+        "seconds": 240
+      },
+      "model_calls": {
+        "baseline": 80,
+        "candidate": 77
+      },
+      "logged_responses": {
+        "baseline": 80,
+        "candidate": 76
+      },
+      "recorded_child_calls": {
+        "baseline": 0,
+        "candidate": 0
+      },
+      "errors": {
+        "baseline": {
+          "RuntimeError: Model call or output-token budget exhausted": 10
+        },
+        "candidate": {
+          "TimeoutError: Model call reached the shared REPL deadline": 1,
+          "RuntimeError: Model call or output-token budget exhausted": 8,
+          "TimeoutError: REPL cell time limit reached": 1
+        }
+      },
+      "grade_type": "Functional patch grade; structured tested_repl evidence is not saved by the full loop"
+    }
+  },
+  "independent_verification": {
+    "source_bindings_verified": 23,
+    "finish_bindings_verified": 34,
+    "stage_bindings_verified": 12,
+    "direct_answers_regraded": 120,
+    "unique_direct_program_test_executions": 96,
+    "reused_exact_program_and_tests": 24,
+    "functional_regrade_mismatches": 0,
+    "repl_trajectories_inspected": 20,
+    "logged_model_responses": 156,
+    "recorded_child_calls": 0,
+    "unlogged_timed_out_model_calls": 1,
+    "exact_tokenizer_counts_reproduced": true,
+    "max_input_tokens": 6692,
+    "max_input_plus_reserved_output": 7716,
+    "full_repl_trajectory_reexecution": false,
+    "context_limit": 8192,
+    "matched_initial_prompts": true,
+    "matched_task_order_and_limits": true
+  },
+  "direct_loss_review": [
+    {
+      "language": "python",
+      "baseline_passed": true,
+      "candidate_passed": false,
+      "independently_regraded_both_answers": true,
+      "failure": "Output mismatch: recursively computed descendant depths are overwritten with one subtree depth."
+    },
+    {
+      "language": "rust",
+      "baseline_passed": true,
+      "candidate_passed": false,
+      "independently_regraded_both_answers": true,
+      "failure": "Execution timeout: the input buffer is not cleared and end of input is treated as a successful read, producing a nonterminating loop."
+    }
+  ],
+  "gates": {
+    "development_gate_promising": false,
+    "candidate_accepted": false,
+    "retained_adapter": null,
+    "strong_tested_repl_and_genuine_recursive_gate_passed": false,
+    "new_complete_790_task_retention_audit_passed": false
+  },
+  "general_code_audit": {
+    "performed_this_round": false,
+    "status": "skipped_development_gate_failed_and_periodic_audit_not_due",
+    "required_tasks_per_model_before_promotion": 790,
+    "previous_round_audit_does_not_validate_these_weights": true
+  },
+  "preservation": {
+    "checkpoint_steps_preserved": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "historical_checkpoint_steps_missing_this_round": [],
+    "final_weights_preserved": true,
+    "files_verified_after_rejection_pruning": 48,
+    "trainer_save_total_limit": 3,
+    "all_scheduled_intermediate_checkpoints_preserved_this_round": true,
+    "earlier_round5_checkpoint5_still_missing": true,
+    "separate_two_second_archiver_active": true
+  },
+  "reserved_holdouts": {
+    "tasks": 8,
+    "candidate_selected": false,
+    "evaluated": false,
+    "used_for_training_or_diagnosis": false,
+    "digest_verified_unchanged": true
+  },
+  "history": {
+    "existing_session_reused": true,
+    "session_contains_prior_pause_resume_interruptions": true,
+    "monitor_issued_pause_resume": false,
+    "older_session_outputs_used_for_comparison": false,
+    "controller_failures_at_review": 0
+  },
+  "evidence_sha256": {
+    "tasks.json": "fe947a53ece5c541a27005b741ca14788dcce0f308810aa09f861b499c7fc794",
+    "baseline.json": "fbd2372e51ca499ed96743739fa22d1550ea4ebf81750d1c0f5cecd47fed873e",
+    "candidate.json": "28b1eb3cded44c9cf9ab7d9a86257e9ac34194b0142a5da6643ab995475c73fe",
+    "repl-baseline.json": "5701e7008fb3a3d3c4f6d6064b833206b93818cc82d90c326bd58eb0855bcc75",
+    "repl-candidate.json": "fc0a5bf7d907fd5176a7d43f038f6a2d6d12400fb33a74fd7a87373a7b0ccafe",
+    "gate.json": "f8596aa74a46beb061dc44ab3e191c6fae1d19a196efb372c53cd08c274f28b3",
+    "finish.json": "f3a58c208d24122963f60fcd7b15759179ef9d974bf340749a68c099aedbea24",
+    "adapter/training.json": "c82afa377a7495456a6d2af8d146a9173154121e730efc9dc5bb9f60a610295e",
+    "audit-parent.json": "0921051c3716d28876e4f1de25a3329429398de7d47c6011a583b0462b10cfce",
+    "audit-candidate.json": "0921051c3716d28876e4f1de25a3329429398de7d47c6011a583b0462b10cfce"
+  },
+  "limitations": [
+    "Direct performance falls from 15/60 to 14/60: one task gained and two previously passing tasks lost. Functional REPL remains 0/10 in both arms.",
+    "All 120 saved direct answers were independently regraded through 96 unique program/test executions and 24 exact duplicates, with zero mismatches. Both individual losses were inspected and reproduced.",
+    "All 20 REPL trajectories were inspected but were not re-executed in full. The baseline exhausted its model budget on all ten tasks; the candidate had eight budget failures, one shared model deadline and one REPL cell timeout.",
+    "All 156 logged input-token counts were reproduced with the pinned tokenizer. Submitted logged contexts fit the 8192-token limit; one timed-out candidate model call has no logged response.",
+    "Every logged model response is a root call. Full-loop rows omit structured execution, query, returned-patch and workspace-hash records; no genuine child-tested recursion is established. Action API and adaptive context preparation were disabled.",
+    "Round six skipped both 790-task retention audits because the development gate failed and the periodic audit was not due. The round four audit applies to different weights.",
+    "All four scheduled round six checkpoints and final weights were verified after rejection pruning. The previously disclosed missing round five checkpoint 5 remains missing.",
+    "No reserved heldout was selected or evaluated. No REPL and recursive learning gain is established."
+  ],
+  "repl_and_recursive_learning_gain_established": false,
+  "decision": "Reject candidate for two direct regressions; retain BASE. The authorized continuous session is collecting in round seven.",
+  "reviewed_at": "2026-10-22T20:25:21.264112+00:00"
+}
