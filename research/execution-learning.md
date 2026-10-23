@@ -442,3 +442,13 @@ task was solved directly. Candidate checks on disk failed before the final answe
 independent success of the later returned source cannot count as an observed tested
 repair. This small diagnostic finds a protocol failure on familiar tasks. It proves
 no generalization or learning gain and leaves full training paused.
+
+A [fixed-weight loss probe](../reports/action-loss-probe-20261023.json) then scored
+eight exact scripted training targets in the same loaded model, with LoRA disabled
+and enabled. All parameters were frozen; no training or generation occurred. The
+adapter lowered masked answer loss on all eight targets (macro mean 1.039 to 0.886).
+Mode flags were checked on 128 LoRA layers, and a repeated BASE score matched after
+restoring the mode. Input selection, encoding and arithmetic were independently
+checked; the GPU loss measurements were not rerun. The adapter affects the model
+and fits these training targets better. That has not produced the required tested
+rollout gains, so it does not satisfy any restart gate.

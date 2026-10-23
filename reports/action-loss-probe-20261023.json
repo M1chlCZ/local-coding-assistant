@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "experiment": "action-loss-probe-20261023",
+  "diagnostic_only": true,
+  "source_commit": "5a2d7679d7fdc25e8dfb7cd1891951a11fe68120",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "adapter_sha256": "e7008998c6471a198b1ad41d73c9d9c59c9ec072ff3853736411576b8a4647a6",
+  "method": "Read-only masked-answer loss on eight exact scripted training examples: ordinary finish, root delegation, child finish and parent finish for two previously fixed training families.",
+  "selection": {
+    "families": 2,
+    "examples": 8,
+    "previously_trained_examples_intentionally_reused": true,
+    "forward_passes": 17,
+    "training": false,
+    "generated_model_responses": 0
+  },
+  "runtime_guards": {
+    "unquantized_bf16": true,
+    "all_parameters_frozen": true,
+    "optimizer_updates": 0,
+    "lora_enable_disable_layers_checked": 128,
+    "base_repeat_control": true,
+    "adapter_file_unchanged": true,
+    "hard_timeout_seconds": 900
+  },
+  "recorded_results": {
+    "macro_base_loss": 1.0387694463133812,
+    "macro_adapter_loss": 0.8863653242588043,
+    "lower_loss_examples": 8,
+    "encoded_examples_sha256": "12d05d24dcf15325cde562aca397168114f5974f97de9750ddfecf912fca1114"
+  },
+  "independent_review": {
+    "exact_training_examples_verified": 8,
+    "slot_selection_verified": true,
+    "full_masked_training_encoding_replayed": true,
+    "result_arithmetic_verified": true,
+    "native_gpu_loss_replayed": false
+  },
+  "decision": {
+    "adapter_forward_effect_observed": true,
+    "training_target_fit_observed": true,
+    "execution_gain_established": false,
+    "generalization_proven": false,
+    "learned_repl_recursive_improvement_proven": false,
+    "candidate_selected_for_confirmation": false,
+    "full_loop_restarted": false
+  },
+  "limitations": [
+    "Input selection, masked encoding, recorded runtime guards and arithmetic independently verified; native GPU losses were not rerun.",
+    "These are eight intentionally reused scripted training targets, not fresh evaluation or actual policy execution.",
+    "A lower teacher-forced loss does not establish REPL/recursive gains."
+  ]
+}
