@@ -598,3 +598,19 @@ review matched all four returned patches, 23 checks and 67 context receipts; fiv
 assertion scripts rejected broken and partial repairs. The failed stage was not
 reset. No development or retention evaluation followed, and full training remains
 paused.
+
+
+The [delegation-return diagnostic](../reports/delegation-receipt-proof-20261023.json)
+then added truthful feedback after a validated child return and a bounded preview
+of the first nonempty supplied readonly source. The parser also works in the CPU
+reviewer environment without RLM. Eight fresh fixed-weight attempts completed with
+no controller or infrastructure failures. Both arms passed 2 of 2 ordinary tested
+repairs. Genuine child-tested repairs rose from 0 to 2 of 2, and functional repairs
+rose from 2 to 4 of 4 with no individual losses. Each child failed a meaningful
+check, repaired and checked the exact files, and finished. Its parent received the
+completion receipt, applied the returned bytes, independently checked them and
+finished. All seven returned patch objects, fourteen checks and 46 context receipts
+matched independent execution; eight passing assertion executions rejected broken
+and partial source. These are verified recursive gains on two familiar training
+families. The predeclared combined-gain screen still failed because ordinary BASE
+was already perfect, so development did not run and full training remains paused.

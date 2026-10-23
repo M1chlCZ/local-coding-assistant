@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "experiment": "delegation-receipt-proof-20261023",
+  "source_commit": "ccc8fcc071cf1ead41208e89913d6a1212baf327",
+  "scope": "Two familiar registered training families; four fresh attempts per arm",
+  "model_attempts_completed": 8,
+  "controller_completed": true,
+  "controller_failures": 0,
+  "optimizer_used": false,
+  "new_adapter": false,
+  "fixed_candidate_sha256": "102baaa5fdb980312c01f95ee7f15a3a0f163b9b05850f6c496e2211f9e572c6",
+  "fixed_candidate_step": 69,
+  "results": {
+    "baseline": {
+      "functional": 2,
+      "ordinary_tested": 2,
+      "genuine_child_tested": 0,
+      "retention": 0,
+      "calls": 26,
+      "child_calls": 0
+    },
+    "candidate": {
+      "functional": 4,
+      "ordinary_tested": 2,
+      "genuine_child_tested": 2,
+      "retention": 0,
+      "calls": 20,
+      "child_calls": 7
+    }
+  },
+  "individual_functional_gains": 2,
+  "individual_functional_losses": 0,
+  "ordinary_tested_gains": 0,
+  "genuine_child_tested_gains": 2,
+  "qualified_genuine_child_chains": 2,
+  "screen_qualified": false,
+  "screen_reason": "Ordinary BASE and candidate both pass 2 of 2; the required ordinary tested gain is absent.",
+  "verification": {
+    "independent_passed": true,
+    "returned_patch_objects": 7,
+    "successful_returned_repairs": 6,
+    "recorded_checks": 14,
+    "passing_checks": 9,
+    "failing_checks": 5,
+    "child_checks": 4,
+    "parent_checks": 10,
+    "discriminating_assertion_executions": 8,
+    "nonasserting_inspections": 1,
+    "prompt_context_receipts": 46,
+    "root_calls": 39,
+    "child_calls": 7,
+    "final_text_responses": 2,
+    "bare_helper_cells": 6,
+    "isolated_program_executions": 64,
+    "grade_mismatches": 0,
+    "unsupported_exact_sources": 0,
+    "raw_accepted_code_matches_executed_code": true,
+    "all_positive_assertions_reject_broken_and_single_file_partials": true,
+    "model_infrastructure_errors": 0,
+    "cpu_reviewer_without_rlm_smoke_passed": true,
+    "cpu_parser_equivalence_examples": 76
+  },
+  "child_parent_chain": "Each candidate child executes a discriminating failed-before/passed-after check and finish, returns the exact source that its parent applies, and the parent independently checks and finishes that source. Both complete attempts qualify as genuine child-tested repairs. The actual parent prompts include a truthful validated-return receipt.",
+  "interface_changes": [
+    "Print bounded child-return feedback after source/path validation while returning the identical dictionary.",
+    "Include the first nonempty supplied readonly source alongside the existing editable previews, each capped at 1500 characters.",
+    "Remove the optional RLM parser import using the identical pinned fenced regex and existing AST acceptance."
+  ],
+  "development_ran": false,
+  "retention_ran": false,
+  "reserved_holdouts_used": false,
+  "new790audit": false,
+  "learned_development_gain": false,
+  "full_stays_paused": true,
+  "limitations": [
+    "Two familiar training-family recursive gains are not development or reserved-confirmation proof.",
+    "The ordinary ceiling was not relaxed and no weaker historical baseline was reused.",
+    "Caller feedback and source-preview changes were evaluated together; separate causal effects are not isolated.",
+    "Output token IDs and full trajectories were not replayed; exact recorded programs, contexts and canonical token counts were verified.",
+    "No new optimizer, adapter or checkpoint selection was used."
+  ]
+}
