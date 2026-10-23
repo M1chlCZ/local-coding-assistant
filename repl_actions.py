@@ -24,10 +24,14 @@ successful check on the current files. No JSON strings, manual escaping, or answ
 Do not modify task, supplied tests, supporting read-only files, or helpers. Hidden tests grade repairs.
 Only your code can solve the task. Helpers do not supply fixes or checks.
 '''
-RECURSIVE = ('At the root, use proposal = delegate("specific repair goal") after inspection. '
+RECURSIVE = ('You are the root REPL. Use proposal = delegate("specific repair goal") after inspection. '
     'It sends the current task and files to a real child REPL, and returns its patch as a dictionary. '
-    'Then apply(proposal), run your own check(code), and finish(). '
-    'A child must inspect, check, repair, check again and finish(); do not delegate further.\n')
+    'Then apply(proposal), run your own independent check(code), and finish(). '
+    'Verify required exceptions with try/except; an exception is raised, not returned as a value.\n')
+CHILD = ('You are the child REPL. Inspect the supplied task and source, run a failing check, '
+    'repair the files, rerun the check successfully and finish(). Do not delegate further. '
+    'The parent will apply your returned patch and independently check it. '
+    'Verify required exceptions with try/except; an exception is raised, not returned as a value.\n')
 
 
 def task_context(context):

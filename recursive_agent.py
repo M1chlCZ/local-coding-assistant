@@ -450,7 +450,11 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
             ' task and context are already-loaded dictionaries.\n'
             'Requirements:\n'+value['task']+'\nFiles: '+str(list(value['files']))+
             '\nEditable: '+str(value['editable'])+'\nEditable source preview:\n'+'\n'.join(preview))
-        return [dict(role='system', content=self.system_prompt), dict(role='user', content=content)]
+        system = self.system_prompt
+        if self.depth:
+            from repl_actions import CHILD, RECURSIVE
+            system = system.replace(RECURSIVE, CHILD, 1)
+        return [dict(role='system', content=system), dict(role='user', content=content)]
 
     def turn_prompt(root_prompt=None, iteration=0, context_count=1, history_count=0, max_iterations=8):
         if not action_api:

@@ -51,7 +51,7 @@ class PromptBoundaryTests(unittest.TestCase):
         row = self.solve([
             "```repl\nchild=rlm_query(__import__('json').dumps(context))\n"
             "answer['content']={'solver.py':'x=2\\n'};answer['ready']=True\n```",
-            "```repl\nanswer['content']='child';answer['ready']=True\n```"], depth=2)
+            "```repl\nanswer['content']='child';answer['ready']=True\n```"], depth=2, instruction='KEEP_THIS_USER_RULE')
         self.assertEqual([c['kind'] for c in row['trace']], ['root', 'subcall'])
         for call, role in zip(row['trace'], ('Root REPL', 'Child REPL')):
             content = call['messages'][1]['content']
@@ -61,6 +61,12 @@ class PromptBoundaryTests(unittest.TestCase):
             self.assertNotIn('100k', str(call['messages']))
             self.assertNotIn('context is a str', str(call['messages']))
             self.assertNotIn('You have not interacted', str(call['messages']))
+            self.assertIn('KEEP_THIS_USER_RULE', call['messages'][0]['content'])
+            if role == 'Child REPL':
+                self.assertNotIn('proposal = delegate', call['messages'][0]['content'])
+                self.assertIn('You are the child REPL', call['messages'][0]['content'])
+            else:
+                self.assertIn('proposal = delegate', call['messages'][0]['content'])
 
     def test_last_turn_and_final_response_have_different_execution_contracts(self):
         row = self.solve(['```repl\npass\n```']*8 + ['{"solver.py":"x=2\\n"}'],
