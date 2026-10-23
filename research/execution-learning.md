@@ -628,3 +628,17 @@ lacked an original failed child check and remains nongenuine. This passes the
 predeclared screen and permits its conditional complete development comparison;
 it does not establish development or reserved-confirmation gains. No optimizer,
 new adapter, checkpoint search or full restart occurred. Full training stays paused.
+
+During the subsequent development comparison, a separate
+[helper keyword contract bug](../reports/helper-path-contract-20261023.json)
+was found: the prompt advertises `read(path)` and `write(path, source)`, but the
+implementation rejected `path=`. Two recorded Roman-numeral source artifacts
+passed diagnostic private grading, yet six actual write attempts failed before
+application. Those original attempts remain failed. The shared helpers now accept
+the advertised keyword and preserve positional and legacy `name=` calls, while
+rejecting ambiguous paths and retaining all edit validation. Regression tests
+failed before the fix and passed after; an isolated native suite executed 37 tests
+with one optional skip. A separate real Docker parent/child control exercised the
+keyword, a failed-before/passed-after child check and the parent's independent
+check of the exact returned source. This scripted control proves the API repair,
+not learning. The active matched comparison retained its original frozen source.

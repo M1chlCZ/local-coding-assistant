@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "repair": "helper-path-contract-20261023",
+  "source_commit": "573ee46e9f9e09f789540b5a307eda135ce64f5a",
+  "problem": "The advertised read(path) and write(path, source) helpers rejected path= calls because their Python parameter was named name.",
+  "behavior": "Both parent and child now accept the advertised path keyword, positional paths and legacy name keywords. Ambiguous dual paths reject before mutation; existing path, editable-file, source, syntax and finish validation is unchanged.",
+  "evidence_from_frozen_comparison": {
+    "roman_write_attempts_rejected_before_application": 6,
+    "distinct_literal_roman_artifacts_independently_passing": 2,
+    "original_attempts_remain_failed": true,
+    "isbn_failure_is_distinct_incorrect_algorithm": true
+  },
+  "verification": {
+    "regressions_failed_before": true,
+    "red_type_errors": 7,
+    "local_suite_tests": 38,
+    "local_optional_skips": 16,
+    "remote_suite_tests": 38,
+    "remote_optional_skips": 1,
+    "remote_executed_tests": 37,
+    "real_docker_scripted_child_parent_chain_passed": true,
+    "child_advertised_keywords_executed": true,
+    "parent_legacy_keyword_executed": true,
+    "child_failed_before_passed_after_then_parent_independent_check": true,
+    "independent_diff_and_native_review_passed": true,
+    "immutable_source_files_verified": 335
+  },
+  "model_generation": false,
+  "optimizer_used": false,
+  "new_adapter": false,
+  "active_comparison_source_unchanged": true,
+  "full_stays_paused": true,
+  "limitations": [
+    "The Docker repair chain is a scripted regression control, not learned improvement.",
+    "The ongoing matched development comparison remains frozen on its earlier source; this fix does not retroactively change its failed attempts.",
+    "A later model comparison on this source must be fresh and separately bound before it can support restart."
+  ]
+}
