@@ -164,6 +164,7 @@ class ContextTests(unittest.TestCase):
             for call in row['trace']:
                 self.assertNotIn('As an RLM, you should act as an orchestrator',
                                  call['messages'][0]['content'])
+                self.assertNotIn('Shared model calls remaining', str(call['messages']))
             limit[0] = 100
             with patch.object(agent, 'Sandbox', LocalSandbox), \
                  patch.object(OpenAIClient, 'completion') as completion:
@@ -177,6 +178,59 @@ class ContextTests(unittest.TestCase):
             http.shutdown()
             thread.join()
             http.server_close()
+
+
+    @unittest.skipUnless(importlib.util.find_spec('rlm'), 'Pinned upstream environment required')
+    def test_action_requests_show_live_shared_budget_before_context_preparation(self):
+        from rlm.clients.openai import OpenAIClient
+        from rlm.core.types import ModelUsageSummary
+        from test_agent_curriculum import LocalSandbox
+        http = HTTPServer(('127.0.0.1', 0), server.make_handler(
+            lambda *a: self.fail('Preflight must not generate'), 'model', 'revision', False,
+            prepare_context_fn=lambda data: server.prepare_context(Tokenizer(), data, 20000, 1024)))
+        thread = threading.Thread(target=http.serve_forever); thread.start()
+        task = dict(id='shared-budget', repository='fixture', split='train', prompt='Repair solver',
+                    files={'solver.py': 'x=1'}, editable=['solver.py'])
+        try:
+            replies = iter(["```repl\nchild=rlm_query('inspect a small subtask')\n"
+                            "answer['content']={'solver.py':'x=2'};answer['ready']=True\n```",
+                            "```repl\nanswer['content']='child response';answer['ready']=True\n```"])
+            with patch.object(agent, 'Sandbox', LocalSandbox), \
+                 patch.object(OpenAIClient, 'completion', side_effect=lambda *a, **k: next(replies)), \
+                 patch.object(OpenAIClient, 'get_last_usage', return_value=ModelUsageSummary(1, 1, 1)):
+                row = agent.solve(task, f'http://127.0.0.1:{http.server_port}', depth=2, calls=4,
+                                  seconds=10, action_api=True, context_window=True)
+            self.assertEqual([c['kind'] for c in row['trace']], ['root', 'subcall'])
+            for index, (call, window) in enumerate(zip(row['trace'], row['context_windows'])):
+                self.assertIn(f'Shared model calls remaining (including this response): {4-index} of 4.',
+                              call['messages'][-1]['content'])
+                self.assertEqual(window['requested_messages'][-1], call['messages'][-1])
+                self.assertEqual(window['messages'], call['messages'])
+            self.assertIn('one later root call', row['trace'][1]['messages'][-1]['content'])
+            self.assertEqual(row['calls'], 2)
+        finally:
+            http.shutdown(); thread.join(); http.server_close()
+
+    def test_shared_budget_notice_is_transient_survives_eviction_and_keeps_hard_limit(self):
+        original = messages()
+        snapshot = copy.deepcopy(original)
+        budget = agent.Budget(calls=2)
+        budget.reserve(100)
+        first = budget.action_prompt(original, 'baseline', 'root')
+        self.assertNotIn('Delegate', first[-1]['content'])
+        self.assertEqual(original, snapshot)
+        budget.reserve(100)
+        second = budget.action_prompt(original, 'rlm', 'subcall')
+        self.assertEqual(len(second), len(original)+1)
+        self.assertIn('including this response): 1 of 2.', second[-1]['content'])
+        self.assertNotIn('including this response): 2 of 2.', second[-1]['content'])
+        prepared = self.fit(second, context=1200)
+        self.assertTrue(prepared['fits'])
+        self.assertGreater(prepared['dropped_turns'], 0)
+        self.assertEqual(prepared['messages'][-1], second[-1])
+        with self.assertRaisesRegex(RuntimeError, 'budget exhausted'):
+            budget.reserve(100)
+        self.assertEqual(original, snapshot)
 
 
 if __name__ == '__main__':

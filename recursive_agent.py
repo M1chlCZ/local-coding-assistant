@@ -172,6 +172,20 @@ class Budget:
             raise ContextWindowExceeded('Task and latest REPL turn exceed the context budget')
         return prepared['messages']
 
+    def action_prompt(self, prompt, mode, origin):
+        notice = (f'Shared model calls remaining (including this response): '
+                  f'{self.max_calls-self.calls+1} of {self.max_calls}. '
+                  'Parent and children share this limit; local Turn labels do not grant extra calls. '
+                  'When using the REPL, combine independent inspections in one cell and avoid rereading '
+                  'source already displayed. Leave calls for checking and finalizing the exact returned source.')
+        if mode == 'rlm':
+            notice += (' As a child, leave one later root call for applying and checking your returned patch.'
+                       if origin == 'subcall' else
+                       ' Delegate early enough for child inspection, failing check, repair and passing check; '
+                       'assign the returned proposal, then apply, check and finish it in the root REPL.')
+        messages = list(prompt) if isinstance(prompt, list) else [dict(role='user', content=prompt)]
+        return messages + [dict(role='user', content=notice)]
+
 
 class Sandbox:
     """Upstream-compatible environment with no network, mounts or host-code execution."""
@@ -379,6 +393,8 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                 self.sampling_args['max_completion_tokens'] = maximum
                 self.client.timeout = budget.remaining()
                 try:
+                    if action_api:
+                        prompt = budget.action_prompt(prompt, mode, CALL_ORIGIN.get() or self.origin)
                     if context_window:
                         prompt = budget.prepare_prompt(prompt, base, maximum)
                         self.client.timeout = budget.remaining()
