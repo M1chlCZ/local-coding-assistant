@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "experiment": "action-transport-proof-20261023",
+  "source_commit": "04acf332488afe90adbecec7f101a158d67e54ca",
+  "scope": "Two familiar registered training families; four fresh attempts per arm",
+  "model_attempts_completed": 8,
+  "optimizer_used": false,
+  "new_adapter": false,
+  "fixed_candidate_sha256": "102baaa5fdb980312c01f95ee7f15a3a0f163b9b05850f6c496e2211f9e572c6",
+  "fixed_candidate_step": 69,
+  "results": {
+    "baseline": {
+      "functional": 2,
+      "ordinary_tested": 1,
+      "genuine_child_tested": 0,
+      "retention": 0,
+      "calls": 31,
+      "child_calls": 10
+    },
+    "candidate": {
+      "functional": 2,
+      "ordinary_tested": 2,
+      "genuine_child_tested": 0,
+      "retention": 0,
+      "calls": 36,
+      "child_calls": 20
+    }
+  },
+  "individual_functional_gains": 1,
+  "individual_functional_losses": 1,
+  "ordinary_tested_gains": 1,
+  "genuine_child_tested_gains": 0,
+  "screen_qualified": false,
+  "complete_recursive_success": false,
+  "verification": {
+    "frozen_controller_stage_failed": "review-screen",
+    "reason": "The parser lazily imported RLM, which is absent from the CPU tokenizer/review environment.",
+    "all_model_attempts_completed_before_review_failure": true,
+    "additive_stdlib_review_passed": true,
+    "original_failure_config_sources_results_preserved": true,
+    "failed_stage_reset": false,
+    "returned_patches": 4,
+    "recorded_checks": 23,
+    "passing_checks": 7,
+    "failing_checks": 16,
+    "child_checks": 11,
+    "parent_checks": 12,
+    "discriminating_assertion_scripts": 5,
+    "nonasserting_inspections": 2,
+    "prompt_context_receipts": 67,
+    "executed_bare_helper_cells": 6,
+    "raw_accepted_code_matches_executed_code": true,
+    "isolated_program_executions": 62,
+    "grade_mismatches": 0,
+    "unsupported_exact_sources": 0,
+    "model_infrastructure_errors": 0
+  },
+  "child_components": "One candidate family completed the same valid failed-check/repair/passing-check/finish child sequence twice. Parent assignment printed no completion feedback, then the parent delegated again instead of applying/testing the returned proposal. The other candidate family repeated an incorrect caller check and returned an invalid patch; it did not complete a child repair.",
+  "transport_result": "Six explicit bare helper cells executed without altering their raw model responses, under the existing phase and call limits. This demonstrates transport execution, not combined learned improvement.",
+  "development_ran": false,
+  "retention_ran": false,
+  "reserved_holdouts_used": false,
+  "new790audit": false,
+  "learned_development_gain": false,
+  "full_stays_paused": true,
+  "limitations": [
+    "Familiar training-family results do not establish generalization.",
+    "Functional net2of4 hides one gained and one lost individual pass; ordinary tested improves1to2of2, genuine child-tested remains0of2.",
+    "All historical comparisons are descriptive only. Fresh BASE outputs were used.",
+    "Generated token IDs and complete trajectories were not replayed; prompt/context/output counts and exact recorded checks were verified.",
+    "Candidate weight binding and server mode code were verified; this trial did not persist per-request mode or independently rerun actual LoRA enable flags. Different child goals prevent attributing first child output differences solely to the adapter."
+  ]
+}

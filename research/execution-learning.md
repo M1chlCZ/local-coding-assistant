@@ -581,3 +581,20 @@ Initial ordinary prompts match the prior same-weight trial, but one BASE first
 output diverged immediately; its cause remains unresolved. Historical outputs were
 not reused as BASE. The screen failed, development did not run, and full training
 remains paused.
+
+
+The [bare-action transport diagnostic](../reports/action-transport-proof-20261023.json)
+then accepted whole responses containing only explicit existing helper calls during
+executable turns. Six such cells executed with their raw model responses preserved.
+Eight fresh fixed-weight attempts left functional repairs at 2 of 4, with one gain
+and one individual loss. Ordinary tested repairs rose from 1 to 2 of 2; genuine
+child-tested repairs stayed 0 of 2. One candidate child completed a valid checked
+repair twice, but the parent saw no output after assignment and repeated delegation
+instead of applying and testing its result. The other child repeatedly tested an
+incorrect caller and returned an invalid patch. These are distinct failure chains.
+The frozen CPU reviewer then failed because the parser imported an unavailable RLM
+package. Its original failure and all inputs remain preserved. An additive stdlib
+review matched all four returned patches, 23 checks and 67 context receipts; five
+assertion scripts rejected broken and partial repairs. The failed stage was not
+reset. No development or retention evaluation followed, and full training remains
+paused.
