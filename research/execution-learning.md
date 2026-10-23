@@ -379,3 +379,17 @@ generated programs could not be independently regraded. Public code now saves th
 programs, prompts and feedback for future retention checks. The development tasks
 had been used before; no fresh confirmation or 790-task audit was run. The candidate
 was rejected and full training remains paused.
+
+The subsequent [BASE-only protocol check](../reports/delegation-protocol-20261023.json)
+used two training families with current instructions and one worked protocol
+example. Current instructions produced one direct repair and one failed recursive
+query; the worked example produced two direct repairs and no child calls. Neither
+interface completed a child-tested repair, so neither qualified.
+
+Inspection of the actual child prompt exposed a configuration mismatch in the
+pinned RLM library. The parent used `orchestrator=False`, but the child constructor
+omitted that setting and defaulted to `True`. The child received extra orchestration
+instructions that contradicted the REPL protocol, including saying sub-models had
+no REPL. The adapter now preserves the parent's setting when constructing a child.
+A pinned-library parent/child regression failed before the fix and passed after it.
+This repairs an interface defect; it establishes no learned gain or restart proof.

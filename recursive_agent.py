@@ -414,7 +414,10 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
     def subcall(self, *args, **kwargs):
         token = CALL_ORIGIN.set('subcall')
         try:
-            return original_subcall(self, *args, **kwargs)
+            # The pinned upstream otherwise resets children to orchestrator=True.
+            with patch.object(core, 'RLM', lambda **options: RLM(**{
+                    **options, 'orchestrator': self.orchestrator})):
+                return original_subcall(self, *args, **kwargs)
         finally:
             CALL_ORIGIN.reset(token)
 

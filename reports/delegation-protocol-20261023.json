@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "method": "BASE-only instruction-following diagnostic on two registered training families, four predeclared attempts.",
+  "source_commit": "72cc08d0a320a8f7774717320aee3f64f7522ac1",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "adapter_used": false,
+  "training_performed": false,
+  "reserved_holdouts_used": false,
+  "limits": {
+    "depth": 2,
+    "calls": 12,
+    "output_tokens": 8192,
+    "seconds": 360
+  },
+  "current_instructions": {
+    "tasks": 2,
+    "functional_repairs": 1,
+    "actual_recursive_queries": 1,
+    "child_model_calls": 5,
+    "genuine_child_tested_repairs": 0
+  },
+  "worked_protocol_example": {
+    "tasks": 2,
+    "functional_repairs": 2,
+    "actual_recursive_queries": 0,
+    "child_model_calls": 0,
+    "genuine_child_tested_repairs": 0
+  },
+  "qualifying_interface": null,
+  "independent_review": {
+    "returned_patches_regraded": 3,
+    "grade_mismatches": 0,
+    "child_attempt_reviewed": true,
+    "child_attempt_result": "Budget exhausted; no saved child assertion receipts or returned patch."
+  },
+  "verified_setup_defect": {
+    "description": "The pinned upstream child constructor omitted the parent orchestrator setting, so a parent configured with orchestrator=False spawned a child with the default True.",
+    "observed_in_actual_child_prompt": true,
+    "effect": "Appended orchestration instructions contradicted the child REPL protocol, including claiming sub-models have no REPL.",
+    "repair": "Preserve the parent orchestrator value when constructing a recursive child.",
+    "pinned_library_regression_failed_before_and_passed_after": true,
+    "sampling_setting_change_needed": false,
+    "other_failure_causes_ruled_out": false
+  },
+  "decision": {
+    "learned_improvement_established": false,
+    "full_loop_authorized": false,
+    "candidate_selected_for_confirmation": false,
+    "fresh790audit_started": false
+  },
+  "limitations": [
+    "This tests the unchanged BASE on training tasks, not learning or fresh generalization.",
+    "Functional direct repairs do not count as genuine recursive completions.",
+    "The configuration fix is not evidence of learned improvement; both model arms need fresh matched evaluation.",
+    "The source mismatch may contribute to failure; it does not explain every observed code or finalization error."
+  ]
+}

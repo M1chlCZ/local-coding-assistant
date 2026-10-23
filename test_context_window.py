@@ -161,6 +161,9 @@ class ContextTests(unittest.TestCase):
             self.assertEqual([c['kind'] for c in row['context_windows']], ['root', 'subcall'])
             self.assertEqual([c['messages'] for c in row['context_windows']],
                              [c['messages'] for c in row['trace']])
+            for call in row['trace']:
+                self.assertNotIn('As an RLM, you should act as an orchestrator',
+                                 call['messages'][0]['content'])
             limit[0] = 100
             with patch.object(agent, 'Sandbox', LocalSandbox), \
                  patch.object(OpenAIClient, 'completion') as completion:
