@@ -482,3 +482,20 @@ retained and checked against canonical text counts with zero or one ending token
 This verifies that the corrective lessons can execute within the existing limits.
 It does not show that the model learned them. No new recipe, reserved confirmation
 or 790-task audit started, and full training remains paused.
+
+The subsequent [single corrective-state trial](../reports/correction-fit-proof-20261023.json)
+trained fresh BASE for 22 updates on those 26 corrective targets and the same 150
+verified multilingual training anchors. All five scheduled checkpoints and final
+weights were preserved before evaluating the fixed final candidate. Independent
+checks matched all six returned patches, eight successful recorded parent check
+scripts, 75 prompt/context receipts and the complete 176-row masked encoding.
+
+On the same two familiar families, ordinary tested repairs rose from 0 to 1 of 2.
+Functional repairs stayed 3 of 4 with no individual losses. The candidate also
+finished a directly tested repair under recursive instructions, but genuine
+child-tested repairs stayed 0 of 2. Each arm's delegated attempt used seven parent
+calls and five child inspections, exhausting the shared call budget before any
+child checks or edits. The required screen failed, so development and retention
+evaluation did not run. This one-family ordinary gain does not establish
+generalization or the required combined improvement. No next recipe, reserved
+confirmation, 790-task audit or full restart follows automatically.

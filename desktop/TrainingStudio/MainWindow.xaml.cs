@@ -45,7 +45,7 @@ public partial class MainWindow : Window
         }
         else if(busy || !await operationGate.WaitAsync(0))return;
         try { await work(); if(announce) Notice.Text="Your data and model files stay on this PC."; }
-        catch(Exception ex) { latest=null; Notice.Text=ex.Message; ConnectionBadge.Text="Action failed · check details below"; if(!announce) {Activity.Text="Connection unavailable"; ActivityDetail.Text="Displayed results are from the last successful read. Training may still be running."; StageProgress.IsIndeterminate=false;} }
+        catch(Exception ex) { latest=null; Notice.Text=ex.Message; ConnectionBadge.Text="Action failed · check details below"; if(!announce) {Activity.Text="Connection unavailable"; ActivityDetail.Text="Displayed results are from the last successful read. Training may still be running."; RepairUpdated.Text="Connection unavailable · showing the last saved repair update."; StageProgress.IsIndeterminate=false;} }
         finally
         {
             if(announce){busy=false;SessionPicker.IsEnabled=true;}
@@ -169,7 +169,7 @@ public partial class MainWindow : Window
         RepairedCount.Text=observed?$"{N(state,"repaired_examples"):0}":"—";
         ReplCount.Text=N(state,"training_examples")>0?$"{N(state,"repl_examples"):0}":"—";
         AcceptedCount.Text=$"{N(state,"accepted_updates"):0} accepted updates";
-        int current=finished?4:stage switch {"prepare"=>0,"collect" or "export"=>1,"train" or "train-agent"=>2,"finish"=>4,_=>3};
+        int current=state["repair_progress"] is not null || S(state,"status")=="paused"?-1:finished?4:stage switch {"prepare"=>0,"collect" or "export"=>1,"train" or "train-agent"=>2,"finish"=>4,_=>3};
         for(int i=0;i<Pipeline.Children.Count;i++) {
             var step=(Border)Pipeline.Children[i];
             step.SetResourceReference(Border.BackgroundProperty,i==current?"StepBrush":"ClearBrush");
@@ -194,7 +194,7 @@ public partial class MainWindow : Window
             :"Supervised training experiment";
         Clocks.Text="Training "+Duration(N(state,"training_seconds"))+(continuous?" · No time cutoff":" / "+Duration(N(state,"limit_seconds")))+" · All active work "+Duration(N(state,"active_seconds"));
         if(continuous) {
-            ProgressText.Text="Cycle "+N(state,"cycle").ToString("0");
+            ProgressText.Text+=" · Cycle "+N(state,"cycle").ToString("0");
 
             if(state["report"]?["accepted"]?.GetValue<bool>()==false) {
                 QualityTitle.Text="Retained model unchanged";
@@ -235,6 +235,42 @@ public partial class MainWindow : Window
             panel.Children.Add(new ProgressBar{Height=10,Maximum=Math.Max(1,N(suite.Value,"total")),Value=N(suite.Value,"passed")}); Chart.Children.Add(panel);
         }
         ChartHint.Text=report is null?"Waiting for complete matched results. See current task progress above.":"Completed test results. Review language regressions before choosing a checkpoint.";
+        if(S(state,"status")=="paused") {
+            Activity.Text="Session paused";
+            ActivityDetail.Text="Saved counts from before Pause. The full run is not advancing.";
+            StageProgress.IsIndeterminate=false;
+        }
+        RenderRepair(state);
+    }
+    void RenderRepair(JsonNode state)
+    {
+        var repair=state["repair_progress"];
+        bool visible=repair is not null;
+        SourcePanel.Visibility=visible?Visibility.Collapsed:Visibility.Visible;
+        RepairPanel.Visibility=visible?Visibility.Visible:Visibility.Collapsed;
+        ActivityTitle.Text=visible?"Repair trial · separate from full run":"Selected learning session";
+        FirstLabel.Text=visible?"BASE checks":"First attempt";
+        RepairedLabel.Text=visible?"Candidate checks":"Repaired";
+        ReplLabel.Text=visible?"Training steps":"REPL lessons";
+        ReplCount.ToolTip=visible?"Completed optimizer steps in the separate bounded trial":"Verified training rows from executed REPL lessons";
+        if(!visible)return;
+        bool stale=repair!["stale"]?.GetValue<bool>()==true;
+        string status=S(repair,"status");
+        RepairPhase.Text=S(repair,"phase");
+        RepairDetail.Text=S(repair,"detail");
+        double updated=N(repair,"updated_at");
+        RepairUpdated.Text=updated>0?"Last repair update: "+DateTimeOffset.FromUnixTimeSeconds((long)updated).ToLocalTime().ToString("HH:mm:ss")+" · "+(stale?"No recent heartbeat; activity is unconfirmed.":status):"No readable repair heartbeat.";
+        Activity.Text=stale?"Repair update is stale":"Repair trial: "+S(repair,"phase");
+        Activity.ToolTip=Activity.Text;
+        ActivityDetail.Text="Selected session: "+S(state,"status")+". Trial counts are separate; learned improvement is not yet proven.";
+        var screen=repair["screen"];
+        FirstPasses.Text=screen is null?"—":$"{N(screen,"baseline_done"):0} / {N(screen,"total_per_arm"):0}";
+        RepairedCount.Text=screen is null?"—":$"{N(screen,"candidate_done"):0} / {N(screen,"total_per_arm"):0}";
+        ReplCount.Text=repair["training_steps"] is null?"—":$"{N(repair,"training_steps"):0} / {N(repair,"max_training_steps"):0}";
+        StageProgress.IsIndeterminate=!stale && status=="running";
+        StageProgress.Value=0;
+        ProgressText.Text=stale?"Last saved update":status=="running"?"In progress":status;
+        StageProgress.ToolTip=RepairUpdated.Text;
     }
     void CopyCode_Click(object sender,RoutedEventArgs e)
     {

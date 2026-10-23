@@ -18,6 +18,43 @@ SESSIONS = ROOT / '.cache/learning'
 REVISION = '851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a'
 
 
+def repair_progress():
+    """Read the service's separate repair activity; never touch a learning session."""
+    file = ROOT/'.cache/repair-progress.json'
+    if not file.exists() and not file.is_symlink():
+        return None
+    try:
+        if file.is_symlink() or not file.is_file() or file.stat().st_size > 16384:
+            raise ValueError('Invalid repair status file')
+        saved = json.loads(file.read_text())
+        if (saved.get('schema') != 1 or saved.get('status') not in ('running', 'waiting', 'complete', 'failed')
+                or any(not isinstance(saved.get(key), str) or not 0 < len(saved[key]) <= limit
+                       for key, limit in (('phase', 100), ('detail', 1000)))
+                or type(saved.get('updated_at')) not in (int, float)
+                or not 0 < saved['updated_at'] <= time.time()+10):
+            raise ValueError('Invalid repair status')
+        result = {key: saved[key] for key in ('schema', 'updated_at', 'phase', 'status', 'detail')}
+        for key, maximum in (('training_steps', 'max_training_steps'),):
+            done, total = saved.get(key), saved.get(maximum)
+            if done is not None:
+                if type(done) is not int or type(total) is not int or not 0 <= done <= total <= 10000:
+                    raise ValueError('Invalid repair counts')
+                result.update({key: done, maximum: total})
+        if 'screen' in saved:
+            screen = saved['screen']
+            total = screen.get('total_per_arm')
+            if (type(total) is not int or not 0 < total <= 1000
+                    or any(type(screen.get(key)) is not int or not 0 <= screen[key] <= total
+                           for key in ('baseline_done', 'candidate_done'))):
+                raise ValueError('Invalid repair screen counts')
+            result['screen'] = {key: screen[key] for key in ('baseline_done', 'candidate_done', 'total_per_arm')}
+        result['stale'] = saved['status'] in ('running', 'waiting') and time.time()-saved['updated_at'] > 120
+        return result
+    except (OSError, ValueError, TypeError, AttributeError):
+        return dict(status='unavailable', phase='Repair status unavailable',
+                    detail='The last repair update could not be read. The selected session is unchanged.', stale=True)
+
+
 def session_path(name):
     if not isinstance(name, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}', name):
         raise ValueError('Use a session name with letters, numbers, dashes or underscores')
@@ -252,6 +289,7 @@ def snapshot(name):
     except (OSError, subprocess.SubprocessError, IndexError):
         pass
     value['observed_at'] = time.time()
+    value['repair_progress'] = repair_progress()
     return value
 
 

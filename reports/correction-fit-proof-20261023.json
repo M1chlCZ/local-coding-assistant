@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "experiment": "correction-fit-proof-20261023",
+  "diagnostic_only": true,
+  "source_commit": "5aa3a73850c15bfb315bd33ad1ffb0f3b44195f8",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "adapter_sha256": "c4df89e48bef03e2dcad6d5d55c03290027b02dfed6227ae64d7e989426e5db1",
+  "method": "One fresh-BASE/null-adapter recipe on verified corrective states, followed by a fresh matched familiar-family screen. Only a passing independently reviewed screen could start development.",
+  "data": {
+    "rows": 176,
+    "verified_corrective_rows": 26,
+    "intentionally_reused_multilingual_train_anchors": 150,
+    "recorded_prefix_calls_masked": 44,
+    "corrective_target_tokens": 4030,
+    "anchor_target_tokens": 63500,
+    "max_sequence_tokens": 2719,
+    "token_exclusions": 0,
+    "dataset_sha256": "4be190a5e9b1bc866c5a099da5bf518fa85f098f261e788f4248e4035de744bf",
+    "encoded_sha256": "48d47eb53e2606898181cb9756fe3b9bfe52cdf5db78e6339814c479af4c1756"
+  },
+  "recipe": {
+    "initial_adapter": null,
+    "resumed_checkpoint": null,
+    "learning_rate": 1e-05,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "microbatch": 1,
+    "gradient_accumulation": 8,
+    "max_updates": 22,
+    "completed_updates": 22,
+    "reported_epoch": 1.0,
+    "training_active_seconds": 112.989,
+    "training_cap_seconds": 900,
+    "trial_wall_cap_seconds": 14400,
+    "fixed_candidate": "final-step22",
+    "checkpoint_search": false
+  },
+  "selection": {
+    "training_families": 2,
+    "tasks_per_arm": 4,
+    "total_attempts": 8,
+    "chosen_before_generation": true,
+    "retention_tasks": 0,
+    "reserved_holdout_tasks": 0
+  },
+  "settings": {
+    "greedy_generation": true,
+    "action_api": true,
+    "context_window": true,
+    "execution_context_tokens": 8192,
+    "strict_ordinary": true,
+    "depth": 2,
+    "calls": 12,
+    "output_tokens": 8192,
+    "seconds": 360,
+    "root_child_max_iterations": 8,
+    "corrected_child_policy": true,
+    "forced_child_guard": false
+  },
+  "summary": {
+    "baseline": {
+      "ordinary": {
+        "total": 2,
+        "functional": 2,
+        "tested_repl": 0
+      },
+      "recursive": {
+        "total": 2,
+        "functional": 1,
+        "direct_tested_repl": 0,
+        "genuine_child_tested": 0
+      }
+    },
+    "candidate": {
+      "ordinary": {
+        "total": 2,
+        "functional": 2,
+        "tested_repl": 1
+      },
+      "recursive": {
+        "total": 2,
+        "functional": 1,
+        "direct_tested_repl": 1,
+        "genuine_child_tested": 0
+      }
+    }
+  },
+  "matched_changes": {
+    "functional_gains": 0,
+    "functional_losses": 0,
+    "ordinary_tested_gains": 1,
+    "ordinary_tested_losses": 0,
+    "genuine_child_tested_gains": 0,
+    "genuine_child_tested_losses": 0,
+    "distinct_tested_gain_families": 1,
+    "required_distinct_tested_gain_families": 2
+  },
+  "execution_counts": {
+    "baseline": {
+      "calls": 39,
+      "child_calls": 5,
+      "queries": 1
+    },
+    "candidate": {
+      "calls": 36,
+      "child_calls": 5,
+      "queries": 1
+    },
+    "controller_infrastructure_failures": 0
+  },
+  "independent_review": {
+    "returned_patches_reexecuted": 6,
+    "successful_recorded_parent_check_scripts_reexecuted": 8,
+    "child_check_scripts": 0,
+    "negative_task_mode_controls": 4,
+    "partial_edit_controls": 12,
+    "prompt_context_receipts_matched": 75,
+    "complete_training_rows_reencoded": 176,
+    "grade_mismatches": 0,
+    "matched_initial_prompts": true,
+    "actual_child_prompts_use_corrected_policy": true,
+    "all_individual_changes_reviewed": true
+  },
+  "preservation": {
+    "scheduled_checkpoint_steps": [
+      5,
+      10,
+      15,
+      20,
+      22
+    ],
+    "final_adapter": true,
+    "receipts": 6,
+    "files": 57,
+    "hash_verified_outside_session_before_candidate_evaluation": true,
+    "optimizer_scheduler_rng_trainer_states_verified": true,
+    "pruning": false
+  },
+  "diagnosis": [
+    "Candidate reads the bridge before writing, checks the implementation and uses finish() on the exact checked files. BASE eventually returned a functionally correct patch but its final bytes did not match its checked workspace, so later program success cannot make it historically tested.",
+    "Same family is repaired directly and finished with exact checked files. No delegation occurs on this attempt, so this remains zero genuine child-tested repairs.",
+    "Seven parent calls through delegation and five child inspection calls exhaust the shared12call budget. Neither child executes checks or edits. BASE13.300s/candidate17.886s,250outputtokens each. No output/time exhaustion or infrastructure failure.",
+    "Other family has passing program and root checks but a final text patch with different source bytes from the checked workspace. It remains untested in both arms."
+  ],
+  "decision": {
+    "familiar_screen_passed": false,
+    "development_started": false,
+    "retention_started": false,
+    "candidate_selected_for_confirmation": false,
+    "reserved_holdouts_evaluated": 0,
+    "new790audit_started": false,
+    "full_loop_restarted": false,
+    "proven_repl_and_recursive_improvement": false,
+    "automatic_next_recipe": false
+  },
+  "limitations": [
+    "The ordinary tested gain is confined to one familiar training family; this is not a generalization or development result.",
+    "No genuine child-tested gain; one direct tested repair under recursive instructions cannot count as child-tested recursion.",
+    "No development or retention comparison was run after screen rejection.",
+    "Program and context review does not rerun model generation, full environment trajectories or output token IDs.",
+    "Historical corrective prefixes and150verifiedtraininganchors were intentionally reused; failed proposals remained masked.",
+    "Exact shuffled optimizer sample order was not independently audited; row and target-token proportions do not prove effective weighting or causality.",
+    "Initial setup invocation lacked PYTHONPATH and failed before session mutation; corrected invocation completed before model launch. No model output was reused.",
+    "Historical round5checkpoint5 remains missing."
+  ]
+}

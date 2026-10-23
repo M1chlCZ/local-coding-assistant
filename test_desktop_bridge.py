@@ -7,6 +7,43 @@ from unittest.mock import patch
 import desktop_bridge as app
 
 class DesktopBridgeTests(unittest.TestCase):
+    def test_repair_progress_is_separate_read_only_and_marks_stale_updates(self):
+        with tempfile.TemporaryDirectory() as d, patch.object(app, 'ROOT', Path(d)):
+            folder = Path(d)/'.cache'; folder.mkdir()
+            file = folder/'repair-progress.json'
+            self.assertIsNone(app.repair_progress())
+            value = dict(schema=1, updated_at=1000, phase='Testing the candidate', status='running',
+                         detail='The full run stays paused.', training_steps=22, max_training_steps=22,
+                         screen=dict(baseline_done=4, candidate_done=2, total_per_arm=4), private_path='SECRET')
+            file.write_text(json.dumps(value))
+            original = file.read_bytes()
+            with patch.object(app.time, 'time', return_value=1010):
+                result = app.repair_progress()
+            self.assertFalse(result['stale'])
+            self.assertEqual(result['screen']['candidate_done'], 2)
+            self.assertNotIn('SECRET', str(result))
+            self.assertEqual(file.read_bytes(), original)
+            with patch.object(app.time, 'time', return_value=1201):
+                self.assertTrue(app.repair_progress()['stale'])
+                for status in ('complete', 'failed'):
+                    value['status'] = status
+                    file.write_text(json.dumps(value))
+                    self.assertFalse(app.repair_progress()['stale'])
+
+    def test_invalid_repair_progress_cannot_break_dashboard_or_follow_links(self):
+        with tempfile.TemporaryDirectory() as d, patch.object(app, 'ROOT', Path(d)):
+            folder = Path(d)/'.cache'; folder.mkdir()
+            file = folder/'repair-progress.json'
+            for text in ('{', json.dumps(dict(schema=1, updated_at=1000, phase='Train', status='running',
+                       detail='Work', training_steps=23, max_training_steps=22)), 'x'*16385):
+                file.write_text(text)
+                self.assertEqual(app.repair_progress()['status'], 'unavailable')
+            file.unlink()
+            outside = Path(d)/'private'; outside.write_text('SECRET')
+            file.symlink_to(outside)
+            self.assertEqual(app.repair_progress()['status'], 'unavailable')
+            self.assertEqual(outside.read_text(), 'SECRET')
+
     def test_session_path_cannot_escape_private_folder(self):
         for name in ('../escape', '/tmp/x', '.cache/learning/../x', 'a/b', ''):
             with self.assertRaises(ValueError): app.session_path(name)

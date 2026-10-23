@@ -54,6 +54,7 @@ public partial class MainWindow
                 if(position.X<0 || position.X+PrimaryButton.ActualWidth>ActualWidth)throw new IOException("Main control is clipped");
             }
             latest=saved!.DeepClone();
+            latest["repair_progress"]=null;
             latest["continuous"]=false;
             latest["quality"]!["label"]="Improved on these tests";
             latest["quality"]!["tone"]="good";
@@ -80,6 +81,20 @@ public partial class MainWindow
                 throw new IOException("Completed pilot shows stale progress or omits its measured REPL result");
             latest["report"]!["pilot_gate"]=null;Render(latest);
             if(ReplComparison.Text!="—" || ReplComparisonLabel.Text!="REPL comparison")throw new IOException("Direct repair tests were mislabeled as REPL results");
+            latest["status"]="paused";latest["phase"]="round-000007/collect";latest["repair_progress"]=null;
+            Render(latest);
+            if(Activity.Text!="Session paused" || StageProgress.IsIndeterminate || !ActivityDetail.Text.Contains("Saved counts"))
+                throw new IOException("Paused session still presents saved collection as live activity");
+            latest["repair_progress"]=System.Text.Json.Nodes.JsonNode.Parse("""{"status":"running","phase":"Testing the candidate","detail":"A separate bounded trial is running.","updated_at":1792770000,"stale":false,"training_steps":22,"max_training_steps":22,"screen":{"baseline_done":4,"candidate_done":2,"total_per_arm":4}}""");
+            Render(latest);
+            if(Activity.Text!="Repair trial: Testing the candidate" || FirstPasses.Text!="4 / 4" || RepairedCount.Text!="2 / 4" || ReplCount.Text!="22 / 22")
+                throw new IOException("Separate repair activity is hidden by the paused full session");
+            foreach(Border step in Pipeline.Children)
+                if(((SolidColorBrush)step.Background).Color!=((SolidColorBrush)Application.Current.Resources["ClearBrush"]).Color)
+                    throw new IOException("Paused full-session pipeline appears active during the separate repair trial");
+            latest["repair_progress"]!["stale"]=true;Render(latest);
+            if(Activity.Text!="Repair update is stale" || StageProgress.IsIndeterminate)
+                throw new IOException("Stale repair update was shown as live work");
         } finally {latest=saved;Render(saved!);UpdateControls();}
     }
     internal async Task CheckRefreshBehavior()
