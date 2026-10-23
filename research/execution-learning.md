@@ -614,3 +614,17 @@ matched independent execution; eight passing assertion executions rejected broke
 and partial source. These are verified recursive gains on two familiar training
 families. The predeclared combined-gain screen still failed because ordinary BASE
 was already perfect, so development did not run and full training remains paused.
+
+The [broader fixed-weight screen](../reports/broader-action-proof-20261023.json)
+used the next four registered training families in their original order, selected
+before generation. All sixteen attempts were fresh. Ordinary tested repairs rose
+from 2 to 3 of 4, genuine child-tested repairs from 0 to 3 of 4, and functional
+repairs from 2 to 7 of 8, with no individual functional, tested or recursive losses.
+Independent execution matched twelve returned patch objects, forty check scripts
+and 121 prompt/context receipts. Three complete child-to-parent repair chains
+qualified, with discriminating failed-before and passed-after child assertions and
+independent parent checks of the exact returned bytes. Another recursive repair
+lacked an original failed child check and remains nongenuine. This passes the
+predeclared screen and permits its conditional complete development comparison;
+it does not establish development or reserved-confirmation gains. No optimizer,
+new adapter, checkpoint search or full restart occurred. Full training stays paused.
