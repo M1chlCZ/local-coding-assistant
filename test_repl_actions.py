@@ -21,6 +21,22 @@ class ActionTests(unittest.TestCase):
         self.answer = {}
         self.workspace = Workspace(self.context, self.answer, root=self.root)
 
+    def test_delegate_reports_returned_patch_without_echoing_source_or_inventing_test_success(self):
+        patch = {'pkg/core.py': 'def greet():\n    return "SOURCE_SENTINEL"\n'}
+        self.workspace.query = lambda _: json.dumps(patch)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(self.workspace.delegate('Repair and verify.'), patch)
+        self.assertIn('Child returned a patch for 1 editable file', output.getvalue())
+        self.assertIn('run your own check', output.getvalue())
+        self.assertNotIn('SOURCE_SENTINEL', output.getvalue())
+        self.assertNotIn('passed tests', output.getvalue())
+        self.workspace.query = lambda _: json.dumps({'README.md': 'not editable'})
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaises(ValueError):
+            self.workspace.delegate('Repair.')
+        self.assertEqual(output.getvalue(), '')
+
     def test_bare_read_displays_source_and_preserves_return_value_in_parent_and_child(self):
         child = Workspace(json.dumps(self.context), {}, root=self.root/'child')
         for workspace in (self.workspace, child):
@@ -47,7 +63,8 @@ class ActionTests(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             self.workspace.delegate('Repair and test.')
             self.workspace.finish()
-        self.assertEqual(output.getvalue(), '')
+        self.assertIn('Child returned a patch for 1 editable file', output.getvalue())
+        self.assertNotIn(source, output.getvalue())
         self.assertEqual(self.answer['content'], {'pkg/core.py': source})
 
     @unittest.skipUnless(importlib.util.find_spec('rlm'), 'Pinned upstream and Docker required')

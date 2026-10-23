@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,11 @@ from repl_actions import Workspace
 
 
 class ActionParsingTests(unittest.TestCase):
+    def test_transport_parser_needs_no_optional_rlm_installation(self):
+        with patch.dict(sys.modules, {'rlm.utils.parsing': None}):
+            self.assertEqual(agent.action_code_blocks('proposal = delegate("repair")'),
+                             ['proposal = delegate("repair")'])
+
     def test_only_complete_direct_helper_calls_are_accepted_without_fences(self):
         code = 'proposal = delegate("repair and test")\napply(proposal)\ncheck("assert True")\nfinish()'
         self.assertEqual(agent.action_code_blocks(code), [code])
@@ -76,6 +82,7 @@ class PromptBoundaryTests(unittest.TestCase):
         self.assertEqual([c['kind'] for c in row['trace']], ['root', 'subcall', 'subcall', 'root'])
         self.assertTrue(all(c.get('action_transport') == 'bare-helper-calls' for c in row['trace']))
         self.assertEqual(len(row['queries']), 1)
+        self.assertIn('Child returned a patch', str(row['trace'][-1]['messages']))
         self.assertTrue(agent.tested_repl(dict(row, passed=True)))
 
     def test_final_bare_finish_is_not_executed(self):
@@ -85,16 +92,22 @@ class PromptBoundaryTests(unittest.TestCase):
         self.assertNotIn('patch', row)
 
     def test_actual_parent_and_child_setup_show_task_and_true_role(self):
+        task = dict(id='boundary', repository='fixture', split='train', prompt='Repair the value.',
+                    files={'solver.py': 'x=1\n', '__init__.py': '',
+                           'bridge.py': 'def invoke(function, args): return function(*args)\n'},
+                    editable=['solver.py'], checks='PRIVATE_CHECK_SENTINEL')
         row = self.solve([
             "```repl\nchild=rlm_query(__import__('json').dumps(context))\n"
             "answer['content']={'solver.py':'x=2\\n'};answer['ready']=True\n```",
-            "```repl\nanswer['content']='child';answer['ready']=True\n```"], depth=2, instruction='KEEP_THIS_USER_RULE')
+            "```repl\nanswer['content']='child';answer['ready']=True\n```"], task=task, depth=2, instruction='KEEP_THIS_USER_RULE')
         self.assertEqual([c['kind'] for c in row['trace']], ['root', 'subcall'])
         for call, role in zip(row['trace'], ('Root REPL', 'Child REPL')):
             content = call['messages'][1]['content']
             self.assertIn(role, content)
             self.assertIn('Repair the value.', content)
             self.assertIn('x=1', content)
+            self.assertIn(task['files']['bridge.py'], content)
+            self.assertNotIn('PRIVATE_CHECK_SENTINEL', content)
             self.assertNotIn('100k', str(call['messages']))
             self.assertNotIn('context is a str', str(call['messages']))
             self.assertNotIn('You have not interacted', str(call['messages']))
@@ -142,13 +155,16 @@ class PromptBoundaryTests(unittest.TestCase):
         requirement = 'Repair.'*500+'REQUIREMENTS_END'
         source = 'x=1\n'+'#'*1700+'SOURCE_END'
         task = dict(id='preview', repository='fixture', split='train', prompt=requirement,
-                    files={'solver.py': source}, editable=['solver.py'], checks='PRIVATE_CHECK_SENTINEL',
+                    files={'solver.py': source, 'support.py': 'SUPPORT_START\n'+'#'*1700+'SUPPORT_END'},
+                    editable=['solver.py'], checks='PRIVATE_CHECK_SENTINEL',
                     reference_patch={'solver.py': 'PRIVATE_REFERENCE_SENTINEL'})
         row = self.solve(["```repl\nanswer['content']={'solver.py':'x=2\\n'};answer['ready']=True\n```"], task=task)
         content = row['trace'][0]['messages'][1]['content']
         self.assertIn(requirement, content)
         self.assertIn('Preview truncated', content)
         self.assertNotIn('SOURCE_END', content)
+        self.assertIn('SUPPORT_START', content)
+        self.assertNotIn('SUPPORT_END', content)
         self.assertNotIn('PRIVATE_CHECK_SENTINEL', content)
         self.assertNotIn('PRIVATE_REFERENCE_SENTINEL', content)
 

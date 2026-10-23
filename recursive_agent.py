@@ -84,8 +84,7 @@ def format_iteration(iteration):
 
 def action_code_blocks(response):
     """Accept an entire bare action cell without interpreting prose or arbitrary Python."""
-    from rlm.utils.parsing import find_code_blocks
-    blocks = find_code_blocks(response)
+    blocks = [code.strip() for code in re.findall(r'```repl\s*\n(.*?)\n```', response, re.S)]
     if blocks or '```' in response:
         return blocks
     try:
@@ -481,14 +480,19 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
         from repl_actions import task_context
         value = task_context(prompt)
         preview = []
-        for name in value['editable'][:2]:
+        names = value['editable'][:2]
+        supporting = next((name for name, source in value['files'].items()
+                           if name not in value['editable'] and source.strip()), None)
+        if supporting:
+            names.append(supporting)
+        for name in names:
             source = value['files'][name]
             preview.append(name+'\n'+source[:1500]+(
                 '\n[Preview truncated; read this file for full source.]' if len(source)>1500 else ''))
         content = ('Child REPL' if self.depth else 'Root REPL') + f' (is_child={bool(self.depth)}).' + (
             ' task and context are already-loaded dictionaries.\n'
             'Requirements:\n'+value['task']+'\nFiles: '+str(list(value['files']))+
-            '\nEditable: '+str(value['editable'])+'\nEditable source preview:\n'+'\n'.join(preview))
+            '\nEditable: '+str(value['editable'])+'\nSource preview:\n'+'\n'.join(preview))
         system = self.system_prompt
         if self.depth:
             from repl_actions import CHILD, RECURSIVE

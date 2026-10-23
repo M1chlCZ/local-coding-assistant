@@ -141,7 +141,10 @@ class Workspace:
         response = self.query(json.dumps(request))
         match = re.fullmatch(r'\s*```(?:json)?\s*\n(.*?)\n```\s*', response, re.S)
         result = json.loads(match.group(1) if match else response)
-        return self.validate(result)
+        result = self.validate(result)
+        print(f'Child returned a patch for {len(result)} editable file(s); source/path validation passed. '
+              'Apply the returned dictionary and run your own check before finish().')
+        return result
 
     def finish(self):
         patch = {p:self._read(p) for p in self.task['editable']
