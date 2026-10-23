@@ -548,19 +548,36 @@ separately verified examples for the corrected interface; full training stays pa
 
 
 The [current-interface policy-fit trial](../reports/policy-boundary-fit-20261023.json)
-executed twelve train-only reference paths and fit one fresh69-update adapter.
-Eight fresh model attempts improved ordinary tested repairs from1to2of2 without
+executed twelve train-only reference paths and fit one fresh 69-update adapter.
+Eight fresh model attempts improved ordinary tested repairs from 1 to 2 of 2 without
 individual losses. Both recursive tasks delegated, and one child completed a valid
 failed-check/repair/passing-check/finish sequence. Its parent applied the correct
 patch but incorrectly tested an expected exception as a returned value, so the
 whole attempt still failed. The other child tried the root delegation workflow.
-Complete genuine child-tested repairs remained0of2; no development run followed.
+Complete genuine child-tested repairs remained 0 of 2; no development run followed.
 
 The frozen independent reviewer also failed on a help-only inspection because it
 used Python site-disabled flags that differ from the actual check subprocess.
 All original inputs, outputs and the failed reviewer were preserved. An additive
-review in the actual check environment matched all27scripts and58context receipts;
+review in the actual check environment matched all 27 scripts and 58 context receipts;
 nonasserting inspections were kept separate from the four discriminating assertion
 scripts. All seven checkpoints and final weights were independently verified outside
 the session. This is ordinary improvement and child-component progress on familiar
 families, not combined recursive development proof. Full training remains paused.
+
+
+The [child-role diagnostic](../reports/child-role-proof-20261023.json) then used
+eight fresh attempts with BASE and the same fixed final-step69 adapter, with no
+optimizer. Ordinary tested repairs rose from 0 to 2 of 2. Functional repairs rose
+from 1 to 3 of 4, with three gains and one individual recursive-mode loss. Genuine
+child-tested repairs stayed 0 of 2: neither arm made a child call. Both candidate
+recursive attempts first requested delegation as bare Python without executable
+REPL fences, so the pinned parser executed neither request. One then completed a
+directly tested repair; the other exhausted its local turns and returned an invalid
+final patch. Independent review matched all four returned patches, nineteen checks
+and 56 prompt/context receipts. Four assertion scripts rejected broken and partial
+repairs; one belonged to an unreturned workspace and did not count as a pass.
+Initial ordinary prompts match the prior same-weight trial, but one BASE first
+output diverged immediately; its cause remains unresolved. Historical outputs were
+not reused as BASE. The screen failed, development did not run, and full training
+remains paused.

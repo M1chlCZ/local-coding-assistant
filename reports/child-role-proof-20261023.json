@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "experiment": "child-role-proof-20261023",
+  "model_attempts_completed": 8,
+  "scope": "Two familiar registered training families; four fresh attempts per arm",
+  "source_commit": "cd4bf16a66f8aceb17fbb30537b8f09a15fab6d9",
+  "optimizer_used": false,
+  "new_adapter": false,
+  "fixed_candidate_sha256": "102baaa5fdb980312c01f95ee7f15a3a0f163b9b05850f6c496e2211f9e572c6",
+  "fixed_candidate_step": 69,
+  "results": {
+    "baseline": {
+      "functional": 1,
+      "ordinary_tested": 0,
+      "genuine_child_tested": 0,
+      "retention": 0,
+      "calls": 30,
+      "child_calls": 0
+    },
+    "candidate": {
+      "functional": 3,
+      "ordinary_tested": 2,
+      "genuine_child_tested": 0,
+      "retention": 0,
+      "calls": 26,
+      "child_calls": 0
+    }
+  },
+  "individual_functional_gains": 3,
+  "individual_functional_losses": 1,
+  "ordinary_tested_gains": 2,
+  "genuine_child_tested_gains": 0,
+  "verification": {
+    "independent_passed": true,
+    "returned_patches": 4,
+    "recorded_checks": 19,
+    "passing_checks": 7,
+    "failing_checks": 12,
+    "nonasserting_inspections": 3,
+    "discriminating_assertion_scripts": 4,
+    "returned_tested_repairs": 3,
+    "correct_checked_but_unreturned_workspaces": 1,
+    "prompt_context_receipts": 56,
+    "final_text_responses": 4,
+    "isolated_program_executions": 50,
+    "grade_mismatches": 0,
+    "unsupported_exact_sources": 0,
+    "model_infrastructure_errors": 0
+  },
+  "diagnosis": "Both candidate recursive first responses requested delegation as bare Python calls, without executable REPL fences. The pinned parser executed neither. Both then repaired directly; one completed a tested repair, while the other corrected source on its last local turn but returned an invalid final patch and remained failed.",
+  "ordinary_prompt_divergence": "Both initial ordinary requested and effective prompts match the preserved prior protocol. One BASE first output differs immediately despite that equality, losing its historical tested pass. The cause is unresolved; no causal attribution to the recursive role change is established.",
+  "complete_recursive_success": false,
+  "screen_qualified": false,
+  "learned_development_gain": false,
+  "development_ran": false,
+  "retention_ran": false,
+  "reserved_holdouts_used": false,
+  "new790audit": false,
+  "full_stays_paused": true,
+  "limitations": [
+    "Familiar training-family results do not establish generalization or combined recursive improvement.",
+    "A three-gain/one-loss net increase does not satisfy the no-individual-loss gate.",
+    "All historical comparisons are descriptive only. Fresh BASE outputs were used in this comparison.",
+    "Output token IDs and complete trajectories were not replayed; exact recorded check scripts and canonical prompt/context/output counts were verified."
+  ]
+}
