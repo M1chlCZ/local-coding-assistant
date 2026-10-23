@@ -672,3 +672,36 @@ adapter was used. The independent recorded-evidence score predicates pass on the
 previously consumed development definitions. Reserved confirmation and a new
 790-task audit have not run; full training remains paused. The later helper keyword
 fix is separately native-tested and does not inherit this source's model evidence.
+
+
+The [fresh keyword-fixed development comparison](../reports/keyword-development-proof-20261024.json)
+completed all sixty new model attempts on the repaired source and the same fixed
+step-69 adapter, with no optimizer or output reuse. Seven simple helper cells
+successfully used `path=` without an unexpected keyword error. One actual child
+write is bound by exact source hashes through failed-before/passed-after child
+checks, child finish and proposal return, parent application, an independent parent
+check and finish, and the final returned repair. The keyword interface repair now
+has fresh model-execution evidence, beyond its native scripted control.
+
+Ordinary tested repairs rose from 1 to 2 of 8 and genuine child-tested repairs from
+0 to 3 of 7. Functional repairs rose from 4 to 5 of 15, with three gains and **two
+individual losses** of functional and root-tested BASE passes. Both lost repairs
+failed relevant assertions that the registered references pass; neither has a
+passing checked candidate workspace. Retention remained 0 of 15 in both arms.
+The higher totals fail the predeclared no-loss gate. No candidate was selected,
+reserved confirmation was not accessed, and the conditional 790-task audit did not
+start. Full training remains paused with zero accepted updates.
+
+The controller completed all four stages with zero controller failures. A separate
+independent audit matched ten returned patch objects, all 102 recorded check
+scripts, thirty retention programs and all 224 prepared contexts; 229 isolated
+program executions included eleven additional regression controls, with no grade
+mismatch. One original failed attempt has seven prepared requests but six returned
+responses at its 360.305-second deadline; its missing output remains unknown.
+A BASE response records 999 output tokens versus 997 canonical decoded-text
+tokens. Original generated IDs were not saved. The independent audit did not
+regenerate model outputs or replay full environment trajectories. Six recorded
+syntax-error cells and a failed draft
+inventory assertion remain preserved. All 533 evidence copies and their bound
+originals passed independent hash verification. These consumed development tasks
+provide neither reserved confirmation nor generalization proof.
