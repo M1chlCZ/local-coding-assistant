@@ -526,3 +526,22 @@ local REPL iterations. That attempt remains failed. The combined prompt interven
 is rejected as a sufficient child repair; it establishes neither learned improvement
 nor generalization. No optimizer, new adapter, development/retention run, reserved
 confirmation, audit or full restart followed. Full training stays paused.
+
+
+The [typed-boundary diagnostic](../reports/protocol-boundaries-20261023.json)
+fixed three concrete wrapper faults: parent and child now expose the same detached
+dictionary interface, setup shows the actual task instead of generic string/100k
+metadata, and the final text response is distinguished from executable REPL turns.
+Regression checks failed before the corrections and passed after. Real container
+checks covered parent/child aliases and recursive execution. Grading and limits
+were unchanged; a patch returned without an executed finalization still cannot
+become a tested pass.
+
+Eight fresh fixed-weight familiar attempts still produced one functional repair
+of four and one ordinary tested repair of two in each arm, with no child calls.
+All three returned patches, five recorded checks and51prompt/context receipts
+were independently regraded without mismatch. The two passing final checks fail
+original code and each single-file partial repair, and have identical failed-before
+checks. The wrapper repair therefore has native evidence, but generated child
+execution and learned improvement remain unproven. Further repair work uses
+separately verified examples for the corrected interface; full training stays paused.

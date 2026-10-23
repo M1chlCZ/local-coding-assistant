@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "experiment": "protocol-boundaries-20261023",
+  "completed": true,
+  "source_commit": "b73ea655b3455f2078c2c4b2eb178c4c77c8552e",
+  "scope": "Two familiar training families; four tasks per arm; fixed weights; no optimizer",
+  "candidate_adapter_sha256": "c4df89e48bef03e2dcad6d5d55c03290027b02dfed6227ae64d7e989426e5db1",
+  "native": {
+    "remote_checks": 48,
+    "optional_skips": 1,
+    "real_recursive_docker_integration": true,
+    "red_before_green_after": true
+  },
+  "changes": [
+    "Detached typed task/context aliases in parent and child",
+    "Actual complete requirements and bounded source preview instead of false100k/string context metadata",
+    "Local executable-turn counter and distinct text-only final phase"
+  ],
+  "limits": {
+    "shared_calls": 12,
+    "local_iterations": 8,
+    "depth": 2,
+    "output_tokens": 8192,
+    "seconds": 360,
+    "execution_context": 8192
+  },
+  "results": {
+    "baseline": {
+      "functional": 1,
+      "ordinary_tested": 1,
+      "genuine_child_tested": 0,
+      "calls": 28,
+      "queries": 0,
+      "child_calls": 0
+    },
+    "candidate": {
+      "functional": 1,
+      "ordinary_tested": 1,
+      "genuine_child_tested": 0,
+      "calls": 23,
+      "queries": 0,
+      "child_calls": 0
+    }
+  },
+  "individual_gains": 0,
+  "individual_losses": 0,
+  "checks": {
+    "recorded": 5,
+    "passing": 2,
+    "failing": 3,
+    "child": 0,
+    "exact_sources_recovered": 5,
+    "grade_mismatches": 0,
+    "isolated_program_executions": 16,
+    "returned_patches_regraded": 3,
+    "passing_scripts_discriminate_broken_and_both_partials": 2,
+    "positive_scripts_have_identical_reexecuted_failed_before": 2
+  },
+  "prompt_context_receipts": 51,
+  "controller_failures": 0,
+  "learned_improvement_proven": false,
+  "generated_child_protocol_exercised": false,
+  "full_stays_paused": true,
+  "reserved_holdouts_used": false,
+  "new790audit": false,
+  "conclusion": "Boundary regressions are fixed, but both generated policies still fail to delegate. Active repair continues with separately verified current-interface policy data.",
+  "limitations": [
+    "No child query/call/check occurred, so the new child model protocol was not exercised by these generated attempts; scripted native checks are separate evidence.",
+    "Only all five recorded check-helper scripts are independently regraded; raw direct REPL assertions have no action-mode stable check receipts and are not promoted to tested passes.",
+    "No full model trajectory replay or generated-token-ID replay. No optimizer/new weights, development, retention, reserved holdouts or790audit.",
+    "No interface fix or these familiar-family results establish learned improvement."
+  ]
+}
