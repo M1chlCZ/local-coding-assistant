@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent
 UPSTREAM = 'd04208afbad29ca675ab13478c40ee8bebc84bfe'
 TASKS = ROOT / 'research/rlm_tasks.json'
 CALL_ORIGIN = ContextVar('rlm_call_origin', default=None)
+FINAL_RESPONSE = ContextVar('rlm_final_response', default=False)
 MAX_ACTION_TOKENS = 1024
 SYSTEM = '''You are an English coding assistant with a persistent isolated Python REPL.
 The repository is in context['files'], a dictionary of relative paths to source text.
@@ -166,24 +167,34 @@ class Budget:
             raise ValueError('Invalid context preparation receipt')
         self.context_windows.append(dict(json.loads(json.dumps(prepared)),
                                          requested_messages=json.loads(json.dumps(messages)),
-                                         kind=CALL_ORIGIN.get() or 'root'))
+                                         kind=CALL_ORIGIN.get() or 'root',
+                                         **({'phase': self.phase} if hasattr(self, 'phase') else {})))
         if not prepared['fits']:
             self.context_exhausted = True
             raise ContextWindowExceeded('Task and latest REPL turn exceed the context budget')
         return prepared['messages']
 
     def action_prompt(self, prompt, mode, origin):
+        messages = list(prompt) if isinstance(prompt, list) else [dict(role='user', content=prompt)]
+        turn = re.match(r'Turn (\d+)/(\d+):', messages[-1]['content']) if isinstance(prompt, list) else None
+        self.phase = 'final' if FINAL_RESPONSE.get() else 'repl' if turn else 'text'
         notice = (f'Shared model calls remaining (including this response): '
                   f'{self.max_calls-self.calls+1} of {self.max_calls}. '
-                  'Parent and children share this limit; local Turn labels do not grant extra calls. '
-                  'When using the REPL, combine independent inspections in one cell and avoid rereading '
-                  'source already displayed. Leave calls for checking and finalizing the exact returned source.')
-        if mode == 'rlm':
-            notice += (' As a child, leave one later root call for applying and checking your returned patch.'
-                       if origin == 'subcall' else
-                       ' Delegate early enough for child inspection, failing check, repair and passing check; '
-                       'assign the returned proposal, then apply, check and finish it in the root REPL.')
-        messages = list(prompt) if isinstance(prompt, list) else [dict(role='user', content=prompt)]
+                  'Parent and children share this limit. It does not extend local REPL turns. ')
+        if self.phase == 'final':
+            messages[0] = dict(role='system', content='No code will execute in this final response. '
+                'Return only the requested JSON patch object, or the requested text for a text subtask. '
+                'Do not emit REPL blocks or call finish(). Preserve the exact checked source bytes.')
+            notice += 'REPL turns remaining: 0. Return the final answer directly; no commands will execute.'
+        elif self.phase == 'repl':
+            current, maximum = map(int, turn.groups())
+            notice += f'Local REPL turns remaining (including this response): {maximum-current+1} of {maximum}. '
+            if current == maximum:
+                notice += 'This is the last executable turn. A later text response cannot run finish(). '
+            if mode == 'rlm' and origin == 'subcall':
+                notice += 'Leave one later root call for applying and checking your returned patch.'
+        else:
+            notice += 'No REPL is available in this text-only response. Answer the supplied subtask directly.'
         return messages + [dict(role='user', content=notice)]
 
 
@@ -194,7 +205,11 @@ class Sandbox:
         self.address, self.depth, self.subcall = lm_handler_address, depth, subcall_fn
         self.allow_queries, self.cell_seconds, self.budget = allow_queries, cell_seconds, budget
         self.action_api = action_api
-        self.editable = context_payload.get('editable', []) if isinstance(context_payload, dict) else []
+        if action_api:
+            from repl_actions import task_context
+            self.editable = task_context(context_payload).get('editable', [])
+        else:
+            self.editable = context_payload.get('editable', []) if isinstance(context_payload, dict) else []
         self.workspace_hashes = {}
         self.container = None
         self.process = None
@@ -410,13 +425,48 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                 budget.trace.append({'messages': json.loads(json.dumps(prompt)) if isinstance(prompt, list) else
                                      [{'role': 'user', 'content': prompt}], 'response': response,
                                      'input_tokens': used.total_input_tokens, 'output_tokens': used.total_output_tokens,
-                                     'kind': CALL_ORIGIN.get() or self.origin})
+                                     'kind': CALL_ORIGIN.get() or self.origin,
+                                     **({'phase': budget.phase} if action_api else {})})
                 return response
 
     environments = []
     original_context = RLM._spawn_completion_context
     original_subcall = RLM._subcall
     original_single = LMRequestHandler._handle_single
+    original_setup = RLM._setup_prompt
+    original_turn_prompt = core.build_user_prompt
+
+    def setup_prompt(self, prompt, root_prompt=None):
+        if not action_api:
+            return original_setup(self, prompt, root_prompt=root_prompt)
+        from repl_actions import task_context
+        value = task_context(prompt)
+        preview = []
+        for name in value['editable'][:2]:
+            source = value['files'][name]
+            preview.append(name+'\n'+source[:1500]+(
+                '\n[Preview truncated; read this file for full source.]' if len(source)>1500 else ''))
+        content = ('Child REPL' if self.depth else 'Root REPL') + f' (is_child={bool(self.depth)}).' + (
+            ' task and context are already-loaded dictionaries.\n'
+            'Requirements:\n'+value['task']+'\nFiles: '+str(list(value['files']))+
+            '\nEditable: '+str(value['editable'])+'\nEditable source preview:\n'+'\n'.join(preview))
+        return [dict(role='system', content=self.system_prompt), dict(role='user', content=content)]
+
+    def turn_prompt(root_prompt=None, iteration=0, context_count=1, history_count=0, max_iterations=8):
+        if not action_api:
+            return original_turn_prompt(root_prompt, iteration, context_count, history_count,
+                                        max_iterations=max_iterations)
+        return dict(role='user', content=f'Turn {iteration+1}/{max_iterations}:\n'
+                    'Execute a REPL cell. The task preview is already provided; task and context are loaded. '
+                    'Independent actions may share a cell. Check and finish the exact source before turns end.')
+
+    def default_answer(self, history, handler):
+        token = FINAL_RESPONSE.set(True)
+        try:
+            return handler.completion(history + [dict(role='user', content='Return the final requested answer now. '
+                'For a repository repair, return ONLY the JSON patch object. For a text subtask, return the requested analysis.')])
+        finally:
+            FINAL_RESPONSE.reset(token)
 
     @contextmanager
     def completion_context(self, prompt):
@@ -474,11 +524,12 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
         with patch.object(core, 'get_environment', environment), \
              patch.object(core, 'get_client', lambda backend, kwargs: LocalClient(**kwargs)), \
              patch.object(core, 'format_iteration', format_iteration), \
+             patch.object(core, 'build_user_prompt', turn_prompt), \
+             patch.object(RLM, '_setup_prompt', setup_prompt), \
              patch.object(RLM, '_spawn_completion_context', completion_context), \
              patch.object(RLM, '_subcall', subcall), \
              patch.object(LMRequestHandler, '_handle_single', single), \
-             patch.object(RLM, '_default_answer', lambda self, history, handler: handler.completion(history + [
-                 {'role':'user','content':'Return the final requested answer now. For a repository repair, return ONLY the JSON patch object. For a text subtask, return the requested analysis.'}])):
+             patch.object(RLM, '_default_answer', default_answer):
             runner = RLM(backend='openai', backend_kwargs={'base_url': base.rstrip('/')+'/v1',
                          'model_name': 'local-coding-assistant', 'api_key': 'local', 'max_retries': 0,
                          'timeout': seconds}, environment='docker', max_depth=depth, max_iterations=8,

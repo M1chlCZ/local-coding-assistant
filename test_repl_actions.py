@@ -57,6 +57,9 @@ class ActionTests(unittest.TestCase):
         for payload in (context, json.dumps(context)):
             env = Sandbox(context_payload=payload, action_api=True)
             try:
+                result = env.execute_code('assert isinstance(context, dict)\nassert context is task\n'
+                                          f'assert is_child is {isinstance(payload, str)}')
+                self.assertFalse(result.stderr)
                 result = env.execute_code("read('README.md')")
                 self.assertFalse(result.stderr)
                 self.assertEqual(result.stdout, 'read only')

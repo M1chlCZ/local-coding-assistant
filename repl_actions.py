@@ -10,7 +10,8 @@ import tempfile
 
 PROMPT = '''You repair repositories using a persistent isolated Python REPL.
 Use executable ```repl``` blocks. Keep each step short and inspect its result before continuing.
-task is a dictionary with task (requirements), editable (paths), and files (original sources).
+task and context refer to the same already-loaded dictionary with task (requirements),
+editable (paths), and files (original sources). No context file needs loading or JSON parsing.
 is_child is True only inside a child REPL; it is False in the root.
 The same interface exists in parent and child; never parse task or source text as JSON.
 show() displays the requirements, inventory and editable source.
@@ -29,17 +30,21 @@ RECURSIVE = ('At the root, use proposal = delegate("specific repair goal") after
     'A child must inspect, check, repair, check again and finish(); do not delegate further.\n')
 
 
+def task_context(context):
+    if isinstance(context, str):
+        try:
+            context = json.loads(context)
+        except ValueError:
+            context = dict(task=context, files={}, editable=[])
+    if not isinstance(context, dict) or not isinstance(context.get('files'), dict):
+        raise ValueError('Expected a repository task')
+    return json.loads(json.dumps(context))
+
+
 class Workspace:
     def __init__(self, context, answer, query=None, root='/workspace'):
         self.is_child = isinstance(context, str)
-        if isinstance(context, str):
-            try:
-                context = json.loads(context)
-            except ValueError:
-                context = dict(task=context, files={}, editable=[])
-        if not isinstance(context, dict) or not isinstance(context.get('files'), dict):
-            raise ValueError('Expected a repository task')
-        self.task = json.loads(json.dumps(context))
+        self.task = task_context(context)
         self.answer, self.query = answer, query
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
@@ -145,5 +150,6 @@ class Workspace:
         self.answer.update(content=patch, ready=True)
 
     def bindings(self):
-        return dict(task=json.loads(json.dumps(self.task)), is_child=self.is_child, **{name:getattr(self, name)
+        snapshot = json.loads(json.dumps(self.task))
+        return dict(task=snapshot, context=snapshot, is_child=self.is_child, **{name:getattr(self, name)
                     for name in ('read', 'show', 'write', 'apply', 'check', 'delegate', 'finish')})
