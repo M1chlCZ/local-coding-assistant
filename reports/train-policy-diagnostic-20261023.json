@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "experiment": "train-policy-diagnostic-20261023",
+  "diagnostic_only": true,
+  "source_commit": "5a2d7679d7fdc25e8dfb7cd1891951a11fe68120",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "adapter_sha256": "e7008998c6471a198b1ad41d73c9d9c59c9ec072ff3853736411576b8a4647a6",
+  "method": "Fresh fixed-BASE versus preserved-candidate evaluation on the first two registry-order training families with both included verified lesson modes; no training.",
+  "selection": {
+    "training_families": 2,
+    "tasks_per_arm": 4,
+    "total_attempts": 8,
+    "chosen_before_generation": true,
+    "retention_tasks": 0,
+    "reserved_holdout_tasks": 0
+  },
+  "settings": {
+    "greedy_generation": true,
+    "action_api": true,
+    "context_window": true,
+    "strict_ordinary": true,
+    "depth": 2,
+    "calls": 12,
+    "output_tokens": 8192,
+    "seconds": 360
+  },
+  "summary": {
+    "baseline": {
+      "ordinary": {
+        "total": 2,
+        "functional": 2,
+        "tested_repl": 0,
+        "child_tested": 0,
+        "child_calls": 0
+      },
+      "recursive": {
+        "total": 2,
+        "functional": 1,
+        "tested_repl": 0,
+        "child_tested": 0,
+        "child_calls": 5
+      }
+    },
+    "candidate": {
+      "ordinary": {
+        "total": 2,
+        "functional": 2,
+        "tested_repl": 0,
+        "child_tested": 0,
+        "child_calls": 0
+      },
+      "recursive": {
+        "total": 2,
+        "functional": 1,
+        "tested_repl": 0,
+        "child_tested": 0,
+        "child_calls": 5
+      }
+    }
+  },
+  "execution_counts": {
+    "baseline": {
+      "calls": 39,
+      "child_calls": 5,
+      "queries": 1,
+      "prompt_counts_and_context_receipts_matched": 39,
+      "evicted_complete_turns": 0
+    },
+    "candidate": {
+      "calls": 39,
+      "child_calls": 5,
+      "queries": 1,
+      "prompt_counts_and_context_receipts_matched": 39,
+      "evicted_complete_turns": 0
+    }
+  },
+  "independent_review": {
+    "returned_patches_reexecuted": 6,
+    "grading_mismatches": 0,
+    "last_root_assertion_scripts_reexecuted_as_diagnostics": 6,
+    "negative_task_mode_controls": 4,
+    "distinct_training_families": 2,
+    "prompt_counts_and_context_receipts_matched": 78,
+    "matched_initial_prompts": true,
+    "actual_child_prompts_use_corrected_policy": true,
+    "parseable_child_patches": 0,
+    "child_assertion_receipts": 0
+  },
+  "diagnosis": [
+    "Both models repaired2/2 ordinary tasks and1/2 recursive-mode tasks functionally, but none completed the required tested ordinary or genuine child-tested protocol.",
+    "In each arm one recursive attempt used seven root calls before delegation. Five child inspection calls consumed the remaining12-call budget before any child checks or edits. Only250 output tokens and less than16seconds were used, excluding output/time exhaustion for these attempts.",
+    "The other recursive-mode task was solved directly without delegation.",
+    "Candidate final returned patches passed independent functional and diagnostic assertion grading, but their original final checks failed. Later regrading does not replace missing successful checks on the exact originally returned source.",
+    "The same protocol failure occurs on these two familiar training families; this tiny diagnostic does not establish its cause or performance on other families."
+  ],
+  "decision": {
+    "new_training": false,
+    "new_adapter": false,
+    "generalization_proven": false,
+    "candidate_selected_for_confirmation": false,
+    "reserved_holdouts_evaluated": 0,
+    "new790audit_started": false,
+    "full_loop_restarted": false,
+    "proven_repl_and_recursive_improvement": false
+  },
+  "limitations": [
+    "Two already trained families; this is not evidence of generalization or a no-loss development gain.",
+    "A diagnostic check rerun on a returned patch cannot retroactively count that patch as tested in the original attempt.",
+    "Model generation, full environment trajectories and output token counts were not replayed.",
+    "No reserved holdout, new790audit, new training or full restart.",
+    "Historical round5checkpoint5 remains missing."
+  ]
+}

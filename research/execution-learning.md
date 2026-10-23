@@ -427,3 +427,18 @@ The candidate is rejected. The small retention sample passed no tasks in either
 arm, so it provides little evidence about broader retention. No reserved
 confirmation or fresh 790-task audit was run. Full training remains paused, and
 this result starts no further recipe.
+
+The subsequent [fixed-weight training-family diagnostic](../reports/train-policy-diagnostic-20261023.json)
+ran both modes on two previously trained families, chosen in registry order before
+generation. It performed no training. Both models returned three functional repairs
+out of four attempts, but neither completed a tested ordinary repair or a genuine
+child-tested repair. All six returned patches and 78 prompt/context receipts were
+independently checked without mismatch.
+
+Each model delegated once, after spending seven of its 12 calls in the parent.
+The child spent the remaining five calls inspecting files and reached no checks or
+edits. The corrected child instructions were present. The other recursive-mode
+task was solved directly. Candidate checks on disk failed before the final answer;
+independent success of the later returned source cannot count as an observed tested
+repair. This small diagnostic finds a protocol failure on familiar tasks. It proves
+no generalization or learning gain and leaves full training paused.
