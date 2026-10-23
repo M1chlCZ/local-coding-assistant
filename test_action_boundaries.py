@@ -74,6 +74,7 @@ class PromptBoundaryTests(unittest.TestCase):
         self.assertEqual(row['patch'], {'solver.py': 'x=2\n'})
         self.assertEqual([c['response'] for c in row['trace']], replies)
         self.assertEqual([c['kind'] for c in row['trace']], ['root', 'subcall', 'subcall', 'root'])
+        self.assertTrue(all(c.get('action_transport') == 'bare-helper-calls' for c in row['trace']))
         self.assertEqual(len(row['queries']), 1)
         self.assertTrue(agent.tested_repl(dict(row, passed=True)))
 
