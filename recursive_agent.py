@@ -1,5 +1,6 @@
 """Bounded local RLM runner and matched non-recursive REPL comparison."""
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -79,6 +80,40 @@ def format_iteration(iteration):
             '```repl``` block, not a python block. context and answer already exist. '
             'For example:\n```repl\nprint(context["editable"][:20] if isinstance(context, dict) else context[:4000])\n```'))
     return messages
+
+
+def action_code_blocks(response):
+    """Accept an entire bare action cell without interpreting prose or arbitrary Python."""
+    from rlm.utils.parsing import find_code_blocks
+    blocks = find_code_blocks(response)
+    if blocks or '```' in response:
+        return blocks
+    try:
+        body = ast.parse(response).body
+    except SyntaxError:
+        return []
+    if not body:
+        return []
+    for statement in body:
+        if isinstance(statement, ast.Expr):
+            call = statement.value
+        elif (isinstance(statement, ast.Assign) and len(statement.targets) == 1
+              and isinstance(statement.targets[0], ast.Name)):
+            call = statement.value
+        else:
+            return []
+        if (not isinstance(call, ast.Call) or not isinstance(call.func, ast.Name)
+                or call.func.id not in ('show', 'read', 'write', 'check', 'delegate', 'apply', 'finish')
+                or any(keyword.arg is None for keyword in call.keywords)):
+            return []
+        for argument in call.args + [keyword.value for keyword in call.keywords]:
+            if isinstance(argument, ast.Name):
+                continue
+            try:
+                ast.literal_eval(argument)
+            except (ValueError, TypeError, SyntaxError):
+                return []
+    return [response.strip()]
 
 
 def valid_path(name):
@@ -427,6 +462,9 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
                                      'input_tokens': used.total_input_tokens, 'output_tokens': used.total_output_tokens,
                                      'kind': CALL_ORIGIN.get() or self.origin,
                                      **({'phase': budget.phase} if action_api else {})})
+                if (action_api and budget.phase == 'repl' and '```' not in response
+                        and action_code_blocks(response)):
+                    budget.trace[-1]['action_transport'] = 'bare-helper-calls'
                 return response
 
     environments = []
@@ -435,6 +473,7 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
     original_single = LMRequestHandler._handle_single
     original_setup = RLM._setup_prompt
     original_turn_prompt = core.build_user_prompt
+    original_code_blocks = core.find_code_blocks
 
     def setup_prompt(self, prompt, root_prompt=None):
         if not action_api:
@@ -529,6 +568,8 @@ def solve(task, base, mode='rlm', depth=1, calls=16, output_tokens=8192, seconds
              patch.object(core, 'get_client', lambda backend, kwargs: LocalClient(**kwargs)), \
              patch.object(core, 'format_iteration', format_iteration), \
              patch.object(core, 'build_user_prompt', turn_prompt), \
+             patch.object(core, 'find_code_blocks', lambda response: action_code_blocks(response)
+                          if action_api and budget.phase == 'repl' else original_code_blocks(response)), \
              patch.object(RLM, '_setup_prompt', setup_prompt), \
              patch.object(RLM, '_spawn_completion_context', completion_context), \
              patch.object(RLM, '_subcall', subcall), \

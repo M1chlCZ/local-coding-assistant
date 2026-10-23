@@ -1,6 +1,7 @@
 """Action context and executable/final response boundaries of the pinned runner."""
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,21 @@ from unittest.mock import patch
 
 import recursive_agent as agent
 from repl_actions import Workspace
+
+
+class ActionParsingTests(unittest.TestCase):
+    def test_only_complete_direct_helper_calls_are_accepted_without_fences(self):
+        code = 'proposal = delegate("repair and test")\napply(proposal)\ncheck("assert True")\nfinish()'
+        self.assertEqual(agent.action_code_blocks(code), [code])
+        for text in ('Here is the repair:\nfinish()', 'x = 1', 'print("finish()")',
+                     'workspace.finish()', 'finish(*args)', 'write("x.py", str(value))',
+                     'proposal[0] = delegate("repair")', 'if True:\n    finish()',
+                     'finish()\nunknown()', '```python\nfinish()\n```',
+                     '```repl\nfinish()\n```\napply(proposal)', 'finish('):
+            with self.subTest(text=text):
+                self.assertEqual(agent.action_code_blocks(text),
+                                 ['finish()'] if text.startswith('```repl') else [])
+        self.assertEqual(agent.action_code_blocks('```repl\nx = 1\n```'), ['x = 1'])
 
 
 class ContextBindingsTests(unittest.TestCase):
@@ -34,18 +50,38 @@ class ContextBindingsTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec('rlm'), 'Pinned upstream required')
 class PromptBoundaryTests(unittest.TestCase):
-    def solve(self, replies, task=None, **kwargs):
+    def solve(self, replies, task=None, native=False, **kwargs):
         from rlm.clients.openai import OpenAIClient
         from rlm.core.types import ModelUsageSummary
         from test_agent_curriculum import LocalSandbox
         task = task or dict(id='boundary', repository='fixture', split='train', prompt='Repair the value.',
                             files={'solver.py': 'x=1\n'}, editable=['solver.py'])
         responses = iter(replies)
-        with patch.object(agent, 'Sandbox', LocalSandbox), \
+        with patch.object(agent, 'Sandbox', agent.Sandbox if native else LocalSandbox), \
              patch.object(OpenAIClient, 'completion', side_effect=lambda *a, **k: next(responses)), \
              patch.object(OpenAIClient, 'get_last_usage', return_value=ModelUsageSummary(1, 1, 1)):
             return agent.solve(task, 'http://127.0.0.1:8090', calls=12, seconds=20,
                                action_api=True, **kwargs)
+
+    @unittest.skipUnless(os.environ.get('LCA_ACTION_NATIVE_TESTS') == '1', 'Explicit real Docker check')
+    def test_bare_actions_execute_real_child_and_checked_parent_without_changing_response(self):
+        child_first = 'check("import solver; assert solver.x == 2")'
+        child_last = 'write("solver.py", "x=2\\n")\n'+child_first+'\nfinish()'
+        parent = 'apply(proposal)\n'+child_first+'\nfinish()'
+        replies = ['proposal = delegate("repair and verify x")', child_first, child_last, parent]
+        row = self.solve(replies, depth=2, native=True)
+        self.assertNotIn('error', row)
+        self.assertEqual(row['patch'], {'solver.py': 'x=2\n'})
+        self.assertEqual([c['response'] for c in row['trace']], replies)
+        self.assertEqual([c['kind'] for c in row['trace']], ['root', 'subcall', 'subcall', 'root'])
+        self.assertEqual(len(row['queries']), 1)
+        self.assertTrue(agent.tested_repl(dict(row, passed=True)))
+
+    def test_final_bare_finish_is_not_executed(self):
+        row = self.solve(['```repl\npass\n```']*8 + ['finish()'], mode='baseline')
+        self.assertEqual(len(row['executions']), 8)
+        self.assertEqual(row['trace'][-1]['phase'], 'final')
+        self.assertNotIn('patch', row)
 
     def test_actual_parent_and_child_setup_show_task_and_true_role(self):
         row = self.solve([
