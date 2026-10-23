@@ -393,3 +393,37 @@ instructions that contradicted the REPL protocol, including saying sub-models ha
 no REPL. The adapter now preserves the parent's setting when constructing a child.
 A pinned-library parent/child regression failed before the fix and passed after it.
 This repairs an interface defect; it establishes no learned gain or restart proof.
+
+### Controlled repeat after the child-policy fix, 23 October 2026
+
+The [controlled repeat](../reports/child-policy-proof-20261023.json) used the corrected
+child policy and freshly executed training lessons. It included 63 ordinary and
+64 recursive trajectories plus 150 multilingual anchors, giving 1,061 complete
+rows. One ordinary trajectory exceeded the token allowance and was excluded whole.
+One fresh BASE adapter trained for 60 updates at 1e-5. All six scheduled checkpoints
+and the final weights were preserved and independently hash-verified.
+
+| Complete development measure | BASE | Candidate |
+| --- | ---: | ---: |
+| Functional repairs | 6/15 | 3/15 |
+| Ordinary repairs with successful assertions on returned source | 2/8 | 1/8 |
+| Genuine child-tested recursive repairs | 0/7 | 0/7 |
+| Small direct retention sample | 0/15 | 0/15 |
+
+The candidate gained two functional repairs and lost five previous passes. Neither
+model delegated. The child-policy fix therefore remained unexercised by model
+delegation in this evaluation. Independent execution matched all 18 returned
+patches, six successful final assertion scripts and 30 retention programs. All
+243 logged prompt counts and context receipts matched, as did the training encoding.
+
+The losses included incorrect source and failures to test or return a valid patch.
+Three lost attempts had independently passing literal source artifacts but did not
+complete the required testing and finalization. They remain failed attempts.
+Training and evaluation used matching system instructions. Delegation appeared in
+64 training targets, accounting for 2,496 of 136,220 supervised answer tokens.
+That distribution raises a training-emphasis question; it does not prove a cause.
+
+The candidate is rejected. The small retention sample passed no tasks in either
+arm, so it provides little evidence about broader retention. No reserved
+confirmation or fresh 790-task audit was run. Full training remains paused, and
+this result starts no further recipe.

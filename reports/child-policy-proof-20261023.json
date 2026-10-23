@@ -1,0 +1,157 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "experiment": "child-policy-proof-20261023",
+  "source_commit": "5a2d7679d7fdc25e8dfb7cd1891951a11fe68120",
+  "method": "One controlled fresh-BASE repeat after correcting inherited child orchestration policy, with fresh executed training trajectories and matched development evaluation.",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "training": {
+    "initial_adapter": null,
+    "resumed_checkpoint": null,
+    "learning_rate": 1e-05,
+    "updates": 60,
+    "max_epochs": 1,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "gradient_accumulation": 8,
+    "included_rows": 1061,
+    "excluded_rows": 0,
+    "registered_train_families": 64,
+    "ordinary_trajectories": 63,
+    "recursive_trajectories": 64,
+    "paired_families": 63,
+    "anchors": 150,
+    "whole_trajectory_length_exclusions": 1,
+    "dataset_sha256": "482410aa6150e9aa059b2c74ad7a0735adde554a91da26b1366f52070097b3bd",
+    "encoded_sha256": "2c99f0fd7b38ae4017a0bca1664d0f8aa05010823b3bd5bf80d81f38dab7e835",
+    "adapter_sha256": "e7008998c6471a198b1ad41d73c9d9c59c9ec072ff3853736411576b8a4647a6"
+  },
+  "evaluation": {
+    "development_tasks": 15,
+    "ordinary_tasks": 8,
+    "recursive_tasks": 7,
+    "retention_tasks": 15,
+    "previously_consumed_development": true,
+    "same_initial_prompts": true,
+    "greedy_generation": true,
+    "action_api": true,
+    "context_window": true,
+    "depth": 2,
+    "calls": 12,
+    "output_tokens": 8192,
+    "seconds": 360,
+    "baseline": {
+      "functional": 6,
+      "ordinary_tested": 2,
+      "recursive_child_tested": 0,
+      "retention": 0,
+      "calls": 120,
+      "logged_calls": 120,
+      "child_calls": 0,
+      "queries": 0
+    },
+    "candidate": {
+      "functional": 3,
+      "ordinary_tested": 1,
+      "recursive_child_tested": 0,
+      "retention": 0,
+      "calls": 123,
+      "logged_calls": 123,
+      "child_calls": 0,
+      "queries": 0
+    },
+    "functional_gains": 2,
+    "functional_losses": 5,
+    "ordinary_tested_gains": 1,
+    "ordinary_tested_losses": 2,
+    "child_tested_gains": 0
+  },
+  "independent_review": {
+    "returned_patches_reexecuted": 18,
+    "successful_root_assertion_scripts_reexecuted": 6,
+    "retention_programs_reexecuted": 30,
+    "retention_prompts_and_feedback_saved": true,
+    "grading_mismatches": 0,
+    "negative_controls_reexecuted": 15,
+    "positive_and_negative_runtime_control": true,
+    "all_individual_changes_reviewed": true,
+    "training_rows_reencoded": 1061,
+    "prompt_token_counts_matched": 243,
+    "context_policy": {
+      "baseline": {
+        "context_receipts_replayed": 120,
+        "prompt_token_counts_matched": 120,
+        "evicted_complete_turns": 0,
+        "max_effective_prompt_tokens": 5134,
+        "output_token_counts_replayed": false
+      },
+      "candidate": {
+        "context_receipts_replayed": 123,
+        "prompt_token_counts_matched": 123,
+        "evicted_complete_turns": 0,
+        "max_effective_prompt_tokens": 6351,
+        "output_token_counts_replayed": false
+      }
+    }
+  },
+  "training_distribution": {
+    "action_rows": {
+      "show": 191,
+      "check": 211,
+      "write": 254,
+      "finish": 191,
+      "delegate": 64,
+      "anchor": 150
+    },
+    "supervised_answer_tokens": {
+      "show": 1910,
+      "check": 18441,
+      "write": 32142,
+      "finish": 17731,
+      "delegate": 2496,
+      "anchor": 63500
+    },
+    "matching_development_system_instructions": true,
+    "causal_explanation_established": false
+  },
+  "preservation": {
+    "scheduled_steps": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+    ],
+    "all_scheduled_checkpoints_and_final_adapter_hash_verified": true,
+    "receipts": 7,
+    "files": 66
+  },
+  "decision": {
+    "candidate_rejected": true,
+    "candidate_selected_for_confirmation": false,
+    "reserved_holdouts_evaluated": 0,
+    "new790audit_started": false,
+    "full_loop_restarted": false,
+    "proven_repl_and_recursive_improvement": false
+  },
+  "diagnosis": [
+    "Both arms made zero child calls despite a present delegation instruction; the fixed child constructor was not exercised by model-generated delegation in this comparison.",
+    "One lost repair wrote incorrect tuple-based source. Three others had independently passing literal source artifacts but failed test execution or valid finalization; these remain failures.",
+    "The remaining lost repair made no valid source change and could not finish; passing checks on unchanged files do not constitute a repair.",
+    "Training and development initial system instructions match. Delegation targets account for2496 of136220 supervised answer tokens; this is a hypothesis about training emphasis, not a proven cause."
+  ],
+  "limitations": [
+    "This controlled recipe failed; correcting child inheritance did not establish learned improvement.",
+    "No model-generated child call occurred, so the child-construction fix was not exercised by delegation in this evaluation.",
+    "Development tasks had been used before. No reserved confirmation or fresh790-task audit was run.",
+    "The small retention sample scored0/15 in both arms and provides little evidence about broader retention.",
+    "Returned programs and successful final assertion scripts were rerun; entire model/environment trajectories were not replayed.",
+    "Output token counts were not independently replayed.",
+    "Action/token distribution is descriptive; the exact sampled60-update prefix has not been audited, and no cause of the failed learning outcome has been proven.",
+    "Historical round5checkpoint5 was already missing before preservation and remains unavailable."
+  ]
+}
