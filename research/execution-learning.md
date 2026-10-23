@@ -452,3 +452,33 @@ restoring the mode. Input selection, encoding and arithmetic were independently
 checked; the GPU loss measurements were not rerun. The adapter affects the model
 and fits these training targets better. That has not produced the required tested
 rollout gains, so it does not satisfy any restart gate.
+
+
+### Corrections at recorded training states, 23 October 2026
+
+The [corrective-data preflight](../reports/policy-corrections-preflight-20261023.json)
+replayed recorded prefixes from the same two registered training families in fresh
+sandboxes. The prefixes were intentionally reused as conditioning history. Only
+the new, executed teacher corrections became training targets. No model generated
+answers or trained new weights in this preparation.
+
+Ten complete trajectories passed: six ordinary and four with a real child repair
+that the parent applied and checked. They produced 26 corrective targets, including
+eight child targets. Two late recursive states were excluded because completing
+them would exceed the original call limits. Independent execution matched all ten
+patches and 30 recorded check scripts, including eight child checks. Broken and
+each single-file partial repair failed both the specification diagnostics and the
+private grading controls. All 70 prompt/context receipts and the masked dataset
+encoding matched.
+
+The first preparation rejected every attempt before its first action: it used a
+4,096-token context while the recorded evaluator used 8,192. That failed preparation
+remains preserved. The corrected isolated runtime uses the original 8,192-token
+execution context; each complete training example must still fit 4,096 tokens. The
+largest example used 2,505 tokens and the largest action used 316 target tokens.
+Historical generated token IDs were unavailable, so their output counters were
+retained and checked against canonical text counts with zero or one ending token.
+
+This verifies that the corrective lessons can execute within the existing limits.
+It does not show that the model learned them. No new recipe, reserved confirmation
+or 790-task audit started, and full training remains paused.

@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "experiment": "policy-corrections-20261023",
+  "preparation_only": true,
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "method": "Re-execute exact recorded train-only policy prefixes in fresh real sandboxes, then execute scripted corrective continuations. Export only verified corrective targets.",
+  "selection": {
+    "registered_training_families": 2,
+    "declared_trajectories": 12,
+    "verified_ordinary_trajectories": 6,
+    "verified_child_tested_trajectories": 4,
+    "excluded_late_recursive_trajectories": 2,
+    "intentional_recorded_prefix_reuse": true,
+    "model_discovered": false
+  },
+  "runtime": {
+    "depth": 2,
+    "total_calls": 12,
+    "parent_max_iterations": 8,
+    "child_max_iterations": 8,
+    "output_tokens": 8192,
+    "seconds": 360,
+    "action_api": true,
+    "context_window": true,
+    "execution_context_tokens": 8192,
+    "training_max_length": 4096,
+    "forced_delegation_guard": false
+  },
+  "dataset": {
+    "rows": 26,
+    "target_origins": {
+      "root": 18,
+      "subcall": 8
+    },
+    "dataset_sha256": "4b99bd4ff4c8727099dea9abf526bcb8e17ad78a9548d12278dd4b90712b7f89",
+    "encoded_sha256": "853f08fcd707feb119837d670480acf8826f52ce52b68efe3e5e3c4656684576",
+    "max_action_tokens": 316,
+    "max_sequence_tokens": 2505,
+    "max_whole_path_target_tokens": 880,
+    "recorded_prefix_actions_are_conditioning_only": true
+  },
+  "independent_review": {
+    "exact_recorded_prefix_calls": 44,
+    "corrective_calls": 26,
+    "prompt_counts_and_context_receipts_matched": 70,
+    "patch_regrades": 10,
+    "check_script_regrades": 30,
+    "child_checks": 8,
+    "parent_checks": 22,
+    "grade_mismatches": 0,
+    "broken_and_each_partial_edit_controls": true,
+    "full_masked_dataset_encoding_replayed": true,
+    "actual_child_proposals_applied_and_checked_by_parent": true
+  },
+  "validation": {
+    "native_checks": 39,
+    "native_failures": 0,
+    "new_replay_regression_checks": 4
+  },
+  "decision": {
+    "data_feasibility_verified": true,
+    "training_started": false,
+    "new_adapter_created": false,
+    "learned_repl_recursive_improvement_proven": false,
+    "candidate_selected_for_confirmation": false,
+    "reserved_holdouts_used": false,
+    "new_790_audit_run": false,
+    "full_loop_restarted": false
+  },
+  "limitations": [
+    "Scripted teacher corrections at two familiar training families establish data feasibility, not learned policy execution or generalization.",
+    "Historical generated token IDs were not saved. Original output counters were retained and match canonical text counts with zero or one ending token; new scripted counts include one EOS.",
+    "The first preserved preparation rejected all ten attempts before action0 because its 4,096-token context differed from the recorded 8,192-token context. It accepted no rows. The corrected isolated runtime preserved the 8,192-token execution context while enforcing 4,096-token training examples.",
+    "Two late recursive states were excluded before execution because completing them would exceed the original iteration budget.",
+    "No new training recipe, model generation, reserved confirmation, retention comparison or 790-task audit was started. The original full run remains paused.",
+    "All current weights and earlier evidence remain preserved. Historical round 5 checkpoint 5 was already missing before preservation and remains a disclosed gap."
+  ]
+}
