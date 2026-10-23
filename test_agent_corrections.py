@@ -34,7 +34,7 @@ class ReplayTests(unittest.TestCase):
             requested_messages=self.messages, kind='root')])
         self.plan = [dict(kind='root', response='```repl\nfinish()\n```')]
 
-    def run_replay(self, changed=False):
+    def run_replay(self, changed=False, prefix=1):
         from rlm.clients.openai import OpenAIClient
         from types import SimpleNamespace
         def solve(task, base, **kwargs):
@@ -45,7 +45,7 @@ class ReplayTests(unittest.TestCase):
             budget = agent.Budget(**{k: v for k,v in kwargs.items() if k in ('calls','output_tokens','seconds')})
             client = SimpleNamespace(sampling_args={'max_completion_tokens':1024})
             trace = []
-            for i in range(2):
+            for i in range(prefix+1):
                 prompt = copy.deepcopy(self.messages)
                 if changed and not i:
                     prompt[0]['content'] += ' silently changed'
@@ -55,12 +55,12 @@ class ReplayTests(unittest.TestCase):
                 used = OpenAIClient.get_last_usage(client)
                 trace.append(dict(messages=effective,response=reply,kind='root',
                     input_tokens=used.total_input_tokens,output_tokens=used.total_output_tokens))
-            return dict(trace=trace, calls=2, context_windows=budget.context_windows,
+            return dict(trace=trace, calls=len(trace), context_windows=budget.context_windows,
                 patch=self.task['reference_patch'], workspace_hashes={}, executions=[])
         with patch.object(agent, 'solve', solve), patch.object(agent, 'grade', return_value={'passed': True}), \
              patch.object(corrections, 'verify_result'), \
              patch.object(corrections, 'response_tokens', return_value=20):
-            return corrections.replay(self.task, False, self.source, 1, self.plan, 'a'*40, Tokenizer())
+            return corrections.replay(self.task, False, self.source, prefix, self.plan, 'a'*40, Tokenizer())
 
     def test_exact_prompt_and_real_accounting_mask_the_recorded_prefix(self):
         record = self.run_replay()
@@ -71,6 +71,16 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(record['result']['trace'][1]['input_tokens'], self.prefix['input_tokens'])
         self.assertTrue(record['prefix_reused'])
 
+    def test_phase_receipt_metadata_is_preserved_outside_context_payload(self):
+        self.source['context_windows'][0]['phase'] = 'repl'
+        self.assertEqual(self.run_replay()['target_indices'], [1])
+
+    def test_initial_policy_has_no_reused_prefix(self):
+        record = self.run_replay(prefix=0)
+        self.assertEqual(record['target_indices'], [0])
+        self.assertFalse(record['prefix_reused'])
+        self.assertEqual(len(record['rows']), 1)
+
     def test_changed_conditioning_prompt_is_rejected_before_export(self):
         with self.assertRaisesRegex(ValueError, 'Recorded requested prefix'):
             self.run_replay(changed=True)
@@ -80,8 +90,8 @@ class ReplayTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Recorded effective context'):
             self.run_replay()
 
-    def test_only_registered_training_tasks_and_nonempty_bounded_prefixes(self):
-        for task, length in [(dict(self.task,split='dev'),1), (self.task,0), (self.task,2)]:
+    def test_only_registered_training_tasks_and_bounded_prefixes(self):
+        for task, length in [(dict(self.task,split='dev'),1), (self.task,-1), (self.task,2)]:
             with self.assertRaises(ValueError):
                 corrections.replay(task,False,self.source,length,self.plan,'a'*40,Tokenizer())
 

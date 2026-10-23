@@ -46,7 +46,7 @@ def replay(original, recursive, source, prefix, continuation, revision, tokenize
     from rlm.clients.openai import OpenAIClient
     from rlm.core.types import ModelUsageSummary
     if (original.get('split') != 'train' or not re.fullmatch('[a-f0-9]{40}', revision)
-            or type(prefix) is not int or not 0 < prefix <= len(source['trace'])
+            or type(prefix) is not int or not 0 <= prefix <= len(source['trace'])
             or len(source.get('context_windows', [])) != len(source['trace'])
             or not continuation or prefix + len(continuation) > LIMITS['calls']):
         raise ValueError('Only complete bounded training-prefix corrections are allowed')
@@ -66,7 +66,7 @@ def replay(original, recursive, source, prefix, continuation, revision, tokenize
             recorded = source['context_windows'][position]
             if data['messages'] != recorded['requested_messages']:
                 raise ValueError(f'Recorded requested prefix differs at call {position}')
-            if prepared != {k:v for k,v in recorded.items() if k not in ('requested_messages','kind')}:
+            if prepared != {k:v for k,v in recorded.items() if k not in ('requested_messages','kind','phase')}:
                 raise ValueError(f'Recorded effective context differs at call {position}')
         return io.BytesIO(json.dumps(prepared).encode())
 
@@ -105,7 +105,8 @@ def replay(original, recursive, source, prefix, continuation, revision, tokenize
     provenance = dict(dataset='local/recorded-policy-corrections', revision=revision,
         source_row_sha256=hashlib.sha256(json.dumps(original, sort_keys=True).encode()).hexdigest(),
         prefix_sha256=hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest(),
-        construction='reexecuted_recorded_prefix_with_scripted_correction', model_discovered=False)
+        construction=('reexecuted_recorded_prefix_with_scripted_correction' if prefix
+                      else 'executed_initial_policy'), model_discovered=False)
     targets, rows = [], []
     for i, (call, action) in enumerate(zip(result['trace'], plan)):
         if call['response'] != action['response'] or call['kind'] != action['kind']:
@@ -121,7 +122,7 @@ def replay(original, recursive, source, prefix, continuation, revision, tokenize
             example_kind='executed_repl_repair', origin=call['kind'], variant=variant,
             messages=messages, provenance=provenance, verification=dict(kind='local_execution',passed=True)))
     return dict(task_id=task['id'], variant=variant, recursive=recursive, prefix=prefix,
-        prefix_reused=True, accepted=True, target_indices=targets, rows=rows, result=result,
+        prefix_reused=bool(prefix), accepted=True, target_indices=targets, rows=rows, result=result,
         usage_note='Pinned CPU context policy; measured scripted tokens plus EOS. '
             'Historical output counters retained and bounded against canonical text tokenization; '
             'original generated token IDs were not recorded.')
