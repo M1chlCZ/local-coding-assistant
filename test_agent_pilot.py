@@ -8,11 +8,30 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 
-from agent_pilot import recursive_success, comparison, evaluate_one, tested_repl
+from agent_pilot import recursive_success, comparison, evaluate, evaluate_one, tested_repl
 from qwen35_train import atomic_json, sha256
 
 
 class PilotTests(unittest.TestCase):
+    def test_retention_keeps_the_generated_program_and_grade(self):
+        from contextlib import nullcontext
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            atomic_json(root/'evaluation.json',dict(sources={},development=[],retention=[dict(id='anchor')]))
+            answer='print(42)\n'
+            messages=[dict(role='user',content='Print 42.')]
+            with patch('agent_pilot.source_hashes',return_value={}), \
+                 patch('coding_loop_stage.server',return_value=nullcontext()), \
+                 patch('coding_loop_stage.task_messages',return_value=messages), \
+                 patch('coding_loop_stage.ask',return_value=answer), \
+                 patch('coding_loop_stage.check_task',return_value=dict(passed=False,feedback='Wrong output')):
+                evaluate(root,'baseline',None,'development')
+            row=json.loads((root/'baseline/development.json').read_text())['retention'][0]
+            self.assertEqual(row['answer'],answer)
+            self.assertEqual(row['messages'],messages)
+            self.assertEqual(row['feedback'],'Wrong output')
+            self.assertFalse(row['passed'])
+
     def test_frozen_recursive_instruction_reaches_worker(self):
         entry=dict(condition='recursive',instruction='Execute the supplied public tests in the child.',
                    task=dict(id='repair',repository='repair',split='dev'))

@@ -157,8 +157,9 @@ def evaluate(folder, label, adapter, suite):
                 time.sleep(1)
         if suite=='development':
             for task in config['retention'][len(saved['retention']):]:
-                answer=ask(task_messages(task)); checked=check_task(task,answer)
-                saved['retention'].append(dict(id=task['id'],passed=checked['passed']))
+                messages=task_messages(task); answer=ask(messages); checked=check_task(task,answer)
+                saved['retention'].append(dict(id=task['id'],passed=checked['passed'],answer=answer,
+                                              messages=messages,feedback=checked.get('feedback','')))
                 atomic_json(path,saved)
                 print(f"{label}/retention: {len(saved['retention'])}/15",flush=True)
     saved['completed']=True; atomic_json(path,saved)

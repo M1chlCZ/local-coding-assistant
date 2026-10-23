@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "experiment": "repl-recursive-proof-20261022",
+  "source_commit": "abd491a76ba88cfe6eb522a241b188c1f26de515",
+  "method": "Fresh BASE training on complete executed short-action repair lessons; matched ordinary tested REPL and child-tested recursive development evaluation.",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "training": {
+    "initial_adapter": null,
+    "learning_rate": 1e-05,
+    "updates": 60,
+    "max_epochs": 1,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "gradient_accumulation": 8,
+    "included_rows": 1053,
+    "excluded_rows": 0,
+    "ordinary_trajectories": 63,
+    "recursive_trajectories": 63,
+    "training_families": 63,
+    "anchors": 150,
+    "whole_trajectory_length_exclusions": 2,
+    "encoded_sha256": "20a9f26be7cd6e30a14248a208856ecaf84beb5e4c3deabf492018dd68f28d74",
+    "adapter_sha256": "f40cd655130a7afff794e09a8cc11864316f31fbd8584d8f0916bafb514a5112"
+  },
+  "evaluation": {
+    "development_tasks": 15,
+    "ordinary_tasks": 8,
+    "recursive_tasks": 7,
+    "previously_consumed_development": true,
+    "same_initial_prompts": true,
+    "action_api": true,
+    "context_window": true,
+    "depth": 2,
+    "calls": 12,
+    "output_tokens": 8192,
+    "seconds": 360,
+    "baseline": {
+      "functional": 4,
+      "ordinary_tested": 2,
+      "recursive_child_tested": 0,
+      "retention": 0,
+      "calls": 115,
+      "logged_calls": 115,
+      "child_calls": 0,
+      "queries": 0
+    },
+    "candidate": {
+      "functional": 3,
+      "ordinary_tested": 1,
+      "recursive_child_tested": 0,
+      "retention": 1,
+      "calls": 126,
+      "logged_calls": 126,
+      "child_calls": 0,
+      "queries": 0
+    },
+    "functional_gains": 3,
+    "functional_losses": 4,
+    "ordinary_tested_gains": 1,
+    "ordinary_tested_losses": 2,
+    "child_tested_gains": 0
+  },
+  "independent_review": {
+    "returned_patches_reexecuted": 15,
+    "grading_mismatches": 0,
+    "successful_root_assertion_scripts_reexecuted": 5,
+    "negative_controls_reexecuted": 15,
+    "positive_and_negative_runtime_control": true,
+    "training_rows_reencoded": 1053,
+    "prompt_token_counts_matched": 241,
+    "context_policy": {
+      "baseline": {
+        "context_receipts_replayed": 115,
+        "prompt_token_counts_matched": 115,
+        "evicted_complete_turns": 0,
+        "max_effective_prompt_tokens": 6177,
+        "output_token_counts_replayed": false
+      },
+      "candidate": {
+        "context_receipts_replayed": 126,
+        "prompt_token_counts_matched": 126,
+        "evicted_complete_turns": 2,
+        "max_effective_prompt_tokens": 6756,
+        "output_token_counts_replayed": false
+      }
+    },
+    "all_individual_changes_reviewed": true
+  },
+  "preservation": {
+    "scheduled_steps": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+    ],
+    "all_scheduled_checkpoints_and_final_adapter_hash_verified": true,
+    "receipts": 7,
+    "files": 66
+  },
+  "decision": {
+    "candidate_rejected": true,
+    "candidate_selected_for_confirmation": false,
+    "reserved_holdouts_evaluated": 0,
+    "fresh_790_audit_started": false,
+    "full_loop_restarted": false,
+    "proven_repl_and_recursive_improvement": false
+  },
+  "diagnosis": [
+    "Both models received the recursive instruction but made no child calls.",
+    "Candidate failures included incorrect source, unsupported run() calls, malformed check strings, and unsuccessful finalization.",
+    "A correct literal edit that was not returned as a valid tested patch remains a failed attempt."
+  ],
+  "interruption": {
+    "intentional_overnight_shutdown": true,
+    "repair_attempts_saved_before_shutdown": 15,
+    "candidate_retention_saved_before_shutdown": 10,
+    "candidate_retention_completed_after_recovery": 5,
+    "uninterrupted_comparison": false
+  },
+  "limitations": [
+    "No fresh confirmation or new790-task audit; previous audits cannot validate these weights.",
+    "The fifteen development tasks were previously consumed.",
+    "Retention answer programs were not recorded by this frozen evaluator; its 0/15 to1/15 result could not be independently regraded. Public code now records future retention answers, prompts and feedback.",
+    "Independent review reran returned patches and successful final assertion scripts, not entire model trajectories.",
+    "Output token counts were not independently replayed.",
+    "This reports a failed bounded recipe, not evidence that the training setup now improves the model."
+  ]
+}

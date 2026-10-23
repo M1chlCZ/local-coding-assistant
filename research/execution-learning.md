@@ -345,3 +345,37 @@ The separately authorized same-weight format comparison also completed: both mod
 produced valid JSON on 4/4 public tasks, but functional repairs were 2/4 plain and
 1/4 constrained. All eight patches were independently regraded. This small format
 test establishes no learning gain and does not authorize a restart.
+
+### Bounded short-action trial, 23 October 2026
+
+The [complete bounded trial](../reports/repl-recursive-proof-20261023.json) trained
+one fresh BASE adapter for 60 updates at a learning rate of 1e-5. It used 63 pairs
+of executed ordinary and child-tested training trajectories plus 150 multilingual
+anchors, producing 1,053 complete rows. Two trajectories from one family exceeded
+the context allowance and were excluded whole. All six scheduled checkpoints and
+the final adapter were preserved and independently hash-verified.
+
+| Complete development measure | BASE | Candidate |
+| --- | ---: | ---: |
+| Functional repairs | 4/15 | 3/15 |
+| Ordinary repairs with successful assertions on returned source | 2/8 | 1/8 |
+| Genuine child-tested recursive repairs | 0/7 | 0/7 |
+| Small direct retention sample | 0/15 | 1/15 |
+
+The candidate gained three functional repairs and lost four previous passes.
+Neither model made a child call, although the recorded prompts contained the
+delegation instruction. Independent regrading matched all 15 returned patches
+and all five successful final assertion scripts. All 241 recorded prompt token
+counts and context preparation results matched replay with the pinned tokenizer.
+The candidate needed two whole-turn evictions. Training encoding also matched.
+
+An intentional overnight shutdown interrupted the candidate stage after all 15
+repair attempts and ten retention checks were saved. The worker was absent after
+reboot. Its state was snapshotted before recovery, and the remaining five retention
+checks completed from saved progress. This was an interrupted comparison.
+
+The frozen evaluator saved only pass/fail values for the retention sample, so those
+generated programs could not be independently regraded. Public code now saves the
+programs, prompts and feedback for future retention checks. The development tasks
+had been used before; no fresh confirmation or 790-task audit was run. The candidate
+was rejected and full training remains paused.
