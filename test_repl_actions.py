@@ -49,6 +49,37 @@ class ActionTests(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(namespace['read']('pkg/core.py'), self.context['files']['pkg/core.py'])
 
+    def test_advertised_path_keywords_and_legacy_names_work_in_parent_and_child(self):
+        from recursive_agent import action_code_blocks
+        child = Workspace(json.dumps(self.context), {}, root=self.root/'keyword-child')
+        for workspace in (self.workspace, child):
+            namespace = workspace.bindings()
+            for argument in ("path='pkg/core.py'", "name='pkg/core.py'", "'pkg/core.py'"):
+                with self.subTest(child=workspace.is_child, argument=argument):
+                    source = 'def greet():\n    return "checked keyword repair"\n'
+                    namespace['source'] = source
+                    command = f'write({argument}, source=source)'
+                    self.assertEqual(action_code_blocks(command), [command])
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        exec(action_code_blocks(command)[0], namespace)
+                        self.assertEqual(eval(f'read({argument})', namespace), source)
+                        receipt = namespace['check']('from pkg.core import greet\nassert greet() == "checked keyword repair"')
+                    self.assertEqual(receipt['returncode'], 0)
+                    namespace['finish']()
+                    self.assertEqual(workspace.answer['content'], {'pkg/core.py': source})
+
+    def test_path_keyword_validation_rejects_invalid_or_ambiguous_edits_before_writing(self):
+        old = self.workspace._read('pkg/core.py')
+        for path, source in [('README.md', 'overwrite'), ('../escape.py', 'pass'),
+                             ('pkg/core.py', 'def broken(:'), ('pkg/core.py', None)]:
+            with self.subTest(path=path), self.assertRaises((ValueError, SyntaxError)):
+                self.workspace.write(path=path, source=source)
+        with self.assertRaises(ValueError):
+            self.workspace.write(path='pkg/core.py', name='api.py', source='pass\n')
+        with self.assertRaises(ValueError):
+            self.workspace.read(path='pkg/core.py', name='api.py')
+        self.assertEqual(self.workspace._read('pkg/core.py'), old)
+
     def test_internal_reads_do_not_echo_source_during_show_delegate_or_finish(self):
         source = 'def greet():\n    return 2\n'
         self.workspace.query = lambda _: json.dumps({'pkg/core.py': source})

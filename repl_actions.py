@@ -75,8 +75,11 @@ class Workspace:
             raise ValueError('Unknown repository file')
         return self.target(name).read_text()
 
-    def read(self, name):
-        source = self._read(name)
+    # Keep legacy name= calls alongside the advertised path= keyword.
+    def read(self, path=None, *, name=None):
+        if path is not None and name is not None:
+            raise ValueError('Provide one repository path')
+        source = self._read(path if path is not None else name)
         print(source, end='')
         return source
 
@@ -99,8 +102,10 @@ class Workspace:
                 compile(source, name, 'exec')
         return patch
 
-    def write(self, name, source):
-        self.apply({name: source})
+    def write(self, path=None, source=None, *, name=None):
+        if path is not None and name is not None:
+            raise ValueError('Provide one repository path')
+        self.apply({path if path is not None else name: source})
 
     def apply(self, patch):
         self.validate(patch)
