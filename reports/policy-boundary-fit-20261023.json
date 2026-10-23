@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "experiment": "policy-boundary-fit-20261023",
+  "model_attempts_completed": 8,
+  "training_completed": true,
+  "scope": "Two familiar registered training families; four fresh tasks per arm",
+  "source_commit": "bf52c1a43ab47594161829af9c541be5b74f6df8",
+  "training": {
+    "initial_adapter": null,
+    "resumed_checkpoint": null,
+    "rows": 178,
+    "corrective_rows": 28,
+    "reused_verified_anchors": 150,
+    "masked_recorded_prefix_calls": 8,
+    "updates": 69,
+    "epochs": 3.0,
+    "learning_rate": 5e-05,
+    "rank": 8,
+    "seed": 3407,
+    "max_length": 4096,
+    "gradient_accumulation": 8,
+    "microbatch": 1,
+    "native_train_seconds": 238.1473,
+    "controller_training_seconds": 270.5414689550016,
+    "checkpoints": [
+      10,
+      20,
+      30,
+      40,
+      50,
+      60,
+      69
+    ],
+    "preservation_receipts": 8,
+    "preserved_files": 75,
+    "adapter_sha256": "102baaa5fdb980312c01f95ee7f15a3a0f163b9b05850f6c496e2211f9e572c6"
+  },
+  "results": {
+    "baseline": {
+      "functional": 1,
+      "ordinary_tested": 1,
+      "genuine_child_tested": 0,
+      "retention": 0,
+      "calls": 28,
+      "child_calls": 0
+    },
+    "candidate": {
+      "functional": 2,
+      "ordinary_tested": 2,
+      "genuine_child_tested": 0,
+      "retention": 0,
+      "calls": 30,
+      "child_calls": 10
+    }
+  },
+  "counts": {
+    "patches": 4,
+    "checks": 27,
+    "child_checks": 8,
+    "parent_checks": 19,
+    "contexts": 58,
+    "broken_controls": 4,
+    "partial_controls": 6,
+    "retention_programs": 0
+  },
+  "individual_losses": 0,
+  "ordinary_gains": 1,
+  "genuine_recursive_gains": 0,
+  "complete_recursive_success": false,
+  "learned_development_gain": false,
+  "screen_qualified": false,
+  "verification": {
+    "frozen_controller_stage_failed": "review-screen",
+    "reason": "The frozen reviewer replayed a help-only inspection with site initialization disabled; actual Workspace.check enables it.",
+    "additive_matched_environment_review_passed": true,
+    "recorded_checks": 27,
+    "nonasserting_inspections": 3,
+    "discriminating_assertion_scripts": 4,
+    "prompt_context_receipts": 58,
+    "grade_mismatches": 0,
+    "original_review_and_failure_preserved": true,
+    "model_infrastructure_errors": 0
+  },
+  "child_component": "One child executed a discriminating failed-before/passed-after check, finished, returned a privately correct patch, and the parent applied its exact bytes. The parent then failed its own invalid expected-exception check, so the full attempt remains failed.",
+  "development_ran": false,
+  "retention_ran": false,
+  "reserved_holdouts_used": false,
+  "new790audit": false,
+  "full_stays_paused": true,
+  "limitations": [
+    "Familiar training-family success is not generalization.",
+    "Exact sampled training row order and generated output token IDs were not independently replayed.",
+    "All original model attempts and the failed frozen reviewer remain unchanged. No failed stage was reset.",
+    "Ordinary improvement and one successful child component do not satisfy combined recursive development proof."
+  ]
+}

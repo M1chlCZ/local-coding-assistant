@@ -539,9 +539,28 @@ become a tested pass.
 
 Eight fresh fixed-weight familiar attempts still produced one functional repair
 of four and one ordinary tested repair of two in each arm, with no child calls.
-All three returned patches, five recorded checks and51prompt/context receipts
+All three returned patches, five recorded checks and 51 prompt/context receipts
 were independently regraded without mismatch. The two passing final checks fail
 original code and each single-file partial repair, and have identical failed-before
 checks. The wrapper repair therefore has native evidence, but generated child
 execution and learned improvement remain unproven. Further repair work uses
 separately verified examples for the corrected interface; full training stays paused.
+
+
+The [current-interface policy-fit trial](../reports/policy-boundary-fit-20261023.json)
+executed twelve train-only reference paths and fit one fresh69-update adapter.
+Eight fresh model attempts improved ordinary tested repairs from1to2of2 without
+individual losses. Both recursive tasks delegated, and one child completed a valid
+failed-check/repair/passing-check/finish sequence. Its parent applied the correct
+patch but incorrectly tested an expected exception as a returned value, so the
+whole attempt still failed. The other child tried the root delegation workflow.
+Complete genuine child-tested repairs remained0of2; no development run followed.
+
+The frozen independent reviewer also failed on a help-only inspection because it
+used Python site-disabled flags that differ from the actual check subprocess.
+All original inputs, outputs and the failed reviewer were preserved. An additive
+review in the actual check environment matched all27scripts and58context receipts;
+nonasserting inspections were kept separate from the four discriminating assertion
+scripts. All seven checkpoints and final weights were independently verified outside
+the session. This is ordinary improvement and child-component progress on familiar
+families, not combined recursive development proof. Full training remains paused.
