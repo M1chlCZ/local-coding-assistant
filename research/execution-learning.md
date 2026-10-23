@@ -642,3 +642,33 @@ with one optional skip. A separate real Docker parent/child control exercised th
 keyword, a failed-before/passed-after child check and the parent's independent
 check of the exact returned source. This scripted control proves the API repair,
 not learning. The active matched comparison retained its original frozen source.
+
+
+The [complete matched development comparison](../reports/broader-development-proof-20261023.json)
+then ran all sixty fresh attempts on the unchanged execution source and fixed
+step-69 adapter. Ordinary tested repairs rose from 1 to 2 of 8, genuine child-tested
+repairs from 0 to 2 of 7, and functional repairs from 1 to 4 of 15. There were no
+individual functional, tested, recursive or retention losses; retention stayed
+0 of 15 in both arms. Both child gains include a discriminating failed child check,
+repair and passed child check, exact proposal return, parent application and an
+independent parent check. The gained repairs span three families.
+
+The frozen CPU reviewer stopped because it assumed every reserved call returned a
+response. One original attempt reached its 360-second deadline with eight prepared
+requests and seven returned responses; it remains failed. The failed controller
+and absent report stage were preserved. An additive independent audit matched all
+six returned patches, 102 recorded check scripts, thirty retention programs and
+all 246 prepared contexts, including explicit verification of the one unanswered
+request. Its seven fail-closed controls reject early or multiple missing responses
+and positive incomplete attempts. All 245 saved responses match their contexts;
+194 isolated repair, control and retention program executions had no grade mismatch.
+
+One BASE response records 428 output tokens while canonical decoded-text encoding
+has 426. Generated token IDs were not saved. A synthetic noncanonical encoding
+control demonstrates a possible implementation path, but cannot establish the
+actual original IDs or cause. This limit and the unknown output of the deadline
+request remain explicit. No model retry, output substitution, optimizer or new
+adapter was used. The independent recorded-evidence score predicates pass on these
+previously consumed development definitions. Reserved confirmation and a new
+790-task audit have not run; full training remains paused. The later helper keyword
+fix is separately native-tested and does not inherit this source's model evidence.
