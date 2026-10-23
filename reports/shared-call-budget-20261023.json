@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "completed": true,
+  "date": "2026-10-23",
+  "experiment": "shared-call-budget-20261023",
+  "diagnostic_only": true,
+  "source_commit": "c6c0d4e611fab10fa75489e60eba3d5a07312f71",
+  "model": "Qwen/Qwen3.5-4B",
+  "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "adapter_sha256": "c4df89e48bef03e2dcad6d5d55c03290027b02dfed6227ae64d7e989426e5db1",
+  "optimizer_used": false,
+  "new_adapter": false,
+  "method": "One repaired-protocol diagnostic with four fresh familiar tasks per fixed-weight arm: BASE and the preserved final-step22 candidate. No training, retries, checkpoint search or output reuse as the current baseline.",
+  "interface_change": {
+    "shared_call_counter_before_tokenization": true,
+    "transient_user_message": true,
+    "parent_and_child_count_verified": true,
+    "non_action_api_unchanged": true,
+    "existing_assignment_application_check_finish_advice_restated": true,
+    "inspection_strategy_advice": true,
+    "causal_effects_separated": false
+  },
+  "selection": {
+    "training_families": 2,
+    "tasks_per_arm": 4,
+    "total_fresh_attempts": 8,
+    "development_tasks": 0,
+    "retention_tasks": 0,
+    "reserved_holdout_tasks": 0
+  },
+  "settings": {
+    "greedy_generation": true,
+    "action_api": true,
+    "context_window": true,
+    "execution_context_tokens": 8192,
+    "strict_ordinary": true,
+    "depth": 2,
+    "calls": 12,
+    "output_tokens": 8192,
+    "seconds": 360,
+    "root_child_max_iterations": 8,
+    "corrected_child_orchestrator_policy": true,
+    "forced_child_guard": false,
+    "wall_cap_seconds": 3600
+  },
+  "summary": {
+    "baseline": {
+      "ordinary": {
+        "total": 2,
+        "functional": 1,
+        "tested_repl": 1
+      },
+      "recursive": {
+        "total": 2,
+        "functional": 0,
+        "direct_tested_repl": 0,
+        "genuine_child_tested": 0
+      }
+    },
+    "candidate": {
+      "ordinary": {
+        "total": 2,
+        "functional": 1,
+        "tested_repl": 1
+      },
+      "recursive": {
+        "total": 2,
+        "functional": 0,
+        "direct_tested_repl": 0,
+        "genuine_child_tested": 0
+      }
+    }
+  },
+  "matched_changes": {
+    "functional_gains": 0,
+    "functional_losses": 0,
+    "ordinary_tested_gains": 0,
+    "ordinary_tested_losses": 0,
+    "genuine_child_tested_gains": 0,
+    "genuine_child_tested_losses": 0,
+    "distinct_tested_gain_families": 0
+  },
+  "historical_context_only": {
+    "both_functional": [
+      3,
+      1,
+      4
+    ],
+    "functional_losses_per_arm": 2,
+    "baseline_ordinary_tested": [
+      0,
+      1,
+      2
+    ],
+    "candidate_ordinary_tested": [
+      1,
+      1,
+      2
+    ],
+    "candidate_additional_recursive_mode_root_tested_pass_lost": true,
+    "genuine_child_remains_zero": true,
+    "changed_evaluation_source_files": [
+      "recursive_agent.py"
+    ],
+    "same_tasks_same_fixed_weights_same_limits": true
+  },
+  "execution_counts": {
+    "baseline": {
+      "calls": 38,
+      "child_calls": 5,
+      "queries": 1
+    },
+    "candidate": {
+      "calls": 35,
+      "child_calls": 0,
+      "queries": 0
+    },
+    "controller_infrastructure_failures": 0,
+    "controller_reported_active_seconds": 628.7675874239976,
+    "completed_wall_seconds": 609.618
+  },
+  "independent_review": {
+    "returned_patches_reexecuted": 2,
+    "recorded_check_scripts_reexecuted": 5,
+    "passing_scripts_in_frozen_review": 3,
+    "failing_scripts_in_frozen_review": 2,
+    "child_check_scripts": 0,
+    "negative_task_mode_controls": 4,
+    "partial_edit_controls": 4,
+    "prompt_context_and_live_counter_receipts_matched": 73,
+    "grade_mismatches": 0,
+    "matched_initial_prompts": true,
+    "all_individual_changes_reviewed": true,
+    "additional_successful_final_scripts_reexecuted": 2,
+    "additional_final_script_control_programs": 14,
+    "all_claimed_final_scripts_reject_broken_and_each_single_file_partial": true,
+    "failed_before_scripts_match_final_script_and_reject_failed_source": true,
+    "all_recorded_check_scripts_reexecuted": 10,
+    "all_recorded_passing_checks": 3,
+    "all_recorded_failing_checks": 7,
+    "all_recorded_check_review_isolated_programs": 22,
+    "all_passing_check_scripts_reject_broken_and_each_single_file_partial": true,
+    "all_passing_checked_workspaces_pass_private_grader": true,
+    "unreturned_passing_workspace_count": 1,
+    "unreturned_passing_workspace_remains_failed": true
+  },
+  "diagnosis": [
+    "Budget notices were present and correctly counted; no genuine child-tested success exists.",
+    "BASE delegated only after seven root calls; child spent all five remaining calls on nonexistent file and invented/manual context-loading attempts, without recorded child checks or a proposal.",
+    "Candidate made no child calls; one recursive attempt repeated direct imports/prints and another rewrote/read source without a helper check/final return.",
+    "Ordinary family1 lost historical functional passes in both arms through testing/finalization or final-answer format failure; both arms only finished family2 ordinary.",
+    "Candidate ordinary family1 reached a correct workspace and passing recorded checks, then emitted finish() in the ninth fallback response. RLM._default_answer does not execute that REPL block and the response is not a JSON patch. It remains failed; shared global calls remaining do not imply remaining local REPL iterations."
+  ],
+  "decision": {
+    "familiar_screen_passed": false,
+    "child_inspection_policy_resolved": false,
+    "resource_notice_verified": true,
+    "proven_repl_and_recursive_improvement": false,
+    "development_started": false,
+    "retention_started": false,
+    "candidate_selected_for_confirmation": false,
+    "reserved_holdouts_evaluated": 0,
+    "new790audit_started": false,
+    "full_loop_restarted": false,
+    "full_stays_paused": true,
+    "automatic_next_recipe": false
+  },
+  "limitations": [
+    "The accurate resource notice and existing strategy reminders did not produce child-tested repairs; this is an interface correction, not a proven child execution repair.",
+    "Both fixed-weight arms lost two historical functional passes; unchanged scores in the fresh BASE/candidate comparison do not erase these regressions. Historical outputs are descriptive context, not the current baseline or a fresh intervention counterfactual.",
+    "Only two familiar training families were used; there is no development, retention or generalization proof.",
+    "No model generation, full environment trajectory or output-token-ID replay was performed.",
+    "No new optimizer, checkpoint or adapter exists. Prior adapter checkpoints, private evidence and all full sessions remain preserved.",
+    "Historical round5 checkpoint5 was missing before preservation and remains a disclosed gap.",
+    "The resource notice exposes the shared-call constraint but does not fully expose the local final-response execution boundary. The small trial rejects this combined prompt intervention as a sufficient repair; no full-run adoption is authorized."
+  ],
+  "config_sha256": "82d0be37a3007fe67c73514f1a1bad094d30a5641ea1f40be06965789d868179",
+  "evaluation_sha256": "dab0c5f8b3e29eb91b9bc52b6faeb41d3549f80709a86889720e5d71feb755ac",
+  "native_checks": {
+    "context_regression_failed_before": true,
+    "context_tests_after": 10,
+    "remote_tests": 30,
+    "remote_optional_dependency_skips": 1,
+    "separate_recursive_agent_integration_passed": true,
+    "local_docker_daemon_unavailable": true,
+    "real_docker_checks_run_remotely": true
+  },
+  "preservation": {
+    "new_evidence_files": 126,
+    "new_evidence_receipt_sha256": "7b80ed56e65ab1d2537805fe8e7b56bb47d7a58c9a4106a2598d24528cb50a53",
+    "full_manifest_hash_verified_after_write": true,
+    "fixed_adapter_unchanged": true,
+    "prior_adapter_receipts": 6,
+    "prior_adapter_weight_files": 57,
+    "prior_full_run_receipts": 9,
+    "prior_full_run_weight_files": 87,
+    "original_sessions_paused": true,
+    "accepted_updates": 0,
+    "retained_adapter": null,
+    "checkpoint_archiver_verified": true,
+    "worker_exited": true,
+    "no_owned_process_or_gpu_lock": true,
+    "checked_prior_artifacts_reverified": true
+  }
+}

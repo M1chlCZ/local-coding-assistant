@@ -499,3 +499,30 @@ child checks or edits. The required screen failed, so development and retention
 evaluation did not run. This one-family ordinary gain does not establish
 generalization or the required combined improvement. No next recipe, reserved
 confirmation, 790-task audit or full restart follows automatically.
+
+
+The [shared-call budget diagnostic](../reports/shared-call-budget-20261023.json)
+then tested a narrow interface correction with fixed weights. Actual child prompts
+had shown local `Turn 1/8` after the parent used seven of twelve shared calls,
+without exposing that only five calls remained. Action-API requests now carry a
+transient remaining-call notice before token counting, plus existing inspection,
+assignment and finalization advice. Hard limits and grading stayed unchanged.
+
+Eight fresh familiar-task attempts compared BASE and the same preserved final-step22
+adapter. Both achieved one functional repair of four, one ordinary tested repair
+of two, and zero genuine child-tested repairs of two. BASE still delegated after
+seven root calls; its child spent the remaining five trying unsupported file and
+context-loading operations. The candidate made no child calls. Compared descriptively
+with the preserved earlier same-weight results, both arms fell from three to one
+functional repairs; the candidate also lost a recursive-mode root-tested pass.
+Those historical outputs were never reused as the current baseline.
+
+Independent execution matched both returned patches, all ten recorded check scripts
+and all 73 prompt/context/resource receipts. Every passing script rejected broken
+code and each single-file partial repair. One additional correct, checked workspace
+was never returned: the final fallback response emitted `finish()` in a REPL block
+that the runtime does not execute. Shared calls remaining do not imply remaining
+local REPL iterations. That attempt remains failed. The combined prompt intervention
+is rejected as a sufficient child repair; it establishes neither learned improvement
+nor generalization. No optimizer, new adapter, development/retention run, reserved
+confirmation, audit or full restart followed. Full training stays paused.
