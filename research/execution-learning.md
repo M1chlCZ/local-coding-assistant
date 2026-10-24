@@ -705,3 +705,34 @@ syntax-error cells and a failed draft
 inventory assertion remain preserved. All 533 evidence copies and their bound
 originals passed independent hash verification. These consumed development tasks
 provide neither reserved confirmation nor generalization proof.
+
+
+The [small regression diagnostic](../reports/regression-repair-20261024.json)
+verified a narrow feedback repair: failed check tracebacks now show the actual
+assertion source line. Exact executed strings, check exit codes, source hashes,
+finish binding and existing execution/output limits remain unchanged. Native
+parent/child tests and a real scripted Docker child-to-parent chain passed.
+This interface proof does not establish a model behavior repair.
+
+A fresh BASE/fixed-step-69 comparison was interrupted by a Windows reboot after
+seven saved results from eight planned attempts. Both target algorithmic
+regressions still fail in saved candidate attempts. Across the three matched
+pairs, one functional/tested BASE pass was lost and one ordinary control gained;
+there was no genuine child-tested gain. The candidate recursive control was
+prepared but has no saved result. Its output and outcome remain unknown. The
+original controller was not restarted, its clock and frozen results remain
+unchanged, and no missing attempt was regenerated. This is an incomplete trial,
+not a completed gate rejection or evidence of improvement.
+
+An additive CPU review matched both returned patches, all 27 recorded checks
+(eight child and nineteen parent), their broken/partial controls, and all 55
+prepared context/response receipts. It used 51 isolated program executions
+including five trusted driver controls, with zero grade mismatches. Five separate
+real Docker transport cases reproduced the original nested-output overflow and
+verified a bounded receipt containing the full inner-tail hash and length, while
+preserving both existing output caps. Failed audit preparations remain retained.
+The review did not regenerate model outputs or replay full environment
+trajectories. All 391 interruption snapshot files and 390 mapped immutable
+originals were hash-verified, together with all twelve preserved weight files.
+Full training remains paused with zero accepted updates; reserved confirmation
+and the 790-task audit did not run.
