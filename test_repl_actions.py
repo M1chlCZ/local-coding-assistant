@@ -174,6 +174,28 @@ class ActionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.workspace.delegate('repair')
 
+    def test_failed_checks_show_the_actual_assertion_line_in_parent_and_child(self):
+        child = Workspace(json.dumps(self.context), {}, root=self.root/'feedback-child')
+        code = ('from __future__ import annotations\nfrom pkg.core import greet\n'
+                'observed = greet()\nassert observed == 1, "greeting mismatch"\n')
+        for workspace in (self.workspace, child):
+            with self.subTest(child=workspace.is_child), contextlib.redirect_stdout(io.StringIO()):
+                workspace.write('pkg/core.py', 'def greet():\n    return 0\n')
+                before = workspace.hashes()
+                result = workspace.check(code)
+                self.assertNotEqual(result['returncode'], 0)
+                self.assertIn('\n    assert observed == 1, "greeting mismatch"\n', result['output'])
+                self.assertIn('AssertionError: greeting mismatch', result['output'])
+                self.assertEqual(result['code'], code)
+                self.assertEqual(result['before'], before)
+                self.assertEqual(result['after'], before)
+                self.assertLessEqual(len(result['output'].encode()), 4096)
+                with self.assertRaisesRegex(ValueError, 'successful check'):
+                    workspace.finish()
+                workspace.write('pkg/core.py', 'def greet():\n    return 1\n')
+                self.assertEqual(workspace.check(code)['returncode'], 0)
+                workspace.finish()
+
     def test_child_json_fence_uses_same_patch_format_as_root(self):
         proposal = {'pkg/core.py': 'def greet():\n    return 1\n'}
         for response in (json.dumps(proposal), '```json\n'+json.dumps(proposal)+'\n```'):

@@ -121,8 +121,13 @@ class Workspace:
             raise ValueError('Check code must be text of at most 12000 characters')
         tree = ast.parse(code)
         before = self.hashes()
-        program = 'import sys;sys.path.insert(0,'+repr(str(self.root))+');exec('+repr(code)+')'
-        with tempfile.TemporaryFile() as output:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as output:
+            # CPython's uncaught traceback needs a real file to display the failed check line.
+            # shortcut: non-UTF-8 coding cookies can distort displayed Unicode; execution uses the exact string.
+            source = Path(directory)/'check.py'
+            source.write_text(code)
+            program = ('import sys;sys.path.insert(0,'+repr(str(self.root))+');exec(compile('
+                +repr(code)+','+repr(str(source))+',"exec"))')
             result = subprocess.run([sys.executable, '-B', '-I', '-c', program],
                 cwd=self.root, stdout=output, stderr=subprocess.STDOUT, timeout=10)
             size = output.tell()
